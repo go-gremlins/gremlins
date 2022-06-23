@@ -1,0 +1,4 @@
+mode: set
+example.com/path/file1.go:47.2,48.16 2 0
+example.com/path/file1.go:48.4,49.20 2 0
+example.com/path2/file2.go:52.2,53.16 2 0
