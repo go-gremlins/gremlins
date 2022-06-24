@@ -17,24 +17,15 @@
 package coverage
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"golang.org/x/tools/cover"
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 )
-
-// Block holds the start and end coordinates of a section of a source file
-// covered by tests.
-type Block struct {
-	StartLine int
-	StartCol  int
-	EndLine   int
-	EndCol    int
-}
-
-// Profile is implemented as a map holding a slice of Block per each filename.
-type Profile map[string][]Block
 
 // Coverage is responsible for executing a Go test with coverage via the Run() method,
 // then parsing the result coverage report file.
@@ -42,6 +33,7 @@ type Coverage struct {
 	cmdContext execContext
 	workDir    string
 	fileName   string
+	mod        string
 }
 
 type execContext = func(name string, args ...string) *exec.Cmd
@@ -49,22 +41,38 @@ type execContext = func(name string, args ...string) *exec.Cmd
 // New instantiates a Coverage element using exec.Command as execContext,
 // actually running the command on the OS.
 func New(workdir string) *Coverage {
-	return NewWithCmd(exec.Command, workdir)
-
+	return NewWithCmdAndPackage(exec.Command, getMod(), workdir)
 }
 
-// NewWithCmd instantiates a Coverage element given a custom execContext.
-func NewWithCmd(cmdContext execContext, workdir string) *Coverage {
+func getMod() string {
+	file, err := os.Open("go.mod")
+	if err != nil {
+		fmt.Printf("not in a go module root folder: %v\n", err)
+		os.Exit(-1)
+	}
+	r := bufio.NewReader(file)
+	line, _, err := r.ReadLine()
+	if err != nil {
+		fmt.Printf("not in a go module root folder %v\n\n", err)
+		os.Exit(-1)
+	}
+	packageName := bytes.TrimPrefix(line, []byte("module "))
+	return string(packageName)
+}
+
+// NewWithCmdAndPackage instantiates a Coverage element given a custom execContext.
+func NewWithCmdAndPackage(cmdContext execContext, mod, workdir string) *Coverage {
 	return &Coverage{
 		cmdContext: cmdContext,
 		workDir:    workdir,
 		fileName:   "coverage",
+		mod:        mod,
 	}
 }
 
 // Run executes the coverage command and parses the results, returning a *Profile
 // object.
-func (c Coverage) Run() (*Profile, error) {
+func (c Coverage) Run() (Profile, error) {
 	err := c.execute()
 	if err != nil {
 		return nil, err
@@ -77,12 +85,12 @@ func (c Coverage) Run() (*Profile, error) {
 	return profile, nil
 }
 
-func (c Coverage) getProfile(err error) (*Profile, error) {
+func (c Coverage) getProfile(err error) (Profile, error) {
 	cf, err := os.Open(c.filePath())
 	if err != nil {
 		return nil, err
 	}
-	profile, err := parse(cf)
+	profile, err := c.parse(cf)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +111,7 @@ func (c Coverage) execute() error {
 	return nil
 }
 
-func parse(data io.Reader) (*Profile, error) {
+func (c Coverage) parse(data io.Reader) (Profile, error) {
 	profiles, err := cover.ParseProfilesFromReader(data)
 	if err != nil {
 		return nil, err
@@ -117,8 +125,13 @@ func parse(data io.Reader) (*Profile, error) {
 				EndLine:   b.EndLine,
 				EndCol:    b.EndCol,
 			}
-			status[p.FileName] = append(status[p.FileName], block)
+			fn := removeModuleFromPath(p, c)
+			status[fn] = append(status[fn], block)
 		}
 	}
-	return &status, nil
+	return status, nil
+}
+
+func removeModuleFromPath(p *cover.Profile, c Coverage) string {
+	return strings.ReplaceAll(p.FileName, c.mod+"/", "")
 }

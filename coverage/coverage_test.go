@@ -17,10 +17,12 @@
 package coverage_test
 
 import (
+	"fmt"
 	"github.com/google/go-cmp/cmp"
 	"github.com/k3rn31/gremlins/coverage"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 )
 
@@ -34,34 +36,22 @@ func TestCoverageRun(t *testing.T) {
 	wantWorkdir := "workdir"
 	wantFilename := "coverage"
 	wantFilePath := wantWorkdir + "/" + wantFilename
-	got := &commandHolder{}
-	cov := coverage.NewWithCmd(fakeExecCommandSuccess(got), wantWorkdir)
+	holder := &commandHolder{}
+	cov := coverage.NewWithCmdAndPackage(fakeExecCommandSuccess(holder), "example.com", wantWorkdir)
 
 	_, _ = cov.Run()
 
-	if !cmp.Equal(got.command, "go") {
-		t.Errorf("expected commandHolder to be 'go', got %q", got.command)
-	}
-	if !cmp.Equal(got.args[0], "test") {
-		t.Errorf("expected 'test', got %q", got.args[0])
-	}
-	if !cmp.Equal(got.args[1], "-cover") {
-		t.Errorf("expected '-cover', got %q", got.args[0])
-	}
-	if !cmp.Equal(got.args[2], "-coverprofile") {
-		t.Errorf("expected '-coverprofile', got %q", got.args[0])
-	}
-	if !cmp.Equal(got.args[3], wantFilePath) {
-		t.Errorf("expected %q, got %q", wantFilePath, got.args[3])
-	}
-	if !cmp.Equal(got.args[4], "./...") {
-		t.Errorf("expected %q, got %q", "./...", got.args[4])
+	want := fmt.Sprintf("go test -cover -coverprofile %v ./...", wantFilePath)
+	got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
+
+	if !cmp.Equal(got, want) {
+		t.Errorf(cmp.Diff(got, want))
 	}
 }
 
 func TestCoverageRunFails(t *testing.T) {
 	t.Parallel()
-	cov := coverage.NewWithCmd(fakeExecCommandFailure, "workdir")
+	cov := coverage.NewWithCmdAndPackage(fakeExecCommandFailure, "example.com", "workdir")
 	_, err := cov.Run()
 	if err == nil {
 		t.Error("expected run to report an error")
@@ -70,9 +60,9 @@ func TestCoverageRunFails(t *testing.T) {
 
 func TestCoverageParsesOutput(t *testing.T) {
 	t.Parallel()
-	cov := coverage.NewWithCmd(fakeExecCommandSuccess(nil), "testdata/valid")
-	want := &coverage.Profile{
-		"example.com/path/file1.go": {
+	cov := coverage.NewWithCmdAndPackage(fakeExecCommandSuccess(nil), "example.com", "testdata/valid")
+	want := coverage.Profile{
+		"path/file1.go": {
 			{
 				StartLine: 47,
 				StartCol:  2,
@@ -86,7 +76,7 @@ func TestCoverageParsesOutput(t *testing.T) {
 				EndCol:    20,
 			},
 		},
-		"example.com/path2/file2.go": {
+		"path2/file2.go": {
 			{
 				StartLine: 52,
 				StartCol:  2,
@@ -108,7 +98,7 @@ func TestCoverageParsesOutput(t *testing.T) {
 
 func TestParseOutputFail(t *testing.T) {
 	t.Parallel()
-	cov := coverage.NewWithCmd(fakeExecCommandSuccess(nil), "testdata/invalid")
+	cov := coverage.NewWithCmdAndPackage(fakeExecCommandSuccess(nil), "example.com", "testdata/invalid")
 
 	_, err := cov.Run()
 	if err == nil {
