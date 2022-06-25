@@ -94,6 +94,8 @@ func (mu Mutator) runOnFile(fileName string, src io.Reader) []Mutant {
 				return true
 			}
 			result = append(result, r...)
+		case *ast.UnaryExpr:
+			// Do something
 		}
 		return true
 	})

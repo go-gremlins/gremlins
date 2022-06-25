@@ -42,9 +42,7 @@ type execContext = func(name string, args ...string) *exec.Cmd
 // New instantiates a Coverage element using exec.Command as execContext,
 // actually running the command on the OS.
 func New(workdir, path string) (*Coverage, error) {
-	if strings.HasSuffix(path, "/") {
-		path = path[:len(path)-1]
-	}
+	path = strings.TrimSuffix(path, "/")
 	mod, err := getMod(path)
 	if err != nil {
 		return nil, err
@@ -84,7 +82,7 @@ func (c Coverage) Run() (Profile, error) {
 	if err != nil {
 		return nil, err
 	}
-	profile, err := c.getProfile(err)
+	profile, err := c.getProfile()
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +90,7 @@ func (c Coverage) Run() (Profile, error) {
 	return profile, nil
 }
 
-func (c Coverage) getProfile(err error) (Profile, error) {
+func (c Coverage) getProfile() (Profile, error) {
 	cf, err := os.Open(c.filePath())
 	if err != nil {
 		return nil, err
