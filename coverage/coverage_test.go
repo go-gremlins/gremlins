@@ -37,7 +37,7 @@ func TestCoverageRun(t *testing.T) {
 	wantFilename := "coverage"
 	wantFilePath := wantWorkdir + "/" + wantFilename
 	holder := &commandHolder{}
-	cov := coverage.NewWithCmdAndPackage(fakeExecCommandSuccess(holder), "example.com", wantWorkdir)
+	cov := coverage.NewWithCmdAndPackage(fakeExecCommandSuccess(holder), "example.com", wantWorkdir, ".")
 
 	_, _ = cov.Run()
 
@@ -51,7 +51,7 @@ func TestCoverageRun(t *testing.T) {
 
 func TestCoverageRunFails(t *testing.T) {
 	t.Parallel()
-	cov := coverage.NewWithCmdAndPackage(fakeExecCommandFailure, "example.com", "workdir")
+	cov := coverage.NewWithCmdAndPackage(fakeExecCommandFailure, "example.com", "workdir", "./...")
 	_, err := cov.Run()
 	if err == nil {
 		t.Error("expected run to report an error")
@@ -60,7 +60,7 @@ func TestCoverageRunFails(t *testing.T) {
 
 func TestCoverageParsesOutput(t *testing.T) {
 	t.Parallel()
-	cov := coverage.NewWithCmdAndPackage(fakeExecCommandSuccess(nil), "example.com", "testdata/valid")
+	cov := coverage.NewWithCmdAndPackage(fakeExecCommandSuccess(nil), "example.com", "testdata/valid", "./...")
 	want := coverage.Profile{
 		"path/file1.go": {
 			{
@@ -98,7 +98,7 @@ func TestCoverageParsesOutput(t *testing.T) {
 
 func TestParseOutputFail(t *testing.T) {
 	t.Parallel()
-	cov := coverage.NewWithCmdAndPackage(fakeExecCommandSuccess(nil), "example.com", "testdata/invalid")
+	cov := coverage.NewWithCmdAndPackage(fakeExecCommandSuccess(nil), "example.com", "testdata/invalid", "./...")
 
 	_, err := cov.Run()
 	if err == nil {

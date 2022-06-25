@@ -16,18 +16,15 @@
  *    limitations under the License.
  */
 
-package main
+package cmd
 
 import (
-	"fmt"
-	"github.com/k3rn31/gremlins/cmd"
-	"os"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	cmd.GremlinsCmd.AddCommand(cmd.UnleashCmd)
-	if err := cmd.GremlinsCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
-	}
+var GremlinsCmd = &cobra.Command{
+	Use: "gremlins",
+	Short: `Gremlins is a mutation testing tool for Go projects, made with love by k3rn31 
+and friends.
+`,
 }

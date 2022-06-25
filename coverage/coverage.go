@@ -32,6 +32,7 @@ import (
 type Coverage struct {
 	cmdContext execContext
 	workDir    string
+	path       string
 	fileName   string
 	mod        string
 }
@@ -40,31 +41,37 @@ type execContext = func(name string, args ...string) *exec.Cmd
 
 // New instantiates a Coverage element using exec.Command as execContext,
 // actually running the command on the OS.
-func New(workdir string) *Coverage {
-	return NewWithCmdAndPackage(exec.Command, getMod(), workdir)
+func New(workdir, path string) (*Coverage, error) {
+	if strings.HasSuffix(path, "/") {
+		path = path[:len(path)-1]
+	}
+	mod, err := getMod(path)
+	if err != nil {
+		return nil, err
+	}
+	return NewWithCmdAndPackage(exec.Command, mod, workdir, path), nil
 }
 
-func getMod() string {
-	file, err := os.Open("go.mod")
+func getMod(path string) (string, error) {
+	file, err := os.Open(path + "/go.mod")
 	if err != nil {
-		fmt.Printf("not in a go module root folder: %v\n", err)
-		os.Exit(-1)
+		return "", err
 	}
 	r := bufio.NewReader(file)
 	line, _, err := r.ReadLine()
 	if err != nil {
-		fmt.Printf("not in a go module root folder %v\n\n", err)
-		os.Exit(-1)
+		return "", err
 	}
 	packageName := bytes.TrimPrefix(line, []byte("module "))
-	return string(packageName)
+	return string(packageName), nil
 }
 
 // NewWithCmdAndPackage instantiates a Coverage element given a custom execContext.
-func NewWithCmdAndPackage(cmdContext execContext, mod, workdir string) *Coverage {
+func NewWithCmdAndPackage(cmdContext execContext, mod, workdir, path string) *Coverage {
 	return &Coverage{
 		cmdContext: cmdContext,
 		workDir:    workdir,
+		path:       path + "/...",
 		fileName:   "coverage",
 		mod:        mod,
 	}
@@ -102,7 +109,7 @@ func (c Coverage) filePath() string {
 }
 
 func (c Coverage) execute() error {
-	cmd := c.cmdContext("go", "test", "-cover", "-coverprofile", c.filePath(), "./...")
+	cmd := c.cmdContext("go", "test", "-cover", "-coverprofile", c.filePath(), c.path)
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
