@@ -96,6 +96,31 @@ func TestCoverageParsesOutput(t *testing.T) {
 	}
 }
 
+func TestCoverageNew(t *testing.T) {
+	t.Run("does not return error if it can retrieve module", func(t *testing.T) {
+		t.Parallel()
+		path := t.TempDir()
+		goMod := path + "/go.mod"
+		err := os.WriteFile(goMod, []byte("module example.com"), 0600)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = coverage.New(t.TempDir(), path)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("returns error if it cannot find module", func(t *testing.T) {
+		t.Parallel()
+		_, err := coverage.New(t.TempDir(), t.TempDir())
+		if err == nil {
+			t.Fatal(err)
+		}
+	})
+}
+
 func TestParseOutputFail(t *testing.T) {
 	t.Parallel()
 	cov := coverage.NewWithCmdAndPackage(fakeExecCommandSuccess(nil), "example.com", "testdata/invalid", "./...")

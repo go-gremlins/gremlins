@@ -16,35 +16,29 @@
 
 package mutator
 
-import "go/token"
-
-type MutantType int
-
-func (mt MutantType) String() string {
-	switch mt {
-	case ConditionalBoundary:
-		return "Conditional Boundary"
-	default:
-		panic("this should not happen")
-	}
-}
-
-const (
-	ConditionalBoundary MutantType = iota
+import (
+	"github.com/google/go-cmp/cmp"
+	"testing"
 )
 
-var tokenMutantType = map[token.Token][]MutantType{
-	token.GTR: {ConditionalBoundary},
-	token.LSS: {ConditionalBoundary},
-	token.GEQ: {ConditionalBoundary},
-	token.LEQ: {ConditionalBoundary},
-}
-
-var mutations = map[MutantType]map[token.Token]token.Token{
-	ConditionalBoundary: {
-		token.GTR: token.GEQ,
-		token.LSS: token.LEQ,
-		token.GEQ: token.GTR,
-		token.LEQ: token.LSS,
-	},
+func TestMutantTypeString(t *testing.T) {
+	testCases := []struct {
+		name       string
+		mutantType MutantType
+		expected   string
+	}{
+		{
+			"Conditional Boundary",
+			ConditionalBoundary,
+			"Conditional Boundary",
+		},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.mutantType.String() != tc.expected {
+				t.Errorf(cmp.Diff(tc.mutantType.String(), tc.expected))
+			}
+		})
+	}
 }

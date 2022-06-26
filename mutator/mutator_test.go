@@ -17,6 +17,7 @@
 package mutator_test
 
 import (
+	"github.com/google/go-cmp/cmp"
 	"github.com/k3rn31/gremlins/coverage"
 	"github.com/k3rn31/gremlins/mutator"
 	"go/token"
@@ -153,5 +154,42 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 
 	if len(got) != 0 {
 		t.Errorf("should not receive results")
+	}
+}
+
+func TestMutationStatusString(t *testing.T) {
+	testCases := []struct {
+		name           string
+		mutationStatus mutator.MutationStatus
+		expected       string
+	}{
+		{
+			"NotCovered",
+			mutator.NotCovered,
+			"NOT COVERED",
+		},
+		{
+			"Runnable",
+			mutator.Runnable,
+			"RUNNABLE",
+		},
+		{
+			"Lived",
+			mutator.Lived,
+			"LIVED",
+		},
+		{
+			"Killed",
+			mutator.Killed,
+			"KILLED",
+		},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.mutationStatus.String() != tc.expected {
+				t.Errorf(cmp.Diff(tc.mutationStatus.String(), tc.expected))
+			}
+		})
 	}
 }
