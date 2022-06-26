@@ -46,59 +46,191 @@ func TestMutations(t *testing.T) {
 		token         token.Token
 		tokenMutation token.Token
 		covProfile    coverage.Profile
-		mutStatus     mutator.MutationStatus
+		mutStatus     mutator.MutantStatus
 	}{
+		// CONDITIONAL BOUNDARIES
 		{
 			name:          "it recognizes CONDITIONAL_BOUNDARY with GTR",
-			fixture:       "testdata/fixtures/conditional_boundary_gtr_go",
-			mutantType:    mutator.ConditionalBoundary,
+			fixture:       "testdata/fixtures/gtr_go",
+			mutantType:    mutator.ConditionalsBoundary,
 			token:         token.GTR,
 			tokenMutation: token.GEQ,
-			covProfile:    coveredPosition("testdata/fixtures/conditional_boundary_gtr_go"),
+			covProfile:    coveredPosition("testdata/fixtures/gtr_go"),
 			mutStatus:     mutator.Runnable,
 		},
 		{
 			name:          "it recognizes CONDITIONAL_BOUNDARY with LSS",
-			fixture:       "testdata/fixtures/conditional_boundary_lss_go",
-			mutantType:    mutator.ConditionalBoundary,
+			fixture:       "testdata/fixtures/lss_go",
+			mutantType:    mutator.ConditionalsBoundary,
 			token:         token.LSS,
 			tokenMutation: token.LEQ,
-			covProfile:    notCoveredPosition("testdata/fixtures/conditional_boundary_lss_go"),
+			covProfile:    notCoveredPosition("testdata/fixtures/lss_go"),
 			mutStatus:     mutator.NotCovered,
 		},
 		{
 			name:          "it recognizes CONDITIONAL_BOUNDARY with LEQ",
-			fixture:       "testdata/fixtures/conditional_boundary_leq_go",
-			mutantType:    mutator.ConditionalBoundary,
+			fixture:       "testdata/fixtures/leq_go",
+			mutantType:    mutator.ConditionalsBoundary,
 			token:         token.LEQ,
 			tokenMutation: token.LSS,
-			covProfile:    notCoveredPosition("testdata/fixtures/conditional_boundary_leq_go"),
+			covProfile:    notCoveredPosition("testdata/fixtures/leq_go"),
 			mutStatus:     mutator.NotCovered,
 		},
 		{
 			name:          "it recognizes CONDITIONAL_BOUNDARY with GEQ",
-			fixture:       "testdata/fixtures/conditional_boundary_geq_go",
-			mutantType:    mutator.ConditionalBoundary,
+			fixture:       "testdata/fixtures/geq_go",
+			mutantType:    mutator.ConditionalsBoundary,
 			token:         token.GEQ,
 			tokenMutation: token.GTR,
-			covProfile:    notCoveredPosition("testdata/fixtures/conditional_boundary_geq_go"),
+			covProfile:    notCoveredPosition("testdata/fixtures/geq_go"),
+			mutStatus:     mutator.NotCovered,
+		},
+		// INCREMENT_DECREMENT
+		{
+			name:          "it recognizes INCREMENT_DECREMENT with INC",
+			fixture:       "testdata/fixtures/inc_go",
+			mutantType:    mutator.IncrementDecrement,
+			token:         token.INC,
+			tokenMutation: token.DEC,
+			covProfile:    notCoveredPosition("testdata/fixtures/inc_go"),
 			mutStatus:     mutator.NotCovered,
 		},
 		{
-			name:          "it recognizes CONDITIONAL_BOUNDARY with recursion",
-			fixture:       "testdata/fixtures/conditional_boundary_geq_land_true_go",
-			mutantType:    mutator.ConditionalBoundary,
-			token:         token.GEQ,
-			tokenMutation: token.GTR,
-			covProfile:    notCoveredPosition("testdata/fixtures/conditional_boundary_geq_go"),
+			name:          "it recognizes INCREMENT_DECREMENT with DEC",
+			fixture:       "testdata/fixtures/dec_go",
+			mutantType:    mutator.IncrementDecrement,
+			token:         token.DEC,
+			tokenMutation: token.INC,
+			covProfile:    notCoveredPosition("testdata/fixtures/dec_go"),
+			mutStatus:     mutator.NotCovered,
+		},
+		// CONDITIONAL_NEGATION
+		{
+			name:          "it recognizes CONDITIONAL_NEGATION with EQL",
+			fixture:       "testdata/fixtures/eql_go",
+			mutantType:    mutator.ConditionalsNegation,
+			token:         token.EQL,
+			tokenMutation: token.NEQ,
+			covProfile:    notCoveredPosition("testdata/fixtures/eql_go"),
 			mutStatus:     mutator.NotCovered,
 		},
 		{
-			name:       "it skips illegal CONDITIONAL_BOUNDARY",
-			fixture:    "testdata/fixtures/conditional_boundary_illegal_go",
-			mutantType: mutator.ConditionalBoundary,
+			name:          "it recognizes CONDITIONAL_NEGATION with NEQ",
+			fixture:       "testdata/fixtures/neq_go",
+			mutantType:    mutator.ConditionalsNegation,
+			token:         token.NEQ,
+			tokenMutation: token.EQL,
+			covProfile:    notCoveredPosition("testdata/fixtures/neq_go"),
+			mutStatus:     mutator.NotCovered,
+		},
+		{
+			name:          "it recognizes CONDITIONAL_NEGATION with LEQ",
+			fixture:       "testdata/fixtures/leq_go",
+			mutantType:    mutator.ConditionalsNegation,
+			token:         token.LEQ,
+			tokenMutation: token.GTR,
+			covProfile:    notCoveredPosition("testdata/fixtures/leq_go"),
+			mutStatus:     mutator.NotCovered,
+		},
+		{
+			name:          "it recognizes CONDITIONAL_NEGATION with GTR",
+			fixture:       "testdata/fixtures/gtr_go",
+			mutantType:    mutator.ConditionalsNegation,
+			token:         token.GTR,
+			tokenMutation: token.LEQ,
+			covProfile:    notCoveredPosition("testdata/fixtures/gtr_go"),
+			mutStatus:     mutator.NotCovered,
+		},
+		{
+			name:          "it recognizes CONDITIONAL_NEGATION with GEQ",
+			fixture:       "testdata/fixtures/geq_go",
+			mutantType:    mutator.ConditionalsNegation,
+			token:         token.GEQ,
+			tokenMutation: token.LSS,
+			covProfile:    notCoveredPosition("testdata/fixtures/geq_go"),
+			mutStatus:     mutator.NotCovered,
+		},
+		{
+			name:          "it recognizes CONDITIONAL_NEGATION with LSS",
+			fixture:       "testdata/fixtures/lss_go",
+			mutantType:    mutator.ConditionalsNegation,
+			token:         token.LSS,
+			tokenMutation: token.GEQ,
+			covProfile:    notCoveredPosition("testdata/fixtures/lss_go"),
+			mutStatus:     mutator.NotCovered,
+		},
+		// INVERT_NEGATIVES
+		{
+			name:          "it recognizes INVERT_NEGATIVE with SUB",
+			fixture:       "testdata/fixtures/negative_sub_go",
+			mutantType:    mutator.InvertNegatives,
+			token:         token.SUB,
+			tokenMutation: token.ADD,
+			covProfile:    notCoveredPosition("testdata/fixtures/negative_sub_go"),
+			mutStatus:     mutator.NotCovered,
+		},
+		// ARITHMETIC_BASIC
+		{
+			name:          "it recognizes ARITHMETIC_BASIC with ADD",
+			fixture:       "testdata/fixtures/add_go",
+			mutantType:    mutator.ArithmeticBase,
+			token:         token.ADD,
+			tokenMutation: token.SUB,
+			covProfile:    notCoveredPosition("testdata/fixtures/add_go"),
+			mutStatus:     mutator.NotCovered,
+		},
+		{
+			name:          "it recognizes ARITHMETIC_BASIC with SUB",
+			fixture:       "testdata/fixtures/sub_go",
+			mutantType:    mutator.ArithmeticBase,
+			token:         token.SUB,
+			tokenMutation: token.ADD,
+			covProfile:    notCoveredPosition("testdata/fixtures/sub_go"),
+			mutStatus:     mutator.NotCovered,
+		},
+		{
+			name:          "it recognizes ARITHMETIC_BASIC with MUL",
+			fixture:       "testdata/fixtures/mul_go",
+			mutantType:    mutator.ArithmeticBase,
+			token:         token.MUL,
+			tokenMutation: token.QUO,
+			covProfile:    notCoveredPosition("testdata/fixtures/mul_go"),
+			mutStatus:     mutator.NotCovered,
+		},
+		{
+			name:          "it recognizes ARITHMETIC_BASIC with QUO",
+			fixture:       "testdata/fixtures/quo_go",
+			mutantType:    mutator.ArithmeticBase,
+			token:         token.QUO,
+			tokenMutation: token.MUL,
+			covProfile:    notCoveredPosition("testdata/fixtures/quo_go"),
+			mutStatus:     mutator.NotCovered,
+		},
+		{
+			name:          "it recognizes ARITHMETIC_BASIC with REM",
+			fixture:       "testdata/fixtures/rem_go",
+			mutantType:    mutator.ArithmeticBase,
+			token:         token.REM,
+			tokenMutation: token.MUL,
+			covProfile:    notCoveredPosition("testdata/fixtures/rem_go"),
+			mutStatus:     mutator.NotCovered,
+		},
+		// Common behaviours
+		{
+			name:          "it works with recursion",
+			fixture:       "testdata/fixtures/geq_land_true_go",
+			mutantType:    mutator.ConditionalsBoundary,
+			token:         token.GEQ,
+			tokenMutation: token.GTR,
+			covProfile:    notCoveredPosition("testdata/fixtures/geq_go"),
+			mutStatus:     mutator.NotCovered,
+		},
+		{
+			name:       "it skips illegal tokens",
+			fixture:    "testdata/fixtures/illegal_go",
+			mutantType: mutator.ConditionalsBoundary,
 			token:      token.ILLEGAL,
-			covProfile: notCoveredPosition("testdata/fixtures/conditional_boundary_illegal_go"),
+			covProfile: notCoveredPosition("testdata/fixtures/illegal_go"),
 		},
 	}
 	for _, tc := range testCases {
@@ -122,7 +254,7 @@ func TestMutations(t *testing.T) {
 			}
 
 			for _, g := range got {
-				if g.MutantType == mutator.ConditionalBoundary &&
+				if g.Type == tc.mutantType &&
 					g.Token == tc.token &&
 					g.Mutation == tc.tokenMutation &&
 					g.Status == tc.mutStatus {
@@ -142,7 +274,7 @@ func filenameFromFixture(fix string) string {
 
 func TestSkipTestAndNonGoFiles(t *testing.T) {
 	t.Parallel()
-	f, _ := os.Open("testdata/fixtures/conditional_boundary_geq_go")
+	f, _ := os.Open("testdata/fixtures/geq_go")
 	file, _ := ioutil.ReadAll(f)
 
 	sys := fstest.MapFS{
@@ -160,7 +292,7 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 func TestMutationStatusString(t *testing.T) {
 	testCases := []struct {
 		name           string
-		mutationStatus mutator.MutationStatus
+		mutationStatus mutator.MutantStatus
 		expected       string
 	}{
 		{

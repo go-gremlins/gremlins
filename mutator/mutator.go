@@ -27,16 +27,16 @@ import (
 	"strings"
 )
 
-type MutationStatus int
+type MutantStatus int
 
 const (
-	NotCovered MutationStatus = iota
+	NotCovered MutantStatus = iota
 	Runnable
 	Lived
 	Killed
 )
 
-func (ms MutationStatus) String() string {
+func (ms MutantStatus) String() string {
 	switch ms {
 	case NotCovered:
 		return "NOT COVERED"
@@ -52,11 +52,11 @@ func (ms MutationStatus) String() string {
 }
 
 type Mutant struct {
-	Position   token.Position
-	MutantType MutantType
-	Status     MutationStatus
-	Token      token.Token
-	Mutation   token.Token
+	Position token.Position
+	Type     MutantType
+	Status   MutantStatus
+	Token    token.Token
+	Mutation token.Token
 }
 
 type Mutator struct {
@@ -88,34 +88,44 @@ func (mu Mutator) runOnFile(fileName string, src io.Reader) []Mutant {
 	file, _ := parser.ParseFile(set, fileName, src, parser.ParseComments)
 	ast.Inspect(file, func(node ast.Node) bool {
 		switch node := node.(type) {
-		case *ast.BinaryExpr:
-			r, ok := mu.inspectBinaryExpr(set, node)
+		case *ast.UnaryExpr:
+			r, ok := mu.mutants(set, node.Op, node.OpPos)
 			if !ok {
 				return true
 			}
 			result = append(result, r...)
-		case *ast.UnaryExpr:
-			// Do something
+		case *ast.BinaryExpr:
+			r, ok := mu.mutants(set, node.Op, node.OpPos)
+			if !ok {
+				return true
+			}
+			result = append(result, r...)
+		case *ast.IncDecStmt:
+			r, ok := mu.mutants(set, node.Tok, node.TokPos)
+			if !ok {
+				return true
+			}
+			result = append(result, r...)
 		}
 		return true
 	})
 	return result
 }
 
-func (mu Mutator) inspectBinaryExpr(set *token.FileSet, be *ast.BinaryExpr) ([]Mutant, bool) {
+func (mu Mutator) mutants(set *token.FileSet, tok token.Token, tokPos token.Pos) ([]Mutant, bool) {
 	var result []Mutant
-	mutantTypes, ok := tokenMutantType[be.Op]
+	mutantTypes, ok := tokenMutantType[tok]
 	if !ok {
 		return nil, false
 	}
 	for _, mt := range mutantTypes {
-		pos := set.Position(be.OpPos)
+		pos := set.Position(tokPos)
 		mutant := Mutant{
-			MutantType: mt,
-			Token:      be.Op,
-			Mutation:   mutations[mt][be.Op],
-			Status:     mutationStatus(mu, pos),
-			Position:   pos,
+			Type:     mt,
+			Token:    tok,
+			Mutation: mutations[mt][tok],
+			Status:   mu.mutationStatus(pos),
+			Position: pos,
 		}
 		result = append(result, mutant)
 	}
@@ -123,8 +133,8 @@ func (mu Mutator) inspectBinaryExpr(set *token.FileSet, be *ast.BinaryExpr) ([]M
 	return result, true
 }
 
-func mutationStatus(mu Mutator, pos token.Position) MutationStatus {
-	var status MutationStatus
+func (mu Mutator) mutationStatus(pos token.Position) MutantStatus {
+	var status MutantStatus
 	if mu.covProfile.IsCovered(pos) {
 		status = Runnable
 	}

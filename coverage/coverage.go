@@ -41,11 +41,11 @@ type execContext = func(name string, args ...string) *exec.Cmd
 
 // New instantiates a Coverage element using exec.Command as execContext,
 // actually running the command on the OS.
-func New(workdir, path string) (*Coverage, error) {
+func New(workdir, path string) (Coverage, error) {
 	path = strings.TrimSuffix(path, "/")
 	mod, err := getMod(path)
 	if err != nil {
-		return nil, err
+		return Coverage{}, err
 	}
 	return NewWithCmdAndPackage(exec.Command, mod, workdir, path), nil
 }
@@ -65,8 +65,8 @@ func getMod(path string) (string, error) {
 }
 
 // NewWithCmdAndPackage instantiates a Coverage element given a custom execContext.
-func NewWithCmdAndPackage(cmdContext execContext, mod, workdir, path string) *Coverage {
-	return &Coverage{
+func NewWithCmdAndPackage(cmdContext execContext, mod, workdir, path string) Coverage {
+	return Coverage{
 		cmdContext: cmdContext,
 		workDir:    workdir,
 		path:       path + "/...",

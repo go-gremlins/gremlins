@@ -2,6 +2,7 @@
 
 [![Tests](https://github.com/k3rn31/gremlins/actions/workflows/ci.yml/badge.svg)](https://github.com/k3rn31/gremlins/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/k3rn31/gremlins)](https://goreportcard.com/report/github.com/k3rn31/gremlins)
+[![Maintainability](https://api.codeclimate.com/v1/badges/970114e2c5a770987a75/maintainability)](https://codeclimate.com/github/k3rn31/gremlins/maintainability)
 [![codecov](https://codecov.io/gh/k3rn31/gremlins/branch/main/graph/badge.svg?token=MICF9A6U3J)](https://codecov.io/gh/k3rn31/gremlins)
 
 **WARNING: Gremlins is in an early stage of development, and it can be unstable or do anything at all. As of now, it
@@ -32,13 +33,7 @@ testing? You already know it will not be caught. In any case, Gremlins will repo
 
 ### Supported mutations
 
-- [x] Conditionals boundary
-- [ ] Increments
-- [ ] Invert negatives
-- [ ] Math
-- [ ] Negate conditionals
-
-#### Conditional Boundaries
+#### Conditionals Boundaries
 
 | Original | Mutated |
 |----------|---------|
@@ -51,7 +46,7 @@ Example:
 
 ```go
 if a > b {
-// Do something
+  // Do something
 }
 ```
 
@@ -59,8 +54,99 @@ will be changed to
 
 ```go
 if a < b {
-// Do something
+  // Do something
 }
+```
+
+#### Conditionals Negation
+
+| Original | Mutated |
+|----------|---------|
+| ==       | !=      |
+| !=       | ==      |
+| \>       | \<=     |
+| <=       | \>      |
+| <        | \>=     |
+| \>=      | <       |
+
+Example:
+
+```go
+if a == b {
+  // Do something
+}
+```
+
+will be changed to
+
+```go
+if a != b {
+  // Do something
+}
+```
+
+#### Increment Decrement
+
+| Original | Mutated |
+|----------|---------|
+| ++       | --      |
+| --       | ++      |
+
+Example:
+
+```go
+func incr(i int) int
+  return i++
+}
+```
+
+will be changed to
+
+```go
+func incr(i int) int {
+  return i--
+}
+```
+
+#### Invert Negatives
+It will invert negative numbers.
+
+Example:
+
+```go
+func negate(i int) int {
+  return -i
+}
+```
+
+will be changed to
+
+```go
+func negate(i int) int {
+  return +i
+}
+```
+
+#### Arithmetic Base
+
+| Original | Mutated |
+|----------|---------|
+| +        | -       |
+| -        | +       |
+| *        | /       |
+| /        | *       |
+| %        | *       |
+
+Example:
+
+```go
+a := 1 + 2
+```
+
+will be changed to
+
+```go
+a := 1 - 2
 ```
 
 ### Current limitations
@@ -74,6 +160,7 @@ There are some limitations on how Gremlins works right now, but rest assured we'
 - Gremlins doesn't support custom test commands; if you have to do anything different from `go test ./...` to run your
   test suite, most probably it will not work with Gremlins.
 - There is no way to implement custom mutations.
+- It is not tested on Windows as of now and most probably it will not work there.
 
 ## What inspired Gremlins
 
