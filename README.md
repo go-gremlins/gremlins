@@ -17,7 +17,7 @@ test anything at all.
 _Mutation testing_ works by mutating the code exercised by the tests and verifying if the mutation is caught by
 the test suite. Imagine _gremlins_ going into your code and messing around: will your test suit catch their damage?
 
-Here is a nice [intro to mutation testing](https://pedrorijo.com/blog/intro-mutation/)nothing.
+Here is a nice [intro to mutation testing](https://pedrorijo.com/blog/intro-mutation/).
 
 ## How to use Gremlins
 
