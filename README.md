@@ -1,5 +1,9 @@
 # Gremlins
 
+[![Tests](https://github.com/k3rn31/gremlins/actions/workflows/ci.yml/badge.svg)](https://github.com/k3rn31/gremlins/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/k3rn31/gremlins)](https://goreportcard.com/report/github.com/k3rn31/gremlins)
+[![codecov](https://codecov.io/gh/k3rn31/gremlins/branch/main/graph/badge.svg?token=MICF9A6U3J)](https://codecov.io/gh/k3rn31/gremlins)
+
 **WARNING: Gremlins is in an early stage of development, and it can be unstable or do anything at all. As of now, it
 only works in dry-run mode, which means it identifies mutation candidates, but still doesn't perform the mutation
 testing.**
