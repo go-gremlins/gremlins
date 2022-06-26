@@ -1,5 +1,8 @@
 # Gremlins
 
+![Tests](https://github.com/k3rn31/gremlins/actions/workflows/tests_go.yml/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/k3rn31/gremlins)](https://goreportcard.com/report/github.com/k3rn31/gremlins)
+
 **WARNING: Gremlins is in an early stage of development, and it can be unstable or do anything at all. As of now, it
 only works in dry-run mode, which means it identifies mutation candidates, but still doesn't perform the mutation
 testing.**
