@@ -37,6 +37,9 @@ var UnleashCmd = &cobra.Command{
 			path = args[0]
 		}
 		tmpdir, _ := ioutil.TempDir(os.TempDir(), "unleash-")
+		defer func(name string) {
+			_ = os.Remove(name)
+		}(tmpdir)
 		cov, err := coverage.New(tmpdir, path)
 		if err != nil {
 			fmt.Printf("directory %s does not contain main module\n", path)
