@@ -1,5 +1,3 @@
-//go:build exec
-
 /*
  * Copyright 2022 The Gremlins Authors
  *

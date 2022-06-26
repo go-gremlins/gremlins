@@ -9,7 +9,7 @@ all: lint test build
 
 build:
 	mkdir -p ${BIN}
-	${GO_BUILD} -tags exec -o ${BIN}/${BINARY_NAME} cmd/gremlins/main.go
+	${GO_BUILD} -o ${BIN}/${BINARY_NAME} cmd/gremlins/main.go
 
 test:
 	${GO_TEST} ./...
