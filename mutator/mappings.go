@@ -22,29 +22,72 @@ type MutantType int
 
 func (mt MutantType) String() string {
 	switch mt {
-	case ConditionalBoundary:
-		return "Conditional Boundary"
+	case ConditionalsBoundary:
+		return "CONDITIONALS_BOUNDARY"
+	case ConditionalsNegation:
+		return "CONDITIONALS_NEGATION"
+	case IncrementDecrement:
+		return "INCREMENT_DECREMENT"
+	case InvertNegatives:
+		return "INVERT_NEGATIVES"
+	case ArithmeticBase:
+		return "ARITHMETIC_BASE"
 	default:
 		panic("this should not happen")
 	}
 }
 
 const (
-	ConditionalBoundary MutantType = iota
+	ConditionalsBoundary MutantType = iota
+	ConditionalsNegation
+	IncrementDecrement
+	InvertNegatives
+	ArithmeticBase
 )
 
 var tokenMutantType = map[token.Token][]MutantType{
-	token.GTR: {ConditionalBoundary},
-	token.LSS: {ConditionalBoundary},
-	token.GEQ: {ConditionalBoundary},
-	token.LEQ: {ConditionalBoundary},
+	token.SUB: {InvertNegatives, ArithmeticBase},
+	token.ADD: {ArithmeticBase},
+	token.MUL: {ArithmeticBase},
+	token.QUO: {ArithmeticBase},
+	token.REM: {ArithmeticBase},
+	token.EQL: {ConditionalsNegation},
+	token.NEQ: {ConditionalsNegation},
+	token.GTR: {ConditionalsBoundary, ConditionalsNegation},
+	token.LSS: {ConditionalsBoundary, ConditionalsNegation},
+	token.GEQ: {ConditionalsBoundary, ConditionalsNegation},
+	token.LEQ: {ConditionalsBoundary, ConditionalsNegation},
+	token.INC: {IncrementDecrement},
+	token.DEC: {IncrementDecrement},
 }
 
 var mutations = map[MutantType]map[token.Token]token.Token{
-	ConditionalBoundary: {
+	ArithmeticBase: {
+		token.ADD: token.SUB,
+		token.SUB: token.ADD,
+		token.MUL: token.QUO,
+		token.QUO: token.MUL,
+		token.REM: token.MUL,
+	},
+	ConditionalsBoundary: {
 		token.GTR: token.GEQ,
 		token.LSS: token.LEQ,
 		token.GEQ: token.GTR,
 		token.LEQ: token.LSS,
+	},
+	ConditionalsNegation: {
+		token.EQL: token.NEQ,
+		token.NEQ: token.EQL,
+		token.LEQ: token.GTR,
+		token.GTR: token.LEQ,
+		token.LSS: token.GEQ,
+		token.GEQ: token.LSS,
+	},
+	IncrementDecrement: {
+		token.INC: token.DEC,
+		token.DEC: token.INC,
+	},
+	InvertNegatives: {
+		token.SUB: token.ADD,
 	},
 }

@@ -28,9 +28,29 @@ func TestMutantTypeString(t *testing.T) {
 		expected   string
 	}{
 		{
-			"Conditional Boundary",
-			ConditionalBoundary,
-			"Conditional Boundary",
+			"CONDITIONALS_BOUNDARY",
+			ConditionalsBoundary,
+			"CONDITIONALS_BOUNDARY",
+		},
+		{
+			"CONDITIONALS_NEGATION",
+			ConditionalsNegation,
+			"CONDITIONALS_NEGATION",
+		},
+		{
+			"INCREMENT_DECREMENT",
+			IncrementDecrement,
+			"INCREMENT_DECREMENT",
+		},
+		{
+			"INVERT_NEGATIVES",
+			InvertNegatives,
+			"INVERT_NEGATIVES",
+		},
+		{
+			"ARITHMETIC_BASE",
+			ArithmeticBase,
+			"ARITHMETIC_BASE",
 		},
 	}
 	for _, tc := range testCases {
