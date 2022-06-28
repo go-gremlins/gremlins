@@ -20,12 +20,32 @@ import (
 	"fmt"
 	"github.com/k3rn31/gremlins/cmd"
 	"os"
+	"runtime"
+)
+
+var (
+	version = "dev"
+	date    = ""
+	builtBy = ""
 )
 
 func main() {
-	cmd.GremlinsCmd.AddCommand(cmd.UnleashCmd)
-	if err := cmd.GremlinsCmd.Execute(); err != nil {
+	err := cmd.Execute(buildVersion(version, date, builtBy))
+	if err != nil {
 		fmt.Println(err)
-		os.Exit(-1)
+		os.Exit(1)
 	}
+}
+
+func buildVersion(version, date, builtBy string) string {
+	result := version
+	if date != "" {
+		result = fmt.Sprintf("%s\n\tbuilt at %s", result, date)
+	}
+	if builtBy != "" {
+		result = fmt.Sprintf("%s by %s", result, builtBy)
+	}
+	result = fmt.Sprintf("%s\n\tGOOS: %s\n\tGOARCH: %s", result, runtime.GOOS, runtime.GOARCH)
+
+	return result
 }

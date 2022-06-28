@@ -11,6 +11,9 @@ build:
 	mkdir -p ${BIN}
 	${GO_BUILD} -o ${BIN}/${BINARY_NAME} cmd/gremlins/main.go
 
+snapshot:
+	goreleaser release --snapshot --rm-dist
+
 test:
 	${GO_TEST} -cover -coverprofile coverage.out ./...
 
