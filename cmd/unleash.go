@@ -25,37 +25,47 @@ import (
 	"os"
 )
 
-var UnleashCmd = &cobra.Command{
-	Use:     "unleash [path of the Go module]",
-	Aliases: []string{"run", "r"},
-	Args:    cobra.MaximumNArgs(1),
-	Short:   "Executes the mutation testing process",
-	Long:    `Unleashes the gremlins and performs mutation testing on a Go module.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		path := "."
-		if len(args) > 0 {
-			path = args[0]
-		}
-		tmpdir, _ := ioutil.TempDir(os.TempDir(), "unleash-")
-		defer func(name string) {
-			_ = os.Remove(name)
-		}(tmpdir)
-		cov, err := coverage.New(tmpdir, path)
-		if err != nil {
-			fmt.Printf("directory %s does not contain main module\n", path)
-			os.Exit(1)
-		}
-		pro, err := cov.Run()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		mut := mutator.New(os.DirFS(path), pro)
-		rec := mut.Run()
+type unleashCmd struct {
+	cmd *cobra.Command
+}
 
-		// Temporary report
-		for _, r := range rec {
-			fmt.Printf("found possible mutant at %s - %s\n", r.Position, r.Status)
-		}
-	},
+func newUnleashCmd() *unleashCmd {
+	cmd := &cobra.Command{
+		Use:     "unleash [path of the Go module]",
+		Aliases: []string{"run", "r"},
+		Args:    cobra.MaximumNArgs(1),
+		Short:   "Executes the mutation testing process",
+		Long:    `Unleashes the gremlins and performs mutation testing on a Go module.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			path := "."
+			if len(args) > 0 {
+				path = args[0]
+			}
+			tmpdir, _ := ioutil.TempDir(os.TempDir(), "unleash-")
+			defer func(name string) {
+				_ = os.Remove(name)
+			}(tmpdir)
+			cov, err := coverage.New(tmpdir, path)
+			if err != nil {
+				fmt.Printf("directory %s does not contain main module\n", path)
+				os.Exit(1)
+			}
+			pro, err := cov.Run()
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			mut := mutator.New(os.DirFS(path), pro)
+			rec := mut.Run()
+
+			// Temporary report
+			for _, r := range rec {
+				fmt.Printf("found possible mutant at %s - %s\n", r.Position, r.Status)
+			}
+		},
+	}
+
+	return &unleashCmd{
+		cmd: cmd,
+	}
 }

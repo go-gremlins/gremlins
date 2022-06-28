@@ -20,9 +20,33 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var GremlinsCmd = &cobra.Command{
-	Use: "gremlins",
-	Short: `Gremlins is a mutation testing tool for Go projects, made with love by k3rn31 
+func Execute(version string) error {
+	return newRootCmd(version).execute()
+}
+
+type gremlinsCmd struct {
+	cmd *cobra.Command
+}
+
+func (rc gremlinsCmd) execute() error {
+	if err := rc.cmd.Execute(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func newRootCmd(version string) *gremlinsCmd {
+	cmd := &cobra.Command{
+		Use: "gremlins",
+		Short: `Gremlins is a mutation testing tool for Go projects, made with love by k3rn31 
 and friends.
 `,
+		Version: version,
+	}
+
+	cmd.AddCommand(newUnleashCmd().cmd)
+
+	return &gremlinsCmd{
+		cmd: cmd,
+	}
 }

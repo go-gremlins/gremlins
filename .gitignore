@@ -1,3 +1,4 @@
+dist/
 out
 .idea
 
@@ -83,4 +84,3 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
-
