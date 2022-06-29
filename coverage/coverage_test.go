@@ -69,12 +69,6 @@ func TestCoverageParsesOutput(t *testing.T) {
 				EndLine:   48,
 				EndCol:    16,
 			},
-			{
-				StartLine: 48,
-				StartCol:  4,
-				EndLine:   49,
-				EndCol:    20,
-			},
 		},
 		"path2/file2.go": {
 			{
@@ -112,11 +106,26 @@ func TestCoverageNew(t *testing.T) {
 		}
 	})
 
+	t.Run("returns error if go.mod is invalid", func(t *testing.T) {
+		t.Parallel()
+		path := t.TempDir()
+		goMod := path + "/go.mod"
+		err := os.WriteFile(goMod, []byte(""), 0600)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = coverage.New(t.TempDir(), path)
+		if err == nil {
+			t.Errorf("expected an error")
+		}
+	})
+
 	t.Run("returns error if it cannot find module", func(t *testing.T) {
 		t.Parallel()
 		_, err := coverage.New(t.TempDir(), t.TempDir())
 		if err == nil {
-			t.Fatal(err)
+			t.Errorf("expected an error")
 		}
 	})
 }

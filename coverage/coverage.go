@@ -124,6 +124,9 @@ func (c Coverage) parse(data io.Reader) (Profile, error) {
 	status := make(Profile)
 	for _, p := range profiles {
 		for _, b := range p.Blocks {
+			if b.Count == 0 {
+				continue
+			}
 			block := Block{
 				StartLine: b.StartLine,
 				StartCol:  b.StartCol,

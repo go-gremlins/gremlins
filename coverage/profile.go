@@ -38,8 +38,19 @@ func (p Profile) IsCovered(pos token.Position) bool {
 		return false
 	}
 	for _, b := range block {
-		if pos.Line >= b.StartLine && pos.Line <= b.EndLine {
-			if pos.Column >= b.StartCol && pos.Column <= b.EndCol {
+		if b.StartLine == b.EndLine {
+			if pos.Line == b.StartLine && pos.Column >= b.StartCol && pos.Column <= b.EndCol {
+				return true
+			}
+		}
+		if b.StartLine < b.EndLine {
+			if pos.Line == b.StartLine && pos.Column >= b.StartCol {
+				return true
+			}
+			if pos.Line == b.EndLine && pos.Column <= b.EndCol {
+				return true
+			}
+			if pos.Line > b.StartLine && pos.Line < b.EndLine {
 				return true
 			}
 		}
