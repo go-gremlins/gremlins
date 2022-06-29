@@ -5,9 +5,8 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/970114e2c5a770987a75/maintainability)](https://codeclimate.com/github/k3rn31/gremlins/maintainability)
 [![codecov](https://codecov.io/gh/k3rn31/gremlins/branch/main/graph/badge.svg?token=MICF9A6U3J)](https://codecov.io/gh/k3rn31/gremlins)
 
-**WARNING: Gremlins is in an early stage of development, and it can be unstable or do anything at all. As of now, it
-only works in dry-run mode, which means it identifies mutation candidates, but still doesn't perform the mutation
-testing.**
+**WARNING: Gremlins is in an early stage of development, and it can be unstable, poorly performant and not really
+polished.**
 
 Gremlins is a mutation testing tool for Go.
 
@@ -30,6 +29,12 @@ $ gremlins unleash
 
 Gremlins only tests mutations of parts of the code already covered by test cases. If a mutant is not covered, why bother
 testing? You already know it will not be caught. In any case, Gremlins will report which mutations aren't covered.
+
+```shell
+$ gremlins unleash --dry-run
+```
+
+Will perform the mutation analysis without actually running the tests.
 
 ### Supported mutations
 

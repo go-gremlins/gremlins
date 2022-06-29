@@ -30,6 +30,8 @@ type unleashCmd struct {
 }
 
 func newUnleashCmd() *unleashCmd {
+	var dryRun bool
+
 	cmd := &cobra.Command{
 		Use:     "unleash [path of the Go module]",
 		Aliases: []string{"run", "r"},
@@ -55,16 +57,12 @@ func newUnleashCmd() *unleashCmd {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			mut := mutator.New(os.DirFS(path), pro)
-			rec := mut.Run()
-
-			// Temporary report
-			for _, r := range rec {
-				fmt.Printf("found possible mutant at %s - %s\n", r.Position, r.Status)
-			}
+			mut := mutator.New(os.DirFS(path), pro, mutator.WithDryRun(dryRun))
+			_ = mut.Run()
 		},
 	}
 
+	cmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "find mutations but do not executes tests")
 	return &unleashCmd{
 		cmd: cmd,
 	}

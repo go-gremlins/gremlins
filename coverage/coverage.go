@@ -80,11 +80,11 @@ func NewWithCmdAndPackage(cmdContext execContext, mod, workdir, path string) Cov
 func (c Coverage) Run() (Profile, error) {
 	err := c.execute()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("impossible to execute coverage: %v", err)
 	}
 	profile, err := c.getProfile()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("an error occurred while generating coverage profile: %v", err)
 	}
 
 	return profile, nil

@@ -28,8 +28,8 @@ type gremlinsCmd struct {
 	cmd *cobra.Command
 }
 
-func (rc gremlinsCmd) execute() error {
-	if err := rc.cmd.Execute(); err != nil {
+func (gc gremlinsCmd) execute() error {
+	if err := gc.cmd.Execute(); err != nil {
 		return err
 	}
 	return nil
