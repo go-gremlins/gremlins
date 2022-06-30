@@ -35,14 +35,14 @@ jobs:
           go-version-file: 'go.mod'
       - name: Run tests
         run: make test
-      - name: Upload coverage to Codecov
+      - name: Report coverage to CodeCov
         uses: codecov/codecov-action@v2
         with:
           fail_ci_if_error: true
           files: ./coverage.out
           flags: unittests
           env_vars: OS
-      - name: Test & publish code coverage
+      - name: Report coverage to CodeClimate
         uses: paambaati/codeclimate-action@v3.0.0
         env:
           CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
@@ -50,3 +50,10 @@ jobs:
           prefix: github.com/k3rn31/gremlins
           coverageLocations: |
             ${{github.workspace}}/coverage.out:gocov
+      - name: Report coverage to Codacy
+        uses: codacy/codacy-coverage-reporter-action@v1
+        with:
+          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          coverage-reports: coverage.out
+          language: go
+          force-coverage-parser: go
