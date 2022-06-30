@@ -29,6 +29,10 @@ import (
 	"strings"
 )
 
+// Mutator is the "engine" that performs the mutation testing.
+//
+// It traverses the AST of the project, finds which Mutant can be applied and
+// performs the actual mutation testing.
 type Mutator struct {
 	covProfile  coverage.Profile
 	fs          fs.FS
@@ -40,8 +44,20 @@ type Mutator struct {
 
 type execContext = func(name string, args ...string) *exec.Cmd
 
+// Option for the Mutator initialization.
 type Option func(m Mutator) Mutator
 
+// New instantiates a Mutator.
+//
+// It gets a fs.FS on which to perform the analysis, a coverage.Profile to
+// check if the mutants are covered and a sets of Option.
+//
+// By default, it sets uses exec.Command to perform the tests on the source
+// code. This can be overridden, for example in tests.
+//
+// The apply and rollback functions are wrappers around the Mutant apply and
+// rollback. These can be overridden with nop functions in tests. Not an
+// ideal setup. In the future we can think of a better way to handle this.
 func New(fs fs.FS, p coverage.Profile, opts ...Option) Mutator {
 	mut := Mutator{covProfile: p,
 		fs:          fs,
@@ -59,6 +75,8 @@ func New(fs fs.FS, p coverage.Profile, opts ...Option) Mutator {
 	return mut
 }
 
+// WithDryRun sets the dry-run flag. If true, it will not perform the actual
+// mutant testing, only discovery will be executed.
 func WithDryRun(d bool) Option {
 	return func(m Mutator) Mutator {
 		m.dryRun = d
@@ -66,6 +84,7 @@ func WithDryRun(d bool) Option {
 	}
 }
 
+// WithExecContext overrides the default exec.Command with a custom executor.
 func WithExecContext(c execContext) Option {
 	return func(m Mutator) Mutator {
 		m.execContext = c
@@ -73,6 +92,7 @@ func WithExecContext(c execContext) Option {
 	}
 }
 
+// WithApplyAndRollback overrides the apply and rollback functions.
 func WithApplyAndRollback(a func(m Mutant) error, r func(m Mutant) error) Option {
 	return func(m Mutator) Mutator {
 		m.apply = a
@@ -81,6 +101,15 @@ func WithApplyAndRollback(a func(m Mutant) error, r func(m Mutant) error) Option
 	}
 }
 
+// Run executes the mutation testing.
+//
+// It walks the fs.FS provided and checks every .go file which is not a test.
+// For each file it will scan for mutations and gather all the mutants found.
+// For each Mutant found, if it is RUNNABLE, and it is not in dry-run mode,
+// it will apply the mutation, run the tests and mark the Mutant as either
+// KILLED or LIVED depending on the result. If the tests pass, it means the
+// Mutant survived, so it will be LIVED, if the tests fail, the Mutant will
+// be KILLED.
 func (mu Mutator) Run() []Mutant {
 	mutantStream := make(chan Mutant)
 	go func() {

@@ -18,6 +18,12 @@ package mutator
 
 import "go/token"
 
+// MutantType represents the category of the Mutant.
+//
+// A single token.Token can be mutated in various ways depending on the
+// specific mutation being tested.
+// For example `<` can be mutated to `<=` in case of ConditionalsBoundary
+// or `>=` in case of ConditionalsNegation.
 type MutantType int
 
 func (mt MutantType) String() string {
@@ -37,6 +43,7 @@ func (mt MutantType) String() string {
 	}
 }
 
+// The currently supported MutantType in Gremlins.
 const (
 	ConditionalsBoundary MutantType = iota
 	ConditionalsNegation

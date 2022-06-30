@@ -32,6 +32,7 @@ type Block struct {
 // Profile is implemented as a map holding a slice of Block per each filename.
 type Profile map[string][]Block
 
+// IsCovered checks if the given token.Position is covered by the coverage Profile.
 func (p Profile) IsCovered(pos token.Position) bool {
 	block, ok := p[pos.Filename]
 	if !ok {

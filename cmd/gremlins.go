@@ -20,6 +20,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Execute initialises a new Cobra root command (gremlins) with a custom version
+// string used in the `-v` flag results.
 func Execute(version string) error {
 	return newRootCmd(version).execute()
 }
@@ -29,10 +31,7 @@ type gremlinsCmd struct {
 }
 
 func (gc gremlinsCmd) execute() error {
-	if err := gc.cmd.Execute(); err != nil {
-		return err
-	}
-	return nil
+	return gc.cmd.Execute()
 }
 
 func newRootCmd(version string) *gremlinsCmd {
