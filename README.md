@@ -11,6 +11,19 @@ polished.**
 
 Gremlins is a mutation testing tool for Go.
 
+- [What is Mutation Testing](#what-is-mutation-testing)
+- [How to Use Gremlins](#how-to-use-gremlins)
+- [Supported Mutations](#supported-mutations)
+  - [Conditionals Boundaries](#conditionals-boundaries)
+  - [Conditionals Negation](#conditionals-negation)
+  - [Increment Decrement](#increment-decrement)
+  - [Invert Negatives](#invert-negatives)
+  - [Arithmetic Base](#arithmetic-base)
+- [Current Limitations](#current-limitations)
+- [What Inspired Gremlins](#what-inspired-gremlins)
+- [Other Mutation Testing Tools for Go](#other-mutation-testing-tools-for-go)
+- [Contributing](#contributing)
+
 ## What is Mutation Testing
 
 Code coverage unreliable to measure test quality. It is too easy to have tests that exercise a piece of code but don't
@@ -180,3 +193,7 @@ Among the existing mutation testing tools, Gremlins is inspired especially by [P
 There is not much around, except from:
 
 - [go-mutesting](https://github.com/avito-tech/go-mutesting#list-of-mutators)
+
+## Contributing
+
+See [contributing](CONTRIBUTING.md).
