@@ -42,3 +42,11 @@ jobs:
           files: ./coverage.out
           flags: unittests
           env_vars: OS
+      - name: Test & publish code coverage
+        uses: paambaati/codeclimate-action@v3.0.0
+        env:
+          CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
+        with:
+          prefix: github.com/k3rn31/gremlins
+          coverageLocations: |
+            ${{github.workspace}}/coverage.out:gocov
