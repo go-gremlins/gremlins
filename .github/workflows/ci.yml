@@ -33,8 +33,8 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version-file: 'go.mod'
-      - name: Run tests
-        run: make test
+      - name: Run tests with coverage
+        run: make cover
       - name: Report coverage to CodeCov
         uses: codecov/codecov-action@v2
         with:

@@ -1,25 +1,45 @@
 GO_CMD=go
 GO_TEST=${GO_CMD} test
 GO_BUILD=${GO_CMD} build
+RELEASER_CMD=goreleaser
+RELEASE=${RELEASER_CMD} release
+LINTER_CMD=golangci-lint
+LINT=${LINTER_CMD} run
 BINARY_NAME=gremlins
-TARGET=out
+COVER_OUT=coverage.out
+TARGET=dist
 BIN=${TARGET}/bin
 
+.PHONY: all snap
 all: lint test build
+snap: lint test snapshot
 
-build:
+build: ${BIN}/${BINARY_NAME}
+
+${BIN}/${BINARY_NAME}:
 	mkdir -p ${BIN}
 	${GO_BUILD} -o ${BIN}/${BINARY_NAME} cmd/gremlins/main.go
 
-snapshot:
-	goreleaser release --snapshot --rm-dist
-
+.PHONY: test
 test:
-	${GO_TEST} -cover -coverprofile coverage.out ./...
+	${GO_TEST} ./...
 
+.PHONY: cover
+cover: ${COVER_OUT}
+
+${COVER_OUT}:
+	${GO_TEST} -cover -coverprofile ${COVER_OUT} ./...
+
+.PHONY: lint
 lint:
-	golangci-lint run ./...
+	${LINT} ./...
 
+.PHONY: snapshot
+snapshot:
+	${RELEASE} --snapshot --rm-dist
+
+.PHONY: clean
 clean:
 	go clean
-	rm -rf ${TARGET}
+	rm -rf -- ${TARGET}
+	rm -f -- coverage.out
