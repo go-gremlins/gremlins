@@ -65,6 +65,7 @@ type Mutant struct {
 	fs      *token.FileSet
 	file    *ast.File
 	node    ast.Node
+	token   token.Token
 
 	// ApplyF is the function that modifies the ast.Node so that the mutation
 	// is effective.

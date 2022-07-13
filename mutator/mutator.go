@@ -27,6 +27,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 // Mutator is the "engine" that performs the mutation testing.
@@ -34,12 +35,13 @@ import (
 // It traverses the AST of the project, finds which Mutant can be applied and
 // performs the actual mutation testing.
 type Mutator struct {
-	covProfile  coverage.Profile
-	fs          fs.FS
-	dryRun      bool
-	execContext execContext
-	apply       func(m Mutant) error
-	rollback    func(m Mutant) error
+	covProfile   coverage.Profile
+	fs           fs.FS
+	dryRun       bool
+	execContext  execContext
+	apply        func(m Mutant) error
+	rollback     func(m Mutant) error
+	mutantStream chan Mutant
 }
 
 type execContext = func(name string, args ...string) *exec.Cmd
@@ -59,7 +61,8 @@ type Option func(m Mutator) Mutator
 // rollback. These can be overridden with nop functions in tests. Not an
 // ideal setup. In the future we can think of a better way to handle this.
 func New(fs fs.FS, p coverage.Profile, opts ...Option) Mutator {
-	mut := Mutator{covProfile: p,
+	mut := Mutator{
+		covProfile:  p,
 		fs:          fs,
 		execContext: exec.Command,
 		apply: func(m Mutant) error {
@@ -111,80 +114,67 @@ func WithApplyAndRollback(a func(m Mutant) error, r func(m Mutant) error) Option
 // Mutant survived, so it will be LIVED, if the tests fail, the Mutant will
 // be KILLED.
 func (mu Mutator) Run() []Mutant {
-	mutantStream := make(chan Mutant)
+	mu.mutantStream = make(chan Mutant)
 	go func() {
 		_ = fs.WalkDir(mu.fs, ".", func(path string, d fs.DirEntry, err error) error {
 			if filepath.Ext(path) == ".go" && !strings.HasSuffix(path, "_test.go") {
 				src, _ := mu.fs.Open(path)
-				mu.runOnFile(path, src, mutantStream)
+				mu.runOnFile(path, src)
 			}
 			return nil
 		})
-		close(mutantStream)
+		close(mu.mutantStream)
 	}()
 
-	return mu.executeTests(mutantStream)
+	return mu.executeTests()
 }
 
-func (mu Mutator) runOnFile(fileName string, src io.Reader, ch chan<- Mutant) {
+func (mu Mutator) runOnFile(fileName string, src io.Reader) {
 	set := token.NewFileSet()
 	file, _ := parser.ParseFile(set, fileName, src, parser.ParseComments)
 	ast.Inspect(file, func(node ast.Node) bool {
 		switch n := node.(type) {
 		case *ast.UnaryExpr:
-			tok := n.Op
-			r, ok := mu.mutants(set, file, node, tok, n.OpPos)
-			if !ok {
-				return true
-			}
-			for _, m := range r {
-				m.ApplyF = func() { n.Op = mutations[m.Type][tok] }
-				m.RollbackF = func() { n.Op = tok }
-				ch <- m
-			}
+			mu.findMutations(set, file, n, &n.Op, n.OpPos)
 		case *ast.BinaryExpr:
-			tok := n.Op
-			r, ok := mu.mutants(set, file, node, n.Op, n.OpPos)
-			if !ok {
-				return true
-			}
-			for _, m := range r {
-				m.ApplyF = func() { n.Op = mutations[m.Type][tok] }
-				m.RollbackF = func() { n.Op = tok }
-				ch <- m
-			}
+			mu.findMutations(set, file, n, &n.Op, n.OpPos)
 		case *ast.IncDecStmt:
-			tok := n.Tok
-			r, ok := mu.mutants(set, file, node, n.Tok, n.TokPos)
-			if !ok {
-				return true
-			}
-			for _, m := range r {
-				m.ApplyF = func() { n.Tok = mutations[m.Type][tok] }
-				m.RollbackF = func() { n.Tok = tok }
-				ch <- m
-			}
+			mu.findMutations(set, file, n, &n.Tok, n.TokPos)
+
 		}
 		return true
 	})
 }
 
-func (mu Mutator) mutants(set *token.FileSet, file *ast.File, node ast.Node, tok token.Token, tokPos token.Pos) ([]Mutant, bool) {
-	var result []Mutant
-	mutantTypes, ok := tokenMutantType[tok]
+func (mu Mutator) findMutations(set *token.FileSet, file *ast.File, node ast.Node, tok *token.Token, tokPos token.Pos) {
+	mutantTypes, ok := tokenMutantType[*tok]
 	if !ok {
-		return nil, false
+		return
 	}
+	var mutex sync.RWMutex
 	for _, mt := range mutantTypes {
+		mutantType := mt
 		mutant := NewMutant(set, file, node)
-		mutant.Type = mt
+		mutex.RLock()
+		mutant.token = *tok
+		mutex.RUnlock()
+		mutant.Type = mutantType
 		mutant.TokPos = tokPos
 		mutant.Status = mu.mutationStatus(set.Position(tokPos))
+		mutant.ApplyF = func() {
+			mutex.Lock()
+			defer mutex.Unlock()
+			mutant.token = *tok
+			*tok = mutations[mutantType][*tok]
+		}
+		mutant.RollbackF = func() {
+			mutex.Lock()
+			defer mutex.Unlock()
+			*tok = mutant.token
+		}
 
-		result = append(result, mutant)
+		mu.mutantStream <- mutant
 	}
-
-	return result, true
 }
 
 func (mu Mutator) mutationStatus(pos token.Position) MutantStatus {
@@ -196,9 +186,9 @@ func (mu Mutator) mutationStatus(pos token.Position) MutantStatus {
 	return status
 }
 
-func (mu Mutator) executeTests(ch <-chan Mutant) []Mutant {
+func (mu Mutator) executeTests() []Mutant {
 	var results []Mutant
-	for m := range ch {
+	for m := range mu.mutantStream {
 		if m.Status == NotCovered || mu.dryRun {
 			results = append(results, m)
 			fmt.Printf("%s at %s - %s\n", m.Type, m.Pos(), m.Status)
