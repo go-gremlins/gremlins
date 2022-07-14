@@ -31,6 +31,7 @@ type unleashCmd struct {
 
 func newUnleashCmd() *unleashCmd {
 	var dryRun bool
+	var buildTags string
 
 	cmd := &cobra.Command{
 		Use:     "unleash [path of the Go module]",
@@ -47,7 +48,7 @@ func newUnleashCmd() *unleashCmd {
 			defer func(name string) {
 				_ = os.Remove(name)
 			}(tmpdir)
-			cov, err := coverage.New(tmpdir, path)
+			cov, err := coverage.New(tmpdir, path, coverage.WithBuildTags(buildTags))
 			if err != nil {
 				fmt.Printf("directory %s does not contain main module\n", path)
 				os.Exit(1)
@@ -57,12 +58,15 @@ func newUnleashCmd() *unleashCmd {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			mut := mutator.New(os.DirFS(path), pro, mutator.WithDryRun(dryRun))
+			mut := mutator.New(os.DirFS(path), pro,
+				mutator.WithDryRun(dryRun),
+				mutator.WithBuildTags(buildTags))
 			_ = mut.Run()
 		},
 	}
 
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "find mutations but do not executes tests")
+	cmd.Flags().StringVarP(&buildTags, "tags", "t", "", "a comma-separated list of build tags")
 	return &unleashCmd{
 		cmd: cmd,
 	}

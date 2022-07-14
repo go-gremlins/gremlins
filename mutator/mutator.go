@@ -37,11 +37,13 @@ import (
 type Mutator struct {
 	covProfile   coverage.Profile
 	fs           fs.FS
-	dryRun       bool
 	execContext  execContext
 	apply        func(m Mutant) error
 	rollback     func(m Mutant) error
 	mutantStream chan Mutant
+
+	dryRun    bool
+	buildTags string
 }
 
 type execContext = func(name string, args ...string) *exec.Cmd
@@ -83,6 +85,14 @@ func New(fs fs.FS, p coverage.Profile, opts ...Option) Mutator {
 func WithDryRun(d bool) Option {
 	return func(m Mutator) Mutator {
 		m.dryRun = d
+		return m
+	}
+}
+
+// WithBuildTags sets the build tags for the go test command.
+func WithBuildTags(t string) Option {
+	return func(m Mutator) Mutator {
+		m.buildTags = t
 		return m
 	}
 }
@@ -199,7 +209,12 @@ func (mu Mutator) executeTests() []Mutant {
 			continue
 		}
 		m.Status = Lived
-		cmd := mu.execContext("go", "test", "-timeout", "5s", "./...")
+		args := []string{"test", "-timeout", "5s"}
+		if mu.buildTags != "" {
+			args = append(args, "-tags", fmt.Sprintf("%q", mu.buildTags))
+		}
+		args = append(args, "./...")
+		cmd := mu.execContext("go", args...)
 		if err := cmd.Run(); err != nil {
 			m.Status = Killed
 		}

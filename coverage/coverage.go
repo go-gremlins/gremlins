@@ -35,19 +35,32 @@ type Coverage struct {
 	path       string
 	fileName   string
 	mod        string
+
+	buildTags string
+}
+
+// Option for the Coverage initialization.
+type Option func(c Coverage) Coverage
+
+// WithBuildTags sets the build tags for the go test command.
+func WithBuildTags(tags string) Option {
+	return func(c Coverage) Coverage {
+		c.buildTags = tags
+		return c
+	}
 }
 
 type execContext = func(name string, args ...string) *exec.Cmd
 
 // New instantiates a Coverage element using exec.Command as execContext,
 // actually running the command on the OS.
-func New(workdir, path string) (Coverage, error) {
+func New(workdir, path string, opts ...Option) (Coverage, error) {
 	path = strings.TrimSuffix(path, "/")
 	mod, err := getMod(path)
 	if err != nil {
 		return Coverage{}, err
 	}
-	return NewWithCmdAndPackage(exec.Command, mod, workdir, path), nil
+	return NewWithCmdAndPackage(exec.Command, mod, workdir, path, opts...), nil
 }
 
 func getMod(path string) (string, error) {
@@ -65,14 +78,18 @@ func getMod(path string) (string, error) {
 }
 
 // NewWithCmdAndPackage instantiates a Coverage element given a custom execContext.
-func NewWithCmdAndPackage(cmdContext execContext, mod, workdir, path string) Coverage {
-	return Coverage{
+func NewWithCmdAndPackage(cmdContext execContext, mod, workdir, path string, opts ...Option) Coverage {
+	c := Coverage{
 		cmdContext: cmdContext,
 		workDir:    workdir,
 		path:       path + "/...",
 		fileName:   "coverage",
 		mod:        mod,
 	}
+	for _, opt := range opts {
+		c = opt(c)
+	}
+	return c
 }
 
 // Run executes the coverage command and parses the results, returning a *Profile
@@ -107,7 +124,12 @@ func (c Coverage) filePath() string {
 }
 
 func (c Coverage) execute() error {
-	cmd := c.cmdContext("go", "test", "-cover", "-coverprofile", c.filePath(), c.path)
+	args := []string{"test"}
+	if c.buildTags != "" {
+		args = append(args, "-tags", fmt.Sprintf("%q", c.buildTags))
+	}
+	args = append(args, "-cover", "-coverprofile", c.filePath(), c.path)
+	cmd := c.cmdContext("go", args...)
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
