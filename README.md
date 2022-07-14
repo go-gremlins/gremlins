@@ -37,7 +37,7 @@ Here is a nice [intro to mutation testing](https://pedrorijo.com/blog/intro-muta
 
 ## How to use Gremlins
 
-To execute a mutation testing run, from the root of a Go main module execute:
+To execute a mutation test run, from the root of a Go module execute:
 
 ```shell
 $ gremlins unleash
@@ -46,11 +46,17 @@ $ gremlins unleash
 Gremlins only tests mutations of parts of the code already covered by test cases. If a mutant is not covered, why bother
 testing? You already know it will not be caught. In any case, Gremlins will report which mutations aren't covered.
 
+If the Go test run needs build tags, they can be passed along:
+
+```shell
+$ gremlins unleash --tags "tag1,tag2"
+```
+
+To perform the analysis without actually running the tests:
+
 ```shell
 $ gremlins unleash --dry-run
 ```
-
-Will perform the mutation analysis without actually running the tests.
 
 ### Supported mutations
 

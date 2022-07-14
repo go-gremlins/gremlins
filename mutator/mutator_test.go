@@ -17,6 +17,8 @@
 package mutator_test
 
 import (
+	"fmt"
+	"github.com/google/go-cmp/cmp"
 	"github.com/k3rn31/gremlins/coverage"
 	"github.com/k3rn31/gremlins/mutator"
 	"go/token"
@@ -263,7 +265,44 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 	}
 }
 
+type commandHolder struct {
+	command string
+	args    []string
+}
+
 type execContext = func(name string, args ...string) *exec.Cmd
+
+func TestMutatorRun(t *testing.T) {
+	t.Parallel()
+	f, _ := os.Open("testdata/fixtures/gtr_go")
+	defer f.Close()
+	src, _ := ioutil.ReadAll(f)
+	filename := filenameFromFixture("testdata/fixtures/gtr_go")
+	mapFS := fstest.MapFS{
+		filename: {Data: src},
+	}
+
+	holder := &commandHolder{}
+	mut := mutator.New(mapFS, coveredPosition("testdata/fixtures/gtr_go"),
+		mutator.WithExecContext(fakeExecCommandSuccessWithHolder(holder)),
+		mutator.WithBuildTags("tag1 tag2"),
+		mutator.WithApplyAndRollback(
+			func(m mutator.Mutant) error {
+				return nil
+			},
+			func(m mutator.Mutant) error {
+				return nil
+			}))
+
+	_ = mut.Run()
+
+	want := "go test -timeout 5s -tags \"tag1 tag2\" ./..."
+	got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
+
+	if !cmp.Equal(got, want) {
+		t.Errorf(cmp.Diff(got, want))
+	}
+}
 
 func TestMutatorTestExecution(t *testing.T) {
 	testCases := []struct {
@@ -349,6 +388,22 @@ func fakeExecCommandSuccess(command string, args ...string) *exec.Cmd {
 	cmd := exec.Command(os.Args[0], cs...)
 	cmd.Env = []string{"GO_TEST_PROCESS=1"}
 	return cmd
+}
+
+func fakeExecCommandSuccessWithHolder(got *commandHolder) execContext {
+	return func(command string, args ...string) *exec.Cmd {
+		if got != nil {
+			got.command = command
+			got.args = args
+		}
+		cs := []string{"-test.run=TestCoverageProcessSuccess", "--", command}
+		cs = append(cs, args...)
+		// #nosec G204 - We are in tests, we don't care
+		cmd := exec.Command(os.Args[0], cs...)
+		cmd.Env = []string{"GO_TEST_PROCESS=1"}
+
+		return cmd
+	}
 }
 
 func fakeExecCommandFailure(command string, args ...string) *exec.Cmd {
