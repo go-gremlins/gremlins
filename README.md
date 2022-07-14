@@ -6,8 +6,10 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/5b54f2c399214e53aa93cf0df837855a)](https://www.codacy.com/gh/k3rn31/gremlins/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=k3rn31/gremlins&amp;utm_campaign=Badge_Grade)
 [![codecov](https://codecov.io/gh/k3rn31/gremlins/branch/main/graph/badge.svg?token=MICF9A6U3J)](https://codecov.io/gh/k3rn31/gremlins)
 
-**WARNING: Gremlins is in an early stage of development, and it can be unstable, poorly performant and not really
-polished.**
+**WARNING: Gremlins is in its early stages of development, and it can be unstable, poorly performant and not really
+polished. At the moment, Gremlins runs in the project directory, which means it modifies the original files in place. It should not break
+anything, but it's highly probable it will modify the formatting of the source code. Be sure to have a backup of your project before 
+running Gremlins on it.**
 
 Gremlins is a mutation testing tool for Go.
 
