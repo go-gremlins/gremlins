@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/k3rn31/gremlins/log"
 	"golang.org/x/tools/cover"
 	"io"
 	"os"
@@ -95,6 +96,7 @@ func NewWithCmdAndPackage(cmdContext execContext, mod, workdir, path string, opt
 // Run executes the coverage command and parses the results, returning a *Profile
 // object.
 func (c Coverage) Run() (Profile, error) {
+	log.Infoln("Gathering coverage data...")
 	err := c.execute()
 	if err != nil {
 		return nil, fmt.Errorf("impossible to execute coverage: %v", err)

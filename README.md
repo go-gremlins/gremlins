@@ -7,9 +7,7 @@
 [![codecov](https://codecov.io/gh/k3rn31/gremlins/branch/main/graph/badge.svg?token=MICF9A6U3J)](https://codecov.io/gh/k3rn31/gremlins)
 
 **WARNING: Gremlins is in its early stages of development, and it can be unstable, poorly performant and not really
-polished. At the moment, Gremlins runs in the project directory, which means it modifies the original files in place. It should not break
-anything, but it's highly probable it will modify the formatting of the source code. Be sure to have a backup of your project before 
-running Gremlins on it.**
+polished.**
 
 Gremlins is a mutation testing tool for Go.
 
@@ -184,8 +182,8 @@ There are some limitations on how Gremlins works right now, but rest assured we'
   are especially slow.
 - For each mutation, Gremlins will run all the test suite. It would be better to only run the test cases that actually
   cover the mutation.
-- Gremlins doesn't support custom test commands; if you have to do anything different from `go test ./...` to run your
-  test suite, most probably it will not work with Gremlins.
+- Gremlins doesn't support custom test commands; if you have to do anything different from `go test [-tags t1 t2] ./...`
+  to run your test suite, most probably it will not work with Gremlins.
 - There is no way to implement custom mutations.
 - It is not tested on Windows as of now and most probably it will not work there.
 

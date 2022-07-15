@@ -19,6 +19,7 @@ package main
 import (
 	"fmt"
 	"github.com/k3rn31/gremlins/cmd"
+	"github.com/k3rn31/gremlins/log"
 	"os"
 	"runtime"
 )
@@ -30,9 +31,10 @@ var (
 )
 
 func main() {
+	log.Init(os.Stdout)
 	err := cmd.Execute(buildVersion(version, date, builtBy))
 	if err != nil {
-		fmt.Println(err)
+		log.Errorln(err)
 		os.Exit(1)
 	}
 }

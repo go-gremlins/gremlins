@@ -17,9 +17,10 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/k3rn31/gremlins/coverage"
+	"github.com/k3rn31/gremlins/log"
 	"github.com/k3rn31/gremlins/mutator"
+	"github.com/k3rn31/gremlins/mutator/workdir"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
@@ -40,28 +41,60 @@ func newUnleashCmd() *unleashCmd {
 		Short:   "Executes the mutation testing process",
 		Long:    `Unleashes the gremlins and performs mutation testing on a Go module.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			path := "."
+			currentPath := "."
 			if len(args) > 0 {
-				path = args[0]
+				currentPath = args[0]
 			}
-			tmpdir, _ := ioutil.TempDir(os.TempDir(), "unleash-")
-			defer func(name string) {
-				_ = os.Remove(name)
-			}(tmpdir)
-			cov, err := coverage.New(tmpdir, path, coverage.WithBuildTags(buildTags))
+
+			workDir, err := ioutil.TempDir(os.TempDir(), "gremlins-")
 			if err != nil {
-				fmt.Printf("directory %s does not contain main module\n", path)
+				log.Errorf("impossible to create the workdir: %s", err)
 				os.Exit(1)
 			}
-			pro, err := cov.Run()
+			defer func(n string) {
+				err := os.RemoveAll(n)
+				if err != nil {
+					log.Errorf("impossible to remove temporary folder: %s\n\t%s", err, workDir)
+				}
+			}(workDir)
+
+			c, err := coverage.New(workDir, currentPath, coverage.WithBuildTags(buildTags))
 			if err != nil {
-				fmt.Println(err)
+				log.Errorf("directory %s does not contain main module\n", currentPath)
 				os.Exit(1)
 			}
-			mut := mutator.New(os.DirFS(path), pro,
+
+			p, err := c.Run()
+			if err != nil {
+				log.Errorln(err)
+				os.Exit(1)
+			}
+
+			d := workdir.NewDealer(workDir, currentPath)
+			mut := mutator.New(os.DirFS(currentPath), p, d,
 				mutator.WithDryRun(dryRun),
 				mutator.WithBuildTags(buildTags))
-			_ = mut.Run()
+			results := mut.Run()
+
+			// Temporary reporting
+			var k int
+			var l int
+			var nc int
+			for _, m := range results {
+				if m.Status == mutator.Killed {
+					k++
+				}
+				if m.Status == mutator.Lived {
+					l++
+				}
+				if m.Status == mutator.NotCovered {
+					nc++
+				}
+			}
+			log.Infoln("-----")
+			log.Infof("Killed: %d, Lived: %d, Not covered: %d\n", k, l, nc)
+			log.Infof("Real coverage: %.2f%%\n", float64(k+l)/float64(k+l+nc)*100)
+			log.Infof("Test efficacy: %.2f%%\n", float64(k)/float64(k+l)*100)
 		},
 	}
 
