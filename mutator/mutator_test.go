@@ -296,7 +296,7 @@ func TestMutatorRun(t *testing.T) {
 
 	_ = mut.Run()
 
-	want := "go test -timeout 5s -tags \"tag1 tag2\" ./..."
+	want := "go test -timeout 5s -tags tag1 tag2 ./..."
 	got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
 
 	if !cmp.Equal(got, want) {
