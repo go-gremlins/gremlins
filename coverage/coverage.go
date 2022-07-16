@@ -126,7 +126,7 @@ func (c Coverage) filePath() string {
 func (c Coverage) execute() error {
 	args := []string{"test"}
 	if c.buildTags != "" {
-		args = append(args, "-tags", fmt.Sprintf("%q", c.buildTags))
+		args = append(args, "-tags", c.buildTags)
 	}
 	args = append(args, "-cover", "-coverprofile", c.filePath(), c.path)
 	cmd := c.cmdContext("go", args...)

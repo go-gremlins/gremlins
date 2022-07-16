@@ -211,7 +211,7 @@ func (mu Mutator) executeTests() []Mutant {
 		m.Status = Lived
 		args := []string{"test", "-timeout", "5s"}
 		if mu.buildTags != "" {
-			args = append(args, "-tags", fmt.Sprintf("%q", mu.buildTags))
+			args = append(args, "-tags", mu.buildTags)
 		}
 		args = append(args, "./...")
 		cmd := mu.execContext("go", args...)

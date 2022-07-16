@@ -46,7 +46,7 @@ func TestCoverageRun(t *testing.T) {
 
 	_, _ = cov.Run()
 
-	want := fmt.Sprintf("go test -tags \"tag1 tag1\" -cover -coverprofile %v ./...", wantFilePath)
+	want := fmt.Sprintf("go test -tags tag1 tag1 -cover -coverprofile %v ./...", wantFilePath)
 	got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
 
 	if !cmp.Equal(got, want) {
