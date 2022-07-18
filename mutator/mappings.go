@@ -52,7 +52,7 @@ const (
 	ArithmeticBase
 )
 
-var tokenMutantType = map[token.Token][]MutantType{
+var mokenMutantType = map[token.Token][]MutantType{
 	token.SUB: {InvertNegatives, ArithmeticBase},
 	token.ADD: {ArithmeticBase},
 	token.MUL: {ArithmeticBase},

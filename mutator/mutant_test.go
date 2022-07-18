@@ -28,8 +28,11 @@ import (
 
 func TestMutantApplyAndRollback(t *testing.T) {
 	t.Parallel()
-	want := "package main\n\nfunc main() {\n	a := 1 - 2\n}\n"
-	rollbackWant := "package main\n\nfunc main() {\n	a := 1 + 2\n}\n"
+	want := []string{
+		"package main\n\nfunc main() {\n\ta := 1 - 2\n\tb := 1 - 2\n}\n",
+		"package main\n\nfunc main() {\n\ta := 1 + 2\n\tb := 1 + 2\n}\n",
+	}
+	rollbackWant := "package main\n\nfunc main() {\n\ta := 1 + 2\n\tb := 1 - 2\n}\n"
 
 	workdir := t.TempDir()
 	filePath := "sourceFile.go"
@@ -45,46 +48,49 @@ func TestMutantApplyAndRollback(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var node *ast.BinaryExpr
+	var nodes []*ast.BinaryExpr
 	ast.Inspect(f, func(n ast.Node) bool {
 		if n, ok := n.(*ast.BinaryExpr); ok {
-			node = n
+			nodes = append(nodes, n)
 		}
 		return true
 	})
 
-	mut := mutator.NewMutant(set, f, node)
-	mut.SetWorkdir(workdir)
-	mut.TokPos = token.Pos(39)
-	mut.Type = mutator.ArithmeticBase
-	mut.Status = mutator.Runnable
-	mut.ApplyF = func() { node.Op = token.SUB }
-	mut.RollbackF = func() { node.Op = token.ADD }
+	for i, node := range nodes {
+		n, ok := mutator.NewTokenNode(node)
+		if !ok {
+			t.Fatal("new actualToken node should be created")
+		}
+		mut := mutator.NewMutant(set, f, n)
+		mut.Type = mutator.ArithmeticBase
+		mut.Status = mutator.Runnable
+		mut.SetWorkdir(workdir)
 
-	err = mut.Apply()
-	if err != nil {
-		t.Fatal(err)
-	}
+		err = mut.Apply()
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	got, err := os.ReadFile(fileFullPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !cmp.Equal(string(got), want) {
-		t.Fatalf(cmp.Diff(want, string(got)))
-	}
+		got, err := os.ReadFile(fileFullPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !cmp.Equal(string(got), want[i]) {
+			t.Fatalf(cmp.Diff(want[i], string(got)))
+		}
 
-	err = mut.Rollback()
-	if err != nil {
-		t.Fatal(err)
-	}
+		err = mut.Rollback()
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	got, err = os.ReadFile(fileFullPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !cmp.Equal(string(got), rollbackWant) {
-		t.Fatalf(cmp.Diff(rollbackWant, string(got)))
+		got, err = os.ReadFile(fileFullPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !cmp.Equal(string(got), rollbackWant) {
+			t.Fatalf(cmp.Diff(rollbackWant, string(got)))
+		}
 	}
 }
 

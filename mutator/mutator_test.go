@@ -40,6 +40,12 @@ func notCoveredPosition(fixture string) coverage.Profile {
 	return coverage.Profile{fn: {{StartLine: 9, EndLine: 9, StartCol: 8, EndCol: 9}}}
 }
 
+type dealerStub struct{}
+
+func (wm dealerStub) Get() (string, func(), error) {
+	return ".", func() {}, nil
+}
+
 func TestMutations(t *testing.T) {
 	testCases := []struct {
 		name       string
@@ -225,7 +231,7 @@ func TestMutations(t *testing.T) {
 			mapFS := fstest.MapFS{
 				filename: {Data: src},
 			}
-			mut := mutator.New(mapFS, tc.covProfile, mutator.WithDryRun(true))
+			mut := mutator.New(mapFS, tc.covProfile, dealerStub{}, mutator.WithDryRun(true))
 			got := mut.Run()
 
 			if tc.token == token.ILLEGAL {
@@ -236,7 +242,7 @@ func TestMutations(t *testing.T) {
 			}
 
 			for _, g := range got {
-				if g.Type == tc.mutantType && g.Status == tc.mutStatus && g.TokPos > 0 {
+				if g.Type == tc.mutantType && g.Status == tc.mutStatus && g.TokenNode.TokPos > 0 {
 					// PASS
 					return
 				}
@@ -257,7 +263,7 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 		"file_test.go": {Data: file},
 		"folder1/file": {Data: file},
 	}
-	mut := mutator.New(sys, nil, mutator.WithDryRun(true))
+	mut := mutator.New(sys, nil, dealerStub{}, mutator.WithDryRun(true))
 	got := mut.Run()
 
 	if len(got) != 0 {
@@ -283,14 +289,14 @@ func TestMutatorRun(t *testing.T) {
 	}
 
 	holder := &commandHolder{}
-	mut := mutator.New(mapFS, coveredPosition("testdata/fixtures/gtr_go"),
+	mut := mutator.New(mapFS, coveredPosition("testdata/fixtures/gtr_go"), dealerStub{},
 		mutator.WithExecContext(fakeExecCommandSuccessWithHolder(holder)),
 		mutator.WithBuildTags("tag1 tag2"),
 		mutator.WithApplyAndRollback(
-			func(m mutator.Mutant) error {
+			func(m *mutator.Mutant) error {
 				return nil
 			},
-			func(m mutator.Mutant) error {
+			func(m *mutator.Mutant) error {
 				return nil
 			}))
 
@@ -346,13 +352,13 @@ func TestMutatorTestExecution(t *testing.T) {
 				filename: {Data: src},
 			}
 
-			mut := mutator.New(mapFS, tc.covProfile,
+			mut := mutator.New(mapFS, tc.covProfile, dealerStub{},
 				mutator.WithExecContext(tc.testResult),
 				mutator.WithApplyAndRollback(
-					func(m mutator.Mutant) error {
+					func(m *mutator.Mutant) error {
 						return nil
 					},
-					func(m mutator.Mutant) error {
+					func(m *mutator.Mutant) error {
 						return nil
 					}))
 			got := mut.Run()

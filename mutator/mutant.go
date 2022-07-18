@@ -17,7 +17,7 @@
 package mutator
 
 import (
-	"fmt"
+	"github.com/k3rn31/gremlins/log"
 	"go/ast"
 	"go/printer"
 	"go/token"
@@ -61,20 +61,13 @@ func (ms MutantStatus) String() string {
 
 // Mutant represents a possible mutation of the source code.
 type Mutant struct {
-	workdir string
-	fs      *token.FileSet
-	file    *ast.File
-	node    ast.Node
-	token   token.Token
+	workDir     string
+	fs          *token.FileSet
+	file        *ast.File
+	actualToken token.Token
 
-	// ApplyF is the function that modifies the ast.Node so that the mutation
-	// is effective.
-	ApplyF func()
-	// RollbackF is the function that modifies the ast.Node so that the mutation
-	// is removed.
-	RollbackF func()
-	// TokPos is the position of the token.Token that can be mutated.
-	TokPos token.Pos
+	// TokenNode contains the reference to the token.Token to be mutated.
+	TokenNode *NodeToken
 	// Type is the MutantType categorizing the Mutant.
 	Type MutantType
 	// Status is the current Status of the Mutant.
@@ -82,11 +75,12 @@ type Mutant struct {
 }
 
 // NewMutant initialises a Mutant.
-func NewMutant(set *token.FileSet, file *ast.File, node ast.Node) Mutant {
+func NewMutant(set *token.FileSet, file *ast.File, node *NodeToken) Mutant {
 	return Mutant{
 		fs:   set,
 		file: file,
-		node: node,
+		//actualToken: *astNode.Tok(),
+		TokenNode: node,
 	}
 }
 
@@ -95,8 +89,14 @@ func NewMutant(set *token.FileSet, file *ast.File, node ast.Node) Mutant {
 // It works by executing the ApplyF function of the Mutant, then opening the
 // file where the Mutant was found, and overriding it with the mutated version.
 func (m *Mutant) Apply() error {
-	m.ApplyF()
-	f, err := openFile(m.fs, m.TokPos, m.workdir)
+	m.actualToken = m.TokenNode.Tok()
+	m.TokenNode.SetTok(mutations[m.Type][m.TokenNode.Tok()])
+
+	err := removeFile(m.fs, m.TokenNode.TokPos, m.workDir)
+	if err != nil {
+		return err
+	}
+	f, err := openFile(m.fs, m.TokenNode.TokPos, m.workDir)
 	if err != nil {
 		return err
 	}
@@ -114,8 +114,9 @@ func (m *Mutant) Apply() error {
 // mutated file where the Mutant was applied, and overriding it with the
 // un-mutated version.
 func (m *Mutant) Rollback() error {
-	m.RollbackF()
-	f, err := openFile(m.fs, m.TokPos, m.workdir)
+	m.TokenNode.SetTok(m.actualToken)
+
+	f, err := openFile(m.fs, m.TokenNode.TokPos, m.workDir)
 	if err != nil {
 		return err
 	}
@@ -134,12 +135,25 @@ func (m *Mutant) Rollback() error {
 // was performed. Changing the workdir will prevent the modifications of the
 // original files.
 func (m *Mutant) SetWorkdir(path string) {
-	m.workdir = path
+	m.workDir = path
 }
 
 // Pos returns the token.Position where the Mutant resides.
 func (m *Mutant) Pos() token.Position {
-	return m.fs.Position(m.TokPos)
+	return m.fs.Position(m.TokenNode.TokPos)
+}
+
+func removeFile(fs *token.FileSet, tokPos token.Pos, workdir string) error {
+	file := fs.File(tokPos)
+	file.Name()
+	if workdir != "" {
+		workdir += "/"
+	}
+	err := os.RemoveAll(workdir + file.Name())
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func openFile(fs *token.FileSet, tokPos token.Pos, workdir string) (*os.File, error) {
@@ -147,7 +161,7 @@ func openFile(fs *token.FileSet, tokPos token.Pos, workdir string) (*os.File, er
 	if workdir != "" {
 		workdir += "/"
 	}
-	f, err := os.OpenFile(workdir+file.Name(), os.O_TRUNC|os.O_WRONLY, os.ModeAppend)
+	f, err := os.OpenFile(workdir+file.Name(), os.O_CREATE|os.O_WRONLY, 0777)
 	if err != nil {
 		return nil, err
 	}
@@ -157,6 +171,6 @@ func openFile(fs *token.FileSet, tokPos token.Pos, workdir string) (*os.File, er
 func closeFile(f *os.File) {
 	err := f.Close()
 	if err != nil {
-		fmt.Println("an error occurred while closing the mutated file")
+		log.Errorln("an error occurred while closing the mutated file")
 	}
 }

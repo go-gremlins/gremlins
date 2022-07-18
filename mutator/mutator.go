@@ -17,17 +17,18 @@
 package mutator
 
 import (
-	"fmt"
 	"github.com/k3rn31/gremlins/coverage"
+	"github.com/k3rn31/gremlins/log"
+	"github.com/k3rn31/gremlins/mutator/workdir"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"io"
 	"io/fs"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"sync"
 )
 
 // Mutator is the "engine" that performs the mutation testing.
@@ -38,8 +39,9 @@ type Mutator struct {
 	covProfile   coverage.Profile
 	fs           fs.FS
 	execContext  execContext
-	apply        func(m Mutant) error
-	rollback     func(m Mutant) error
+	wdManager    workdir.Dealer
+	apply        func(m *Mutant) error
+	rollback     func(m *Mutant) error
 	mutantStream chan Mutant
 
 	dryRun    bool
@@ -62,15 +64,16 @@ type Option func(m Mutator) Mutator
 // The apply and rollback functions are wrappers around the Mutant apply and
 // rollback. These can be overridden with nop functions in tests. Not an
 // ideal setup. In the future we can think of a better way to handle this.
-func New(fs fs.FS, p coverage.Profile, opts ...Option) Mutator {
+func New(fs fs.FS, p coverage.Profile, manager workdir.Dealer, opts ...Option) Mutator {
 	mut := Mutator{
+		wdManager:   manager,
 		covProfile:  p,
 		fs:          fs,
 		execContext: exec.Command,
-		apply: func(m Mutant) error {
+		apply: func(m *Mutant) error {
 			return m.Apply()
 		},
-		rollback: func(m Mutant) error {
+		rollback: func(m *Mutant) error {
 			return m.Rollback()
 		},
 	}
@@ -106,7 +109,7 @@ func WithExecContext(c execContext) Option {
 }
 
 // WithApplyAndRollback overrides the apply and rollback functions.
-func WithApplyAndRollback(a func(m Mutant) error, r func(m Mutant) error) Option {
+func WithApplyAndRollback(a func(m *Mutant) error, r func(m *Mutant) error) Option {
 	return func(m Mutator) Mutator {
 		m.apply = a
 		m.rollback = r
@@ -124,6 +127,7 @@ func WithApplyAndRollback(a func(m Mutant) error, r func(m Mutant) error) Option
 // Mutant survived, so it will be LIVED, if the tests fail, the Mutant will
 // be KILLED.
 func (mu Mutator) Run() []Mutant {
+	log.Infoln("Looking for mutants...")
 	mu.mutantStream = make(chan Mutant)
 	go func() {
 		_ = fs.WalkDir(mu.fs, ".", func(path string, d fs.DirEntry, err error) error {
@@ -143,45 +147,25 @@ func (mu Mutator) runOnFile(fileName string, src io.Reader) {
 	set := token.NewFileSet()
 	file, _ := parser.ParseFile(set, fileName, src, parser.ParseComments)
 	ast.Inspect(file, func(node ast.Node) bool {
-		switch n := node.(type) {
-		case *ast.UnaryExpr:
-			mu.findMutations(set, file, n, &n.Op, n.OpPos)
-		case *ast.BinaryExpr:
-			mu.findMutations(set, file, n, &n.Op, n.OpPos)
-		case *ast.IncDecStmt:
-			mu.findMutations(set, file, n, &n.Tok, n.TokPos)
-
+		n, ok := NewTokenNode(node)
+		if !ok {
+			return true
 		}
+		mu.findMutations(set, file, n)
 		return true
 	})
 }
 
-func (mu Mutator) findMutations(set *token.FileSet, file *ast.File, node ast.Node, tok *token.Token, tokPos token.Pos) {
-	mutantTypes, ok := tokenMutantType[*tok]
+func (mu Mutator) findMutations(set *token.FileSet, file *ast.File, node *NodeToken) {
+	mutantTypes, ok := mokenMutantType[node.Tok()]
 	if !ok {
 		return
 	}
-	var mutex sync.RWMutex
 	for _, mt := range mutantTypes {
 		mutantType := mt
 		mutant := NewMutant(set, file, node)
-		mutex.RLock()
-		mutant.token = *tok
-		mutex.RUnlock()
 		mutant.Type = mutantType
-		mutant.TokPos = tokPos
-		mutant.Status = mu.mutationStatus(set.Position(tokPos))
-		mutant.ApplyF = func() {
-			mutex.Lock()
-			defer mutex.Unlock()
-			mutant.token = *tok
-			*tok = mutations[mutantType][*tok]
-		}
-		mutant.RollbackF = func() {
-			mutex.Lock()
-			defer mutex.Unlock()
-			*tok = mutant.token
-		}
+		mutant.Status = mu.mutationStatus(set.Position(node.TokPos))
 
 		mu.mutantStream <- mutant
 	}
@@ -197,15 +181,28 @@ func (mu Mutator) mutationStatus(pos token.Position) MutantStatus {
 }
 
 func (mu Mutator) executeTests() []Mutant {
+	if mu.dryRun {
+		log.Infoln("Running in 'dry-run' mode.")
+	} else {
+		log.Infoln("Executing mutation testing on covered mutants.")
+	}
+	wd, cl, err := mu.wdManager.Get()
+	if err != nil {
+		panic("error, this is temporary")
+	}
+	defer cl()
+	_ = os.Chdir(wd)
+
 	var results []Mutant
 	for m := range mu.mutantStream {
+		m.SetWorkdir(wd)
 		if m.Status == NotCovered || mu.dryRun {
 			results = append(results, m)
-			fmt.Printf("%s at %s - %s\n", m.Type, m.Pos(), m.Status)
+			log.Infof("%s at %s - %s\n", m.Type, m.Pos(), m.Status)
 			continue
 		}
-		if err := mu.apply(m); err != nil {
-			fmt.Printf("failed to apply mutation at %s - %s\n\t%v", m.Pos(), m.Status, err)
+		if err := mu.apply(&m); err != nil {
+			log.Errorf("failed to apply mutation at %s - %s\n\t%v", m.Pos(), m.Status, err)
 			continue
 		}
 		m.Status = Lived
@@ -218,11 +215,11 @@ func (mu Mutator) executeTests() []Mutant {
 		if err := cmd.Run(); err != nil {
 			m.Status = Killed
 		}
-		if err := mu.rollback(m); err != nil {
-			fmt.Printf("failed to restore mutation at %s - %s\n\t%v", m.Pos(), m.Status, err)
+		if err := mu.rollback(&m); err != nil {
+			log.Errorf("failed to restore mutation at %s - %s\n\t%v", m.Pos(), m.Status, err)
 			// What should we do now?
 		}
-		fmt.Printf("%s at %s - %s\n", m.Type, m.Pos(), m.Status)
+		log.Infof("%s at %s - %s\n", m.Type, m.Pos(), m.Status)
 		results = append(results, m)
 	}
 	return results
