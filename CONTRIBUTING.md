@@ -3,9 +3,10 @@
 First, thanks for you wanting to contribute!
 
 - [How Can I Contribute?](#how-can-i-contribute)
-    - [Reporting Bugs](#reporting-bugs)
-    - [Suggesting Enhancements](#suggesting-enhancements)
-    - [Pull Requests](#pull-requests)
+  - [Reporting Bugs](#reporting-bugs)
+  - [Suggesting Enhancements](#suggesting-enhancements)
+  - [Pull Requests](#pull-requests)
+- [Branching Model](#branching-model)
 
 ## How Can I Contribute?
 
@@ -33,3 +34,11 @@ There is a specific issue type for feature requests.
 
 Pull request are welcome, but it's not guaranteed they will be accepted. We are quite strict on code quality, style and
 code metrics, bear with us if we ask you to make changes before accepting your PR.
+
+## Branching Model
+
+We are experimenting with
+the [GitLab Flow branching model](https://docs.gitlab.com/ee/topics/gitlab_flow.html#release-branches-with-gitlab-flow).
+It is similar to the GitHub Flow branching model, but it uses release branches. Since Gremlins is a tool with a release
+lifecycle, we think GitLab Flow fits better than GitHub Flow (which is better oriented to _continuous delivery_), yet
+still remains simpler than Git-flow.
