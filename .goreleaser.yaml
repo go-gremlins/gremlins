@@ -25,3 +25,4 @@ changelog:
       - go mod tidy
 release:
   draft: true
+  prerelease: auto
