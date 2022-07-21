@@ -18,6 +18,7 @@ package mutator_test
 
 import (
 	"github.com/google/go-cmp/cmp"
+	"github.com/k3rn31/gremlins/mutant"
 	"github.com/k3rn31/gremlins/mutator"
 	"go/ast"
 	"go/parser"
@@ -61,9 +62,9 @@ func TestMutantApplyAndRollback(t *testing.T) {
 		if !ok {
 			t.Fatal("new actualToken node should be created")
 		}
-		mut := mutator.NewMutant(set, f, n)
-		mut.Type = mutator.ArithmeticBase
-		mut.Status = mutator.Runnable
+		mut := mutator.NewTokenMutant(set, f, n)
+		mut.SetType(mutant.ArithmeticBase)
+		mut.SetStatus(mutant.Runnable)
 		mut.SetWorkdir(workdir)
 
 		err = mut.Apply()
@@ -91,42 +92,5 @@ func TestMutantApplyAndRollback(t *testing.T) {
 		if !cmp.Equal(string(got), rollbackWant) {
 			t.Fatalf(cmp.Diff(rollbackWant, string(got)))
 		}
-	}
-}
-
-func TestMutationStatusString(t *testing.T) {
-	testCases := []struct {
-		name           string
-		mutationStatus mutator.MutantStatus
-		expected       string
-	}{
-		{
-			"NotCovered",
-			mutator.NotCovered,
-			"NOT COVERED",
-		},
-		{
-			"Runnable",
-			mutator.Runnable,
-			"RUNNABLE",
-		},
-		{
-			"Lived",
-			mutator.Lived,
-			"LIVED",
-		},
-		{
-			"Killed",
-			mutator.Killed,
-			"KILLED",
-		},
-	}
-	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			if tc.mutationStatus.String() != tc.expected {
-				t.Errorf(cmp.Diff(tc.mutationStatus.String(), tc.expected))
-			}
-		})
 	}
 }

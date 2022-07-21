@@ -59,7 +59,7 @@ func (n *NodeToken) Tok() token.Token {
 	return *n.tok
 }
 
-// SetTok sets the token.Token of the TokenNode
+// SetTok sets the token.Token of the tokenNode
 func (n *NodeToken) SetTok(t token.Token) {
 	*n.tok = t
 }

@@ -16,73 +16,42 @@
 
 package mutator
 
-import "go/token"
-
-// MutantType represents the category of the Mutant.
-//
-// A single token.Token can be mutated in various ways depending on the
-// specific mutation being tested.
-// For example `<` can be mutated to `<=` in case of ConditionalsBoundary
-// or `>=` in case of ConditionalsNegation.
-type MutantType int
-
-func (mt MutantType) String() string {
-	switch mt {
-	case ConditionalsBoundary:
-		return "CONDITIONALS_BOUNDARY"
-	case ConditionalsNegation:
-		return "CONDITIONALS_NEGATION"
-	case IncrementDecrement:
-		return "INCREMENT_DECREMENT"
-	case InvertNegatives:
-		return "INVERT_NEGATIVES"
-	case ArithmeticBase:
-		return "ARITHMETIC_BASE"
-	default:
-		panic("this should not happen")
-	}
-}
-
-// The currently supported MutantType in Gremlins.
-const (
-	ConditionalsBoundary MutantType = iota
-	ConditionalsNegation
-	IncrementDecrement
-	InvertNegatives
-	ArithmeticBase
+import (
+	"github.com/k3rn31/gremlins/mutant"
+	"go/token"
 )
 
-var mokenMutantType = map[token.Token][]MutantType{
-	token.SUB: {InvertNegatives, ArithmeticBase},
-	token.ADD: {ArithmeticBase},
-	token.MUL: {ArithmeticBase},
-	token.QUO: {ArithmeticBase},
-	token.REM: {ArithmeticBase},
-	token.EQL: {ConditionalsNegation},
-	token.NEQ: {ConditionalsNegation},
-	token.GTR: {ConditionalsBoundary, ConditionalsNegation},
-	token.LSS: {ConditionalsBoundary, ConditionalsNegation},
-	token.GEQ: {ConditionalsBoundary, ConditionalsNegation},
-	token.LEQ: {ConditionalsBoundary, ConditionalsNegation},
-	token.INC: {IncrementDecrement},
-	token.DEC: {IncrementDecrement},
+var tokenMutantType = map[token.Token][]mutant.Type{
+	token.SUB: {mutant.InvertNegatives, mutant.ArithmeticBase},
+	token.ADD: {mutant.ArithmeticBase},
+	token.MUL: {mutant.ArithmeticBase},
+	token.QUO: {mutant.ArithmeticBase},
+	token.REM: {mutant.ArithmeticBase},
+	token.EQL: {mutant.ConditionalsNegation},
+	token.NEQ: {mutant.ConditionalsNegation},
+	token.GTR: {mutant.ConditionalsBoundary, mutant.ConditionalsNegation},
+	token.LSS: {mutant.ConditionalsBoundary, mutant.ConditionalsNegation},
+	token.GEQ: {mutant.ConditionalsBoundary, mutant.ConditionalsNegation},
+	token.LEQ: {mutant.ConditionalsBoundary, mutant.ConditionalsNegation},
+	token.INC: {mutant.IncrementDecrement},
+	token.DEC: {mutant.IncrementDecrement},
 }
 
-var mutations = map[MutantType]map[token.Token]token.Token{
-	ArithmeticBase: {
+var tokenMutations = map[mutant.Type]map[token.Token]token.Token{
+	mutant.ArithmeticBase: {
 		token.ADD: token.SUB,
 		token.SUB: token.ADD,
 		token.MUL: token.QUO,
 		token.QUO: token.MUL,
 		token.REM: token.MUL,
 	},
-	ConditionalsBoundary: {
+	mutant.ConditionalsBoundary: {
 		token.GTR: token.GEQ,
 		token.LSS: token.LEQ,
 		token.GEQ: token.GTR,
 		token.LEQ: token.LSS,
 	},
-	ConditionalsNegation: {
+	mutant.ConditionalsNegation: {
 		token.EQL: token.NEQ,
 		token.NEQ: token.EQL,
 		token.LEQ: token.GTR,
@@ -90,11 +59,11 @@ var mutations = map[MutantType]map[token.Token]token.Token{
 		token.LSS: token.GEQ,
 		token.GEQ: token.LSS,
 	},
-	IncrementDecrement: {
+	mutant.IncrementDecrement: {
 		token.INC: token.DEC,
 		token.DEC: token.INC,
 	},
-	InvertNegatives: {
+	mutant.InvertNegatives: {
 		token.SUB: token.ADD,
 	},
 }

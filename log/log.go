@@ -23,6 +23,8 @@ import (
 	"sync"
 )
 
+var fgRed = color.New(color.FgRed).SprintFunc()
+
 type log struct {
 	writer io.Writer
 }
@@ -76,8 +78,7 @@ func Errorf(f string, args ...any) {
 		return
 	}
 	msg := fmt.Sprintf(f, args...)
-	red := color.New(color.FgRed).SprintFunc()
-	instance.writef("%s: %s", red("ERROR"), msg)
+	instance.writef("%s: %s", fgRed("ERROR"), msg)
 }
 
 // Errorln logs an error line.
@@ -85,8 +86,7 @@ func Errorln(a any) {
 	if instance == nil {
 		return
 	}
-	red := color.New(color.FgRed).SprintFunc()
-	msg := fmt.Sprintf("%s: %s", red("ERROR"), a)
+	msg := fmt.Sprintf("%s: %s", fgRed("ERROR"), a)
 	instance.writeln(msg)
 }
 

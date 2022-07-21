@@ -19,6 +19,7 @@ package cmd
 import (
 	"github.com/k3rn31/gremlins/coverage"
 	"github.com/k3rn31/gremlins/log"
+	"github.com/k3rn31/gremlins/mutant"
 	"github.com/k3rn31/gremlins/mutator"
 	"github.com/k3rn31/gremlins/mutator/workdir"
 	"github.com/spf13/cobra"
@@ -81,13 +82,13 @@ func newUnleashCmd() *unleashCmd {
 			var l int
 			var nc int
 			for _, m := range results {
-				if m.Status == mutator.Killed {
+				if m.Status() == mutant.Killed {
 					k++
 				}
-				if m.Status == mutator.Lived {
+				if m.Status() == mutant.Lived {
 					l++
 				}
-				if m.Status == mutator.NotCovered {
+				if m.Status() == mutant.NotCovered {
 					nc++
 				}
 			}
