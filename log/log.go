@@ -19,11 +19,16 @@ package log
 import (
 	"fmt"
 	"github.com/fatih/color"
+	"github.com/k3rn31/gremlins/mutant"
 	"io"
 	"sync"
 )
 
-var fgRed = color.New(color.FgRed).SprintFunc()
+var (
+	fgRed     = color.New(color.FgRed).SprintFunc()
+	fgGreen   = color.New(color.FgGreen).SprintFunc()
+	fgHiBlack = color.New(color.FgHiBlack).SprintFunc()
+)
 
 type log struct {
 	writer io.Writer
@@ -88,6 +93,33 @@ func Errorln(a any) {
 	}
 	msg := fmt.Sprintf("%s: %s", fgRed("ERROR"), a)
 	instance.writeln(msg)
+}
+
+// Mutant logs a mutant.Mutant.
+// It reports the mutant.Status, the mutant.Type and its position.
+func Mutant(m mutant.Mutant) {
+	if instance == nil {
+		return
+	}
+	status := m.Status().String()
+	switch m.Status() {
+	case mutant.Killed, mutant.Runnable:
+		status = fgGreen(m.Status())
+	case mutant.Lived:
+		status = fgRed(m.Status())
+	case mutant.NotCovered:
+		status = fgHiBlack(m.Status())
+	}
+	instance.writef("%s%s %s at %s\n", padding(m.Status()), status, m.Type(), m.Position())
+}
+
+func padding(s mutant.Status) string {
+	var pad string
+	padLen := 12 - len(s.String())
+	for i := 0; i < padLen; i++ {
+		pad += " "
+	}
+	return pad
 }
 
 func (l *log) writef(f string, args ...any) {

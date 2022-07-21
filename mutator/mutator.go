@@ -185,7 +185,7 @@ func (mu Mutator) executeTests() []mutant.Mutant {
 	if mu.dryRun {
 		log.Infoln("Running in 'dry-run' mode.")
 	} else {
-		log.Infoln("Executing mutation testing on covered mutants.")
+		log.Infoln("Executing mutation testing on covered mutants...")
 	}
 	wd, cl, err := mu.wdManager.Get()
 	if err != nil {
@@ -199,7 +199,7 @@ func (mu Mutator) executeTests() []mutant.Mutant {
 		m.SetWorkdir(wd)
 		if m.Status() == mutant.NotCovered || mu.dryRun {
 			results = append(results, m)
-			log.Infof("%s at %s - %s\n", m.Type(), m.Position(), m.Status())
+			log.Mutant(m)
 			continue
 		}
 		if err := mu.apply(m); err != nil {
@@ -220,7 +220,7 @@ func (mu Mutator) executeTests() []mutant.Mutant {
 			log.Errorf("failed to restore mutation at %s - %s\n\t%v", m.Position(), m.Status(), err)
 			// What should we do now?
 		}
-		log.Infof("%s at %s - %s\n", m.Type(), m.Position(), m.Status())
+		log.Mutant(m)
 		results = append(results, m)
 	}
 	return results

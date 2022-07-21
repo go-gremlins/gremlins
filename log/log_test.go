@@ -18,7 +18,10 @@ package log_test
 
 import (
 	"bytes"
+	"github.com/google/go-cmp/cmp"
 	"github.com/k3rn31/gremlins/log"
+	"github.com/k3rn31/gremlins/mutant"
+	"go/token"
 	"testing"
 )
 
@@ -102,4 +105,77 @@ func TestLogError(t *testing.T) {
 			t.Errorf("want %q, got %q", want, got)
 		}
 	})
+}
+
+func TestMutantLog(t *testing.T) {
+	out := &bytes.Buffer{}
+	defer out.Reset()
+	log.Init(out)
+	defer log.Reset()
+
+	m := stubMutant{mutant.Lived}
+	log.Mutant(m)
+	m = stubMutant{mutant.Killed}
+	log.Mutant(m)
+	m = stubMutant{mutant.NotCovered}
+	log.Mutant(m)
+	m = stubMutant{mutant.Runnable}
+	log.Mutant(m)
+
+	got := out.String()
+
+	want := "" +
+		"       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"      KILLED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		" NOT COVERED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"    RUNNABLE CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
+
+	if !cmp.Equal(got, want) {
+		t.Errorf(cmp.Diff(got, want))
+	}
+}
+
+type stubMutant struct {
+	status mutant.Status
+}
+
+func (s stubMutant) Type() mutant.Type {
+	return mutant.ConditionalsBoundary
+}
+
+func (s stubMutant) SetType(_ mutant.Type) {
+	panic("implement me")
+}
+
+func (s stubMutant) Status() mutant.Status {
+	return s.status
+}
+
+func (s stubMutant) SetStatus(_ mutant.Status) {
+	panic("implement me")
+}
+
+func (s stubMutant) Position() token.Position {
+	return token.Position{
+		Filename: "aFolder/aFile.go",
+		Offset:   0,
+		Line:     12,
+		Column:   3,
+	}
+}
+
+func (s stubMutant) Pos() token.Pos {
+	return 123
+}
+
+func (s stubMutant) SetWorkdir(_ string) {
+	panic("implement me")
+}
+
+func (s stubMutant) Apply() error {
+	panic("implement me")
+}
+
+func (s stubMutant) Rollback() error {
+	panic("implement me")
 }
