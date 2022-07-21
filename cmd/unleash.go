@@ -21,6 +21,7 @@ import (
 	"github.com/k3rn31/gremlins/log"
 	"github.com/k3rn31/gremlins/mutator"
 	"github.com/k3rn31/gremlins/mutator/workdir"
+	"github.com/k3rn31/gremlins/report"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
@@ -76,25 +77,7 @@ func newUnleashCmd() *unleashCmd {
 				mutator.WithBuildTags(buildTags))
 			results := mut.Run()
 
-			// Temporary reporting
-			var k int
-			var l int
-			var nc int
-			for _, m := range results {
-				if m.Status == mutator.Killed {
-					k++
-				}
-				if m.Status == mutator.Lived {
-					l++
-				}
-				if m.Status == mutator.NotCovered {
-					nc++
-				}
-			}
-			log.Infoln("-----")
-			log.Infof("Killed: %d, Lived: %d, Not covered: %d\n", k, l, nc)
-			log.Infof("Real coverage: %.2f%%\n", float64(k+l)/float64(k+l+nc)*100)
-			log.Infof("Test efficacy: %.2f%%\n", float64(k)/float64(k+l)*100)
+			report.Do(results)
 		},
 	}
 

@@ -22,6 +22,23 @@ import (
 	"testing"
 )
 
+func TestUninitialised(t *testing.T) {
+	t.Parallel()
+	out := &bytes.Buffer{}
+	defer out.Reset()
+	log.Init(out)
+	log.Reset()
+
+	log.Infof("%s", "test")
+	log.Infoln("test")
+	log.Errorf("%s", "test")
+	log.Errorln("test")
+
+	if out.String() != "" {
+		t.Errorf("expected empty string")
+	}
+}
+
 func TestLogInfo(t *testing.T) {
 	out := &bytes.Buffer{}
 	log.Init(out)
@@ -85,21 +102,4 @@ func TestLogError(t *testing.T) {
 			t.Errorf("want %q, got %q", want, got)
 		}
 	})
-}
-
-func TestUninitialised(t *testing.T) {
-	t.Parallel()
-	out := &bytes.Buffer{}
-	defer out.Reset()
-	log.Init(out)
-	log.Reset()
-
-	log.Infof("%s", "test")
-	log.Infoln("test")
-	log.Errorf("%s", "test")
-	log.Errorln("test")
-
-	if out.String() != "" {
-		t.Errorf("expected empty string")
-	}
 }

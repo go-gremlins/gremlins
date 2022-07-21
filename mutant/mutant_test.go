@@ -14,42 +14,80 @@
  *    limitations under the License.
  */
 
-package mutator
+package mutant_test
 
 import (
 	"github.com/google/go-cmp/cmp"
+	"github.com/k3rn31/gremlins/mutant"
 	"testing"
 )
 
-func TestMutantTypeString(t *testing.T) {
+func TestStatusString(t *testing.T) {
+	testCases := []struct {
+		name           string
+		mutationStatus mutant.Status
+		expected       string
+	}{
+		{
+			"NotCovered",
+			mutant.NotCovered,
+			"NOT COVERED",
+		},
+		{
+			"Runnable",
+			mutant.Runnable,
+			"RUNNABLE",
+		},
+		{
+			"Lived",
+			mutant.Lived,
+			"LIVED",
+		},
+		{
+			"Killed",
+			mutant.Killed,
+			"KILLED",
+		},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.mutationStatus.String() != tc.expected {
+				t.Errorf(cmp.Diff(tc.mutationStatus.String(), tc.expected))
+			}
+		})
+	}
+}
+
+func TestTypeString(t *testing.T) {
 	testCases := []struct {
 		name       string
-		mutantType MutantType
+		mutantType mutant.Type
 		expected   string
 	}{
 		{
 			"CONDITIONALS_BOUNDARY",
-			ConditionalsBoundary,
+			mutant.ConditionalsBoundary,
 			"CONDITIONALS_BOUNDARY",
 		},
 		{
 			"CONDITIONALS_NEGATION",
-			ConditionalsNegation,
+			mutant.ConditionalsNegation,
 			"CONDITIONALS_NEGATION",
 		},
 		{
 			"INCREMENT_DECREMENT",
-			IncrementDecrement,
+			mutant.IncrementDecrement,
 			"INCREMENT_DECREMENT",
 		},
 		{
 			"INVERT_NEGATIVES",
-			InvertNegatives,
+			mutant.InvertNegatives,
 			"INVERT_NEGATIVES",
 		},
 		{
 			"ARITHMETIC_BASE",
-			ArithmeticBase,
+			mutant.ArithmeticBase,
 			"ARITHMETIC_BASE",
 		},
 	}
