@@ -1,6 +1,4 @@
-before:
-  hooks:
-    - go mod tidy
+project_name: gremlins
 builds:
   - main: ./cmd/gremlins
     env:
@@ -9,9 +7,10 @@ builds:
       - linux
       - darwin
 checksum:
-  name_template: 'checksums.txt'
+source:
+  enabled: true
 changelog:
-  sort: asc
+  skip: false
   use: github
   filters:
     exclude:
