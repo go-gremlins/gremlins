@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package mutator
+package internal
 
 import (
 	"github.com/k3rn31/gremlins/log"

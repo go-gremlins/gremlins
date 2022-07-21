@@ -20,6 +20,7 @@ import (
 	"github.com/k3rn31/gremlins/coverage"
 	"github.com/k3rn31/gremlins/log"
 	"github.com/k3rn31/gremlins/mutant"
+	"github.com/k3rn31/gremlins/mutator/internal"
 	"github.com/k3rn31/gremlins/mutator/workdir"
 	"go/ast"
 	"go/parser"
@@ -148,7 +149,7 @@ func (mu Mutator) runOnFile(fileName string, src io.Reader) {
 	set := token.NewFileSet()
 	file, _ := parser.ParseFile(set, fileName, src, parser.ParseComments)
 	ast.Inspect(file, func(node ast.Node) bool {
-		n, ok := NewTokenNode(node)
+		n, ok := internal.NewTokenNode(node)
 		if !ok {
 			return true
 		}
@@ -157,14 +158,14 @@ func (mu Mutator) runOnFile(fileName string, src io.Reader) {
 	})
 }
 
-func (mu Mutator) findMutations(set *token.FileSet, file *ast.File, node *NodeToken) {
-	mutantTypes, ok := tokenMutantType[node.Tok()]
+func (mu Mutator) findMutations(set *token.FileSet, file *ast.File, node *internal.NodeToken) {
+	mutantTypes, ok := internal.TokenMutantType[node.Tok()]
 	if !ok {
 		return
 	}
 	for _, mt := range mutantTypes {
 		mutantType := mt
-		tm := NewTokenMutant(set, file, node)
+		tm := internal.NewTokenMutant(set, file, node)
 		tm.SetType(mutantType)
 		tm.SetStatus(mu.mutationStatus(set.Position(node.TokPos)))
 

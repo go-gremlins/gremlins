@@ -14,12 +14,12 @@
  *    limitations under the License.
  */
 
-package mutator_test
+package internal_test
 
 import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/k3rn31/gremlins/mutant"
-	"github.com/k3rn31/gremlins/mutator"
+	"github.com/k3rn31/gremlins/mutator/internal"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -58,11 +58,11 @@ func TestMutantApplyAndRollback(t *testing.T) {
 	})
 
 	for i, node := range nodes {
-		n, ok := mutator.NewTokenNode(node)
+		n, ok := internal.NewTokenNode(node)
 		if !ok {
 			t.Fatal("new actualToken node should be created")
 		}
-		mut := mutator.NewTokenMutant(set, f, n)
+		mut := internal.NewTokenMutant(set, f, n)
 		mut.SetType(mutant.ArithmeticBase)
 		mut.SetStatus(mutant.Runnable)
 		mut.SetWorkdir(workdir)

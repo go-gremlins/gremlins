@@ -14,14 +14,14 @@
  *    limitations under the License.
  */
 
-package mutator
+package internal
 
 import (
 	"github.com/k3rn31/gremlins/mutant"
 	"go/token"
 )
 
-var tokenMutantType = map[token.Token][]mutant.Type{
+var TokenMutantType = map[token.Token][]mutant.Type{
 	token.SUB: {mutant.InvertNegatives, mutant.ArithmeticBase},
 	token.ADD: {mutant.ArithmeticBase},
 	token.MUL: {mutant.ArithmeticBase},
