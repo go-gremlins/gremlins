@@ -45,18 +45,22 @@ func NewTokenMutant(set *token.FileSet, file *ast.File, node *NodeToken) *TokenM
 	}
 }
 
+// Type returns the mutant.Type of the mutant.Mutant.
 func (m *TokenMutant) Type() mutant.Type {
 	return m.mutantType
 }
 
+// SetType sets the mutant.Type of the mutant.Mutant.
 func (m *TokenMutant) SetType(mt mutant.Type) {
 	m.mutantType = mt
 }
 
+// Status returns the mutant.Status of the mutant.Mutant.
 func (m *TokenMutant) Status() mutant.Status {
 	return m.status
 }
 
+// SetStatus sets the mutant.Status of the mutant.Mutant.
 func (m *TokenMutant) SetStatus(s mutant.Status) {
 	m.status = s
 }

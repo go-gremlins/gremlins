@@ -21,6 +21,8 @@ import (
 	"go/token"
 )
 
+// TokenMutantType is the mapping from each token.Token and all the
+// mutant.Type that can be applied to it.
 var TokenMutantType = map[token.Token][]mutant.Type{
 	token.SUB: {mutant.InvertNegatives, mutant.ArithmeticBase},
 	token.ADD: {mutant.ArithmeticBase},

@@ -22,6 +22,7 @@ import (
 	"github.com/k3rn31/gremlins/mutant"
 	"github.com/k3rn31/gremlins/mutator/internal"
 	"github.com/k3rn31/gremlins/mutator/workdir"
+	"github.com/k3rn31/gremlins/report"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -31,6 +32,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // Mutator is the "engine" that performs the mutation testing.
@@ -128,7 +130,8 @@ func WithApplyAndRollback(a func(m mutant.Mutant) error, r func(m mutant.Mutant)
 // KILLED or LIVED depending on the result. If the tests pass, it means the
 // TokenMutant survived, so it will be LIVED, if the tests fail, the TokenMutant will
 // be KILLED.
-func (mu Mutator) Run() []mutant.Mutant {
+func (mu Mutator) Run() report.Results {
+	start := time.Now()
 	log.Infoln("Looking for mutants...")
 	mu.mutantStream = make(chan mutant.Mutant)
 	go func() {
@@ -141,8 +144,11 @@ func (mu Mutator) Run() []mutant.Mutant {
 		})
 		close(mu.mutantStream)
 	}()
+	res := mu.executeTests()
+	end := time.Now()
+	res.Elapsed = end.Sub(start)
 
-	return mu.executeTests()
+	return res
 }
 
 func (mu Mutator) runOnFile(fileName string, src io.Reader) {
@@ -182,7 +188,7 @@ func (mu Mutator) mutationStatus(pos token.Position) mutant.Status {
 	return status
 }
 
-func (mu Mutator) executeTests() []mutant.Mutant {
+func (mu Mutator) executeTests() report.Results {
 	if mu.dryRun {
 		log.Infoln("Running in 'dry-run' mode.")
 	} else {
@@ -195,12 +201,12 @@ func (mu Mutator) executeTests() []mutant.Mutant {
 	defer cl()
 	_ = os.Chdir(wd)
 
-	var results []mutant.Mutant
+	var mutants []mutant.Mutant
 	for m := range mu.mutantStream {
 		m.SetWorkdir(wd)
 		if m.Status() == mutant.NotCovered || mu.dryRun {
-			results = append(results, m)
-			log.Mutant(m)
+			mutants = append(mutants, m)
+			report.Mutant(m)
 			continue
 		}
 		if err := mu.apply(m); err != nil {
@@ -221,8 +227,12 @@ func (mu Mutator) executeTests() []mutant.Mutant {
 			log.Errorf("failed to restore mutation at %s - %s\n\t%v", m.Position(), m.Status(), err)
 			// What should we do now?
 		}
-		log.Mutant(m)
-		results = append(results, m)
+		report.Mutant(m)
+		mutants = append(mutants, m)
+	}
+
+	results := report.Results{
+		Mutants: mutants,
 	}
 	return results
 }

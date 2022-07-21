@@ -233,7 +233,8 @@ func TestMutations(t *testing.T) {
 				filename: {Data: src},
 			}
 			mut := mutator.New(mapFS, tc.covProfile, dealerStub{}, mutator.WithDryRun(true))
-			got := mut.Run()
+			res := mut.Run()
+			got := res.Mutants
 
 			if tc.token == token.ILLEGAL {
 				if len(got) != 0 {
@@ -265,7 +266,8 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 		"folder1/file": {Data: file},
 	}
 	mut := mutator.New(sys, nil, dealerStub{}, mutator.WithDryRun(true))
-	got := mut.Run()
+	res := mut.Run()
+	got := res.Mutants
 
 	if len(got) != 0 {
 		t.Errorf("should not receive results")
@@ -362,13 +364,17 @@ func TestMutatorTestExecution(t *testing.T) {
 					func(m mutant.Mutant) error {
 						return nil
 					}))
-			got := mut.Run()
+			res := mut.Run()
+			got := res.Mutants
 
 			if len(got) < 1 {
 				t.Fatal("no mutants received")
 			}
 			if got[0].Status() != tc.wantMutStatus {
 				t.Errorf("expected mutation to be %v, but got: %v", tc.wantMutStatus, got[0].Status())
+			}
+			if res.Elapsed <= 0 {
+				t.Errorf("expected elapsed time to be greater than zero, got %s", res.Elapsed)
 			}
 		})
 	}
