@@ -23,10 +23,8 @@ import (
 )
 
 func TestUninitialised(t *testing.T) {
-	t.Parallel()
 	out := &bytes.Buffer{}
 	defer out.Reset()
-	log.Init(out)
 	log.Reset()
 
 	log.Infof("%s", "test")
@@ -41,7 +39,8 @@ func TestUninitialised(t *testing.T) {
 
 func TestLogInfo(t *testing.T) {
 	out := &bytes.Buffer{}
-	log.Init(out)
+	log.Init(out, &bytes.Buffer{})
+
 	t.Run("Infof", func(t *testing.T) {
 		defer out.Reset()
 
@@ -71,35 +70,46 @@ func TestLogInfo(t *testing.T) {
 }
 
 func TestLogError(t *testing.T) {
+	out := &bytes.Buffer{}
+	eOut := &bytes.Buffer{}
+	log.Init(out, eOut)
+	defer log.Reset()
+
 	t.Run("Errorf", func(t *testing.T) {
-		out := &bytes.Buffer{}
 		defer out.Reset()
-		log.Init(out)
-		defer log.Reset()
+		defer eOut.Reset()
 
 		log.Errorf("test %d", 1)
 
-		got := out.String()
+		got := eOut.String()
 
 		want := "ERROR: test 1"
 		if got != want {
 			t.Errorf("want %q, got %q", want, got)
 		}
+
+		got = out.String()
+		if got != "" {
+			t.Errorf("expected out to be empty, got %s", got)
+		}
 	})
 
 	t.Run("Errorln", func(t *testing.T) {
-		out := &bytes.Buffer{}
 		defer out.Reset()
-		log.Init(out)
-		defer log.Reset()
+		defer eOut.Reset()
 
 		log.Errorln("test test")
 
-		got := out.String()
+		got := eOut.String()
 
 		want := "ERROR: test test\n"
 		if got != want {
 			t.Errorf("want %q, got %q", want, got)
+		}
+
+		got = out.String()
+		if got != "" {
+			t.Errorf("expected out to be empty, got %s", got)
 		}
 	})
 }
