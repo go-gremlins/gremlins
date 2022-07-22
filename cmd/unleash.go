@@ -43,7 +43,7 @@ func newUnleashCmd() *unleashCmd {
 		Short:   "Executes the mutation testing process",
 		Long:    `Unleashes the gremlins and performs mutation testing on a Go module.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var currentPath string
+			currentPath := "."
 			if len(args) > 0 {
 				currentPath = args[0]
 			}
