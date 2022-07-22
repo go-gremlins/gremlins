@@ -40,17 +40,20 @@ import (
 // It traverses the AST of the project, finds which TokenMutant can be applied and
 // performs the actual mutation testing.
 type Mutator struct {
-	covProfile   coverage.Profile
-	fs           fs.FS
-	execContext  execContext
-	wdManager    workdir.Dealer
-	apply        func(m mutant.Mutant) error
-	rollback     func(m mutant.Mutant) error
-	mutantStream chan mutant.Mutant
+	covProfile        coverage.Profile
+	testExecutionTime time.Duration
+	fs                fs.FS
+	execContext       execContext
+	wdManager         workdir.Dealer
+	apply             func(m mutant.Mutant) error
+	rollback          func(m mutant.Mutant) error
+	mutantStream      chan mutant.Mutant
 
 	dryRun    bool
 	buildTags string
 }
+
+const timeoutCoefficient = 2
 
 type execContext = func(name string, args ...string) *exec.Cmd
 
@@ -68,12 +71,13 @@ type Option func(m Mutator) Mutator
 // The apply and rollback functions are wrappers around the TokenMutant apply and
 // rollback. These can be overridden with nop functions in tests. Not an
 // ideal setup. In the future we can think of a better way to handle this.
-func New(fs fs.FS, p coverage.Profile, manager workdir.Dealer, opts ...Option) Mutator {
+func New(fs fs.FS, r coverage.Result, manager workdir.Dealer, opts ...Option) Mutator {
 	mut := Mutator{
-		wdManager:   manager,
-		covProfile:  p,
-		fs:          fs,
-		execContext: exec.Command,
+		wdManager:         manager,
+		covProfile:        r.Profile,
+		testExecutionTime: r.Elapsed * timeoutCoefficient,
+		fs:                fs,
+		execContext:       exec.Command,
 		apply: func(m mutant.Mutant) error {
 			return m.Apply()
 		},
@@ -131,8 +135,6 @@ func WithApplyAndRollback(a func(m mutant.Mutant) error, r func(m mutant.Mutant)
 // TokenMutant survived, so it will be LIVED, if the tests fail, the TokenMutant will
 // be KILLED.
 func (mu *Mutator) Run() report.Results {
-	start := time.Now()
-	log.Infoln("Looking for mutants...")
 	mu.mutantStream = make(chan mutant.Mutant)
 	go func() {
 		_ = fs.WalkDir(mu.fs, ".", func(path string, d fs.DirEntry, err error) error {
@@ -144,9 +146,10 @@ func (mu *Mutator) Run() report.Results {
 		})
 		close(mu.mutantStream)
 	}()
+
+	start := time.Now()
 	res := mu.executeTests()
-	end := time.Now()
-	res.Elapsed = end.Sub(start)
+	res.Elapsed = time.Since(start)
 
 	return res
 }
@@ -190,7 +193,7 @@ func (mu *Mutator) mutationStatus(pos token.Position) mutant.Status {
 
 func (mu *Mutator) executeTests() report.Results {
 	if mu.dryRun {
-		log.Infoln("Running in 'dry-run' mode.")
+		log.Infoln("Running in 'dry-run' mode...")
 	} else {
 		log.Infoln("Executing mutation testing on covered mutants...")
 	}
@@ -214,7 +217,7 @@ func (mu *Mutator) executeTests() report.Results {
 			continue
 		}
 		m.SetStatus(mutant.Lived)
-		args := []string{"test", "-timeout", "5s"}
+		args := []string{"test", "-timeout", mu.testExecutionTime.String()}
 		if mu.buildTags != "" {
 			args = append(args, "-tags", mu.buildTags)
 		}
