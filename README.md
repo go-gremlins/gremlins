@@ -5,6 +5,7 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/970114e2c5a770987a75/maintainability)](https://codeclimate.com/github/k3rn31/gremlins/maintainability)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/5b54f2c399214e53aa93cf0df837855a)](https://www.codacy.com/gh/k3rn31/gremlins/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=k3rn31/gremlins&amp;utm_campaign=Badge_Grade)
 [![codecov](https://codecov.io/gh/k3rn31/gremlins/branch/main/graph/badge.svg?token=MICF9A6U3J)](https://codecov.io/gh/k3rn31/gremlins)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fk3rn31%2Fgremlins.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fk3rn31%2Fgremlins?ref=badge_shield)
 
 **WARNING: Gremlins is in its early stages of development, and it can be unstable, poorly performant and not really
 polished.**
@@ -203,3 +204,7 @@ There is not much around, except from:
 ## Contributing
 
 See [contributing](CONTRIBUTING.md).
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fk3rn31%2Fgremlins.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fk3rn31%2Fgremlins?ref=badge_large)
