@@ -205,6 +205,6 @@ There is not much around, except from:
 
 See [contributing](CONTRIBUTING.md).
 
-
 ## License
+Gremlins is released under the [Apache 2.0 License](LICENSE)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fk3rn31%2Fgremlins.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fk3rn31%2Fgremlins?ref=badge_large)
