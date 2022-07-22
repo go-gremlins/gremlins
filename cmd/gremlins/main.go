@@ -31,11 +31,15 @@ var (
 )
 
 func main() {
+	var exitCode int
+	defer func() {
+		os.Exit(exitCode)
+	}()
 	log.Init(os.Stdout)
 	err := cmd.Execute(buildVersion(version, date, builtBy))
 	if err != nil {
 		log.Errorln(err)
-		os.Exit(1)
+		exitCode = 1
 	}
 }
 

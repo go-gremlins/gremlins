@@ -17,6 +17,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/k3rn31/gremlins/coverage"
 	"github.com/k3rn31/gremlins/log"
 	"github.com/k3rn31/gremlins/mutator"
@@ -41,16 +42,22 @@ func newUnleashCmd() *unleashCmd {
 		Args:    cobra.MaximumNArgs(1),
 		Short:   "Executes the mutation testing process",
 		Long:    `Unleashes the gremlins and performs mutation testing on a Go module.`,
-		Run: func(cmd *cobra.Command, args []string) {
-			currentPath := "."
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var currentPath string
 			if len(args) > 0 {
 				currentPath = args[0]
+			}
+			if currentPath != "." {
+				err := os.Chdir(currentPath)
+				if err != nil {
+					return err
+				}
+				currentPath = "."
 			}
 
 			workDir, err := ioutil.TempDir(os.TempDir(), "gremlins-")
 			if err != nil {
-				log.Errorf("impossible to create the workdir: %s", err)
-				os.Exit(1)
+				return fmt.Errorf("impossible to create the workdir: %w", err)
 			}
 			defer func(n string) {
 				err := os.RemoveAll(n)
@@ -61,14 +68,12 @@ func newUnleashCmd() *unleashCmd {
 
 			c, err := coverage.New(workDir, currentPath, coverage.WithBuildTags(buildTags))
 			if err != nil {
-				log.Errorf("directory %s does not contain main module\n", currentPath)
-				os.Exit(1)
+				return fmt.Errorf("directory %q does not contain main module: %w", currentPath, err)
 			}
 
 			p, err := c.Run()
 			if err != nil {
-				log.Errorln(err)
-				os.Exit(1)
+				return err
 			}
 
 			d := workdir.NewDealer(workDir, currentPath)
@@ -78,6 +83,8 @@ func newUnleashCmd() *unleashCmd {
 			results := mut.Run()
 
 			report.Do(results)
+
+			return nil
 		},
 	}
 
