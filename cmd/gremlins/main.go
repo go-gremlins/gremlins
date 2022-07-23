@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/fatih/color"
 	"github.com/k3rn31/gremlins/cmd"
 	"github.com/k3rn31/gremlins/log"
 	"os"
@@ -35,7 +36,7 @@ func main() {
 	defer func() {
 		os.Exit(exitCode)
 	}()
-	log.Init(os.Stdout)
+	log.Init(color.Output, color.Error)
 	err := cmd.Execute(buildVersion(version, date, builtBy))
 	if err != nil {
 		log.Errorln(err)

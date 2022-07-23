@@ -25,28 +25,24 @@ import (
 
 var fgRed = color.New(color.FgRed).SprintFunc()
 
-type log struct {
-	writer io.Writer
-}
-
 var mutex = &sync.Mutex{}
 var instance *log
 
-// Init initializes a new logger with the given io.Writer. If no writer is
-// provided the logger behaves as NoOp. The initialized instance
+// Init initializes a new logger with the given out and eOut io.Writer.
+// If no out is  provided the logger behaves as NoOp. The initialized instance
 // is a singleton.
 //
 // If one of the logging methods is called, and the logger hasn't been
-// initialized yet, a new logger will be initialized with a noOp writer.
-func Init(w io.Writer) {
-	if w == nil {
+// initialized yet, a new logger will be initialized with a noOp out.
+func Init(out io.Writer, eOut io.Writer) {
+	if out == nil || eOut == nil {
 		return
 	}
 	if instance == nil {
 		mutex.Lock()
 		defer mutex.Unlock()
 		if instance == nil {
-			instance = &log{writer: w}
+			instance = &log{out: out, eOut: eOut}
 		}
 	}
 }
@@ -78,7 +74,7 @@ func Errorf(f string, args ...any) {
 		return
 	}
 	msg := fmt.Sprintf(f, args...)
-	instance.writef("%s: %s", fgRed("ERROR"), msg)
+	instance.eWritef("%s: %s", fgRed("ERROR"), msg)
 }
 
 // Errorln logs an error line.
@@ -87,13 +83,26 @@ func Errorln(a any) {
 		return
 	}
 	msg := fmt.Sprintf("%s: %s", fgRed("ERROR"), a)
-	instance.writeln(msg)
+	instance.eWriteln(msg)
+}
+
+type log struct {
+	out  io.Writer
+	eOut io.Writer
 }
 
 func (l *log) writef(f string, args ...any) {
-	_, _ = fmt.Fprintf(instance.writer, f, args...)
+	_, _ = fmt.Fprintf(l.out, f, args...)
 }
 
 func (l *log) writeln(a any) {
-	_, _ = fmt.Fprintln(instance.writer, a)
+	_, _ = fmt.Fprintln(l.out, a)
+}
+
+func (l *log) eWritef(f string, args ...any) {
+	_, _ = fmt.Fprintf(l.eOut, f, args...)
+}
+
+func (l *log) eWriteln(a any) {
+	_, _ = fmt.Fprintln(l.eOut, a)
 }

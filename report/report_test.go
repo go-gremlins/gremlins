@@ -30,7 +30,7 @@ import (
 func TestReport(t *testing.T) {
 	t.Run("it reports findings in normal run", func(t *testing.T) {
 		out := &bytes.Buffer{}
-		log.Init(out)
+		log.Init(out, &bytes.Buffer{})
 		defer log.Reset()
 
 		mutants := []mutant.Mutant{
@@ -61,7 +61,7 @@ func TestReport(t *testing.T) {
 
 	t.Run("it reports findings in dry-run", func(t *testing.T) {
 		out := &bytes.Buffer{}
-		log.Init(out)
+		log.Init(out, &bytes.Buffer{})
 		defer log.Reset()
 
 		mutants := []mutant.Mutant{
@@ -88,9 +88,10 @@ func TestReport(t *testing.T) {
 			t.Errorf(cmp.Diff(want, got))
 		}
 	})
+
 	t.Run("it reports nothing if no result", func(t *testing.T) {
 		out := &bytes.Buffer{}
-		log.Init(out)
+		log.Init(out, &bytes.Buffer{})
 		defer log.Reset()
 
 		var mutants []mutant.Mutant
@@ -114,7 +115,7 @@ func TestReport(t *testing.T) {
 func TestMutantLog(t *testing.T) {
 	out := &bytes.Buffer{}
 	defer out.Reset()
-	log.Init(out)
+	log.Init(out, &bytes.Buffer{})
 	defer log.Reset()
 
 	m := stubMutant{mutant.Lived, mutant.ConditionalsBoundary}
