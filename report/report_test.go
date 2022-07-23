@@ -148,7 +148,7 @@ func (s stubMutant) Type() mutant.Type {
 	return s.mutantType
 }
 
-func (s stubMutant) SetType(_ mutant.Type) {
+func (stubMutant) SetType(_ mutant.Type) {
 	panic("implement me")
 }
 
@@ -156,11 +156,11 @@ func (s stubMutant) Status() mutant.Status {
 	return s.status
 }
 
-func (s stubMutant) SetStatus(_ mutant.Status) {
+func (stubMutant) SetStatus(_ mutant.Status) {
 	panic("implement me")
 }
 
-func (s stubMutant) Position() token.Position {
+func (stubMutant) Position() token.Position {
 	return token.Position{
 		Filename: "aFolder/aFile.go",
 		Offset:   0,
@@ -169,18 +169,18 @@ func (s stubMutant) Position() token.Position {
 	}
 }
 
-func (s stubMutant) Pos() token.Pos {
+func (stubMutant) Pos() token.Pos {
 	return 123
 }
 
-func (s stubMutant) SetWorkdir(_ string) {
+func (stubMutant) SetWorkdir(_ string) {
 	panic("implement me")
 }
 
-func (s stubMutant) Apply() error {
+func (stubMutant) Apply() error {
 	panic("implement me")
 }
 
-func (s stubMutant) Rollback() error {
+func (stubMutant) Rollback() error {
 	panic("implement me")
 }
