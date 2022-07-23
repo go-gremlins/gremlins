@@ -29,21 +29,24 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+	"time"
 )
 
-func coveredPosition(fixture string) coverage.Profile {
+func coveredPosition(fixture string) coverage.Result {
 	fn := filenameFromFixture(fixture)
-	return coverage.Profile{fn: {{StartLine: 6, EndLine: 7, StartCol: 8, EndCol: 9}}}
+	p := coverage.Profile{fn: {{StartLine: 6, EndLine: 7, StartCol: 8, EndCol: 9}}}
+	return coverage.Result{Profile: p, Elapsed: 1 * time.Second}
 }
 
-func notCoveredPosition(fixture string) coverage.Profile {
+func notCoveredPosition(fixture string) coverage.Result {
 	fn := filenameFromFixture(fixture)
-	return coverage.Profile{fn: {{StartLine: 9, EndLine: 9, StartCol: 8, EndCol: 9}}}
+	p := coverage.Profile{fn: {{StartLine: 9, EndLine: 9, StartCol: 8, EndCol: 9}}}
+	return coverage.Result{Profile: p, Elapsed: 1 * time.Second}
 }
 
 type dealerStub struct{}
 
-func (wm dealerStub) Get() (string, func(), error) {
+func (dealerStub) Get() (string, func(), error) {
 	return ".", func() {}, nil
 }
 
@@ -53,7 +56,7 @@ func TestMutations(t *testing.T) {
 		fixture    string
 		mutantType mutant.Type
 		token      token.Token
-		covProfile coverage.Profile
+		covResult  coverage.Result
 		mutStatus  mutant.Status
 	}{
 		// CONDITIONAL BOUNDARIES
@@ -62,7 +65,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/gtr_go",
 			mutantType: mutant.ConditionalsBoundary,
 			token:      token.GTR,
-			covProfile: coveredPosition("testdata/fixtures/gtr_go"),
+			covResult:  coveredPosition("testdata/fixtures/gtr_go"),
 			mutStatus:  mutant.Runnable,
 		},
 		{
@@ -70,7 +73,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/lss_go",
 			mutantType: mutant.ConditionalsBoundary,
 			token:      token.LSS,
-			covProfile: notCoveredPosition("testdata/fixtures/lss_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/lss_go"),
 			mutStatus:  mutant.NotCovered,
 		},
 		{
@@ -78,7 +81,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/leq_go",
 			mutantType: mutant.ConditionalsBoundary,
 			token:      token.LEQ,
-			covProfile: notCoveredPosition("testdata/fixtures/leq_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/leq_go"),
 			mutStatus:  mutant.NotCovered,
 		},
 		{
@@ -86,7 +89,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/geq_go",
 			mutantType: mutant.ConditionalsBoundary,
 			token:      token.GEQ,
-			covProfile: notCoveredPosition("testdata/fixtures/geq_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/geq_go"),
 			mutStatus:  mutant.NotCovered,
 		},
 		// INCREMENT_DECREMENT
@@ -95,7 +98,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/inc_go",
 			mutantType: mutant.IncrementDecrement,
 			token:      token.INC,
-			covProfile: notCoveredPosition("testdata/fixtures/inc_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/inc_go"),
 			mutStatus:  mutant.NotCovered,
 		},
 		{
@@ -103,7 +106,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/dec_go",
 			mutantType: mutant.IncrementDecrement,
 			token:      token.DEC,
-			covProfile: notCoveredPosition("testdata/fixtures/dec_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/dec_go"),
 			mutStatus:  mutant.NotCovered,
 		},
 		// CONDITIONAL_NEGATION
@@ -112,7 +115,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/eql_go",
 			mutantType: mutant.ConditionalsNegation,
 			token:      token.EQL,
-			covProfile: notCoveredPosition("testdata/fixtures/eql_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/eql_go"),
 			mutStatus:  mutant.NotCovered,
 		},
 		{
@@ -120,7 +123,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/neq_go",
 			mutantType: mutant.ConditionalsNegation,
 			token:      token.NEQ,
-			covProfile: notCoveredPosition("testdata/fixtures/neq_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/neq_go"),
 			mutStatus:  mutant.NotCovered,
 		},
 		{
@@ -128,7 +131,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/leq_go",
 			mutantType: mutant.ConditionalsNegation,
 			token:      token.LEQ,
-			covProfile: notCoveredPosition("testdata/fixtures/leq_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/leq_go"),
 			mutStatus:  mutant.NotCovered,
 		},
 		{
@@ -136,7 +139,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/gtr_go",
 			mutantType: mutant.ConditionalsNegation,
 			token:      token.GTR,
-			covProfile: notCoveredPosition("testdata/fixtures/gtr_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/gtr_go"),
 			mutStatus:  mutant.NotCovered,
 		},
 		{
@@ -144,7 +147,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/geq_go",
 			mutantType: mutant.ConditionalsNegation,
 			token:      token.GEQ,
-			covProfile: notCoveredPosition("testdata/fixtures/geq_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/geq_go"),
 			mutStatus:  mutant.NotCovered,
 		},
 		{
@@ -152,7 +155,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/lss_go",
 			mutantType: mutant.ConditionalsNegation,
 			token:      token.LSS,
-			covProfile: notCoveredPosition("testdata/fixtures/lss_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/lss_go"),
 			mutStatus:  mutant.NotCovered,
 		},
 		// INVERT_NEGATIVES
@@ -161,7 +164,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/negative_sub_go",
 			mutantType: mutant.InvertNegatives,
 			token:      token.SUB,
-			covProfile: notCoveredPosition("testdata/fixtures/negative_sub_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/negative_sub_go"),
 			mutStatus:  mutant.NotCovered,
 		},
 		// ARITHMETIC_BASIC
@@ -170,7 +173,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/add_go",
 			mutantType: mutant.ArithmeticBase,
 			token:      token.ADD,
-			covProfile: notCoveredPosition("testdata/fixtures/add_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/add_go"),
 			mutStatus:  mutant.NotCovered,
 		},
 		{
@@ -178,7 +181,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/sub_go",
 			mutantType: mutant.ArithmeticBase,
 			token:      token.SUB,
-			covProfile: notCoveredPosition("testdata/fixtures/sub_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/sub_go"),
 			mutStatus:  mutant.NotCovered,
 		},
 		{
@@ -186,7 +189,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/mul_go",
 			mutantType: mutant.ArithmeticBase,
 			token:      token.MUL,
-			covProfile: notCoveredPosition("testdata/fixtures/mul_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/mul_go"),
 			mutStatus:  mutant.NotCovered,
 		},
 		{
@@ -194,7 +197,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/quo_go",
 			mutantType: mutant.ArithmeticBase,
 			token:      token.QUO,
-			covProfile: notCoveredPosition("testdata/fixtures/quo_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/quo_go"),
 			mutStatus:  mutant.NotCovered,
 		},
 		{
@@ -202,7 +205,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/rem_go",
 			mutantType: mutant.ArithmeticBase,
 			token:      token.REM,
-			covProfile: notCoveredPosition("testdata/fixtures/rem_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/rem_go"),
 			mutStatus:  mutant.NotCovered,
 		},
 		// Common behaviours
@@ -211,7 +214,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/geq_land_true_go",
 			mutantType: mutant.ConditionalsBoundary,
 			token:      token.GEQ,
-			covProfile: notCoveredPosition("testdata/fixtures/geq_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/geq_go"),
 			mutStatus:  mutant.NotCovered,
 		},
 		{
@@ -219,7 +222,7 @@ func TestMutations(t *testing.T) {
 			fixture:    "testdata/fixtures/illegal_go",
 			mutantType: mutant.ConditionalsBoundary,
 			token:      token.ILLEGAL,
-			covProfile: notCoveredPosition("testdata/fixtures/illegal_go"),
+			covResult:  notCoveredPosition("testdata/fixtures/illegal_go"),
 		},
 	}
 	for _, tc := range testCases {
@@ -232,7 +235,7 @@ func TestMutations(t *testing.T) {
 			mapFS := fstest.MapFS{
 				filename: {Data: src},
 			}
-			mut := mutator.New(mapFS, tc.covProfile, dealerStub{}, mutator.WithDryRun(true))
+			mut := mutator.New(mapFS, tc.covResult, dealerStub{}, mutator.WithDryRun(true))
 			res := mut.Run()
 			got := res.Mutants
 
@@ -265,7 +268,7 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 		"file_test.go": {Data: file},
 		"folder1/file": {Data: file},
 	}
-	mut := mutator.New(sys, nil, dealerStub{}, mutator.WithDryRun(true))
+	mut := mutator.New(sys, coverage.Result{}, dealerStub{}, mutator.WithDryRun(true))
 	res := mut.Run()
 	got := res.Mutants
 
@@ -305,7 +308,7 @@ func TestMutatorRun(t *testing.T) {
 
 	_ = mut.Run()
 
-	want := "go test -timeout 5s -tags tag1 tag2 ./..."
+	want := "go test -timeout 2s -tags tag1 tag2 ./..."
 	got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
 
 	if !cmp.Equal(got, want) {
@@ -318,28 +321,28 @@ func TestMutatorTestExecution(t *testing.T) {
 		name          string
 		fixture       string
 		testResult    execContext
-		covProfile    coverage.Profile
+		covResult     coverage.Result
 		wantMutStatus mutant.Status
 	}{
 		{
 			name:          "it skips NOT_COVERED",
 			fixture:       "testdata/fixtures/gtr_go",
 			testResult:    fakeExecCommandSuccess,
-			covProfile:    notCoveredPosition("testdata/fixtures/gtr_go"),
+			covResult:     notCoveredPosition("testdata/fixtures/gtr_go"),
 			wantMutStatus: mutant.NotCovered,
 		},
 		{
 			name:          "if tests pass then mutation is LIVED",
 			fixture:       "testdata/fixtures/gtr_go",
 			testResult:    fakeExecCommandSuccess,
-			covProfile:    coveredPosition("testdata/fixtures/gtr_go"),
+			covResult:     coveredPosition("testdata/fixtures/gtr_go"),
 			wantMutStatus: mutant.Lived,
 		},
 		{
 			name:          "if tests fails then mutation is KILLED",
 			fixture:       "testdata/fixtures/gtr_go",
 			testResult:    fakeExecCommandFailure,
-			covProfile:    coveredPosition("testdata/fixtures/gtr_go"),
+			covResult:     coveredPosition("testdata/fixtures/gtr_go"),
 			wantMutStatus: mutant.Killed,
 		},
 	}
@@ -355,7 +358,7 @@ func TestMutatorTestExecution(t *testing.T) {
 				filename: {Data: src},
 			}
 
-			mut := mutator.New(mapFS, tc.covProfile, dealerStub{},
+			mut := mutator.New(mapFS, tc.covResult, dealerStub{},
 				mutator.WithExecContext(tc.testResult),
 				mutator.WithApplyAndRollback(
 					func(m mutant.Mutant) error {
