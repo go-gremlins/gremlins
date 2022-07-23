@@ -36,6 +36,8 @@ const (
 	Runnable
 	Lived
 	Killed
+	NotViable
+	TimedOut
 )
 
 func (ms Status) String() string {
@@ -48,6 +50,10 @@ func (ms Status) String() string {
 		return "LIVED"
 	case Killed:
 		return "KILLED"
+	case NotViable:
+		return "NOT VIABLE"
+	case TimedOut:
+		return "TIMED OUT"
 	default:
 		panic("this should not happen")
 	}

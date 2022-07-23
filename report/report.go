@@ -27,6 +27,8 @@ import (
 var (
 	fgRed      = color.New(color.FgRed).SprintFunc()
 	fgGreen    = color.New(color.FgGreen).SprintFunc()
+	fgHiGreen  = color.New(color.FgHiGreen).SprintFunc()
+	fgHiBlack  = color.New(color.FgHiBlack).SprintFunc()
 	fgHiYellow = color.New(color.FgYellow).SprintFunc()
 )
 
@@ -46,7 +48,7 @@ func Do(results Results) {
 		log.Infoln("\nNo results to report.")
 		return
 	}
-	var k, l, n, r int
+	var k, l, t, nc, nv, r int
 	for _, m := range results.Mutants {
 		switch m.Status() {
 		case mutant.Killed:
@@ -54,16 +56,20 @@ func Do(results Results) {
 		case mutant.Lived:
 			l++
 		case mutant.NotCovered:
-			n++
+			nc++
+		case mutant.TimedOut:
+			t++
+		case mutant.NotViable:
+			nv++
 		case mutant.Runnable:
 			r++
 		}
 	}
 	elapsed := durafmt.Parse(results.Elapsed).LimitFirstN(2)
-	notCovered := fgHiYellow(n)
+	notCovered := fgHiYellow(nc)
 	if r > 0 {
 		runnable := fgGreen(r)
-		rCoverage := float64(r) / float64(r+n) * 100
+		rCoverage := float64(r) / float64(r+nc) * 100
 		log.Infoln("")
 		log.Infof("Dry run completed in %s\n", elapsed.String())
 		log.Infof("Runnable: %s, Not covered: %s\n", runnable, notCovered)
@@ -71,12 +77,15 @@ func Do(results Results) {
 		return
 	}
 	tEfficacy := float64(k) / float64(k+l) * 100
-	rCoverage := float64(k+l) / float64(k+l+n) * 100
-	killed := fgGreen(k)
+	rCoverage := float64(k+l) / float64(k+l+nc) * 100
+	killed := fgHiGreen(k)
 	lived := fgRed(l)
+	timedOut := fgGreen(t)
+	notViable := fgHiBlack(nv)
 	log.Infoln("")
 	log.Infof("Mutation testing completed in %s\n", elapsed.String())
 	log.Infof("Killed: %s, Lived: %s, Not covered: %s\n", killed, lived, notCovered)
+	log.Infof("Timed out: %s, Not viable: %s\n", timedOut, notViable)
 	log.Infof("Test efficacy: %.2f%%\n", tEfficacy)
 	log.Infof("Mutant coverage: %.2f%%\n", rCoverage)
 }
@@ -90,11 +99,15 @@ func Mutant(m mutant.Mutant) {
 	status := m.Status().String()
 	switch m.Status() {
 	case mutant.Killed, mutant.Runnable:
-		status = fgGreen(m.Status())
+		status = fgHiGreen(m.Status())
 	case mutant.Lived:
 		status = fgRed(m.Status())
 	case mutant.NotCovered:
 		status = fgHiYellow(m.Status())
+	case mutant.TimedOut:
+		status = fgGreen(m.Status())
+	case mutant.NotViable:
+		status = fgHiBlack(m.Status())
 	}
 	log.Infof("%s%s %s at %s\n", padding(m.Status()), status, m.Type(), m.Position())
 }
