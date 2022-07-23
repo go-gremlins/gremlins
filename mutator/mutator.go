@@ -130,7 +130,7 @@ func WithApplyAndRollback(a func(m mutant.Mutant) error, r func(m mutant.Mutant)
 // KILLED or LIVED depending on the result. If the tests pass, it means the
 // TokenMutant survived, so it will be LIVED, if the tests fail, the TokenMutant will
 // be KILLED.
-func (mu Mutator) Run() report.Results {
+func (mu *Mutator) Run() report.Results {
 	start := time.Now()
 	log.Infoln("Looking for mutants...")
 	mu.mutantStream = make(chan mutant.Mutant)
@@ -151,7 +151,7 @@ func (mu Mutator) Run() report.Results {
 	return res
 }
 
-func (mu Mutator) runOnFile(fileName string, src io.Reader) {
+func (mu *Mutator) runOnFile(fileName string, src io.Reader) {
 	set := token.NewFileSet()
 	file, _ := parser.ParseFile(set, fileName, src, parser.ParseComments)
 	ast.Inspect(file, func(node ast.Node) bool {
@@ -164,7 +164,7 @@ func (mu Mutator) runOnFile(fileName string, src io.Reader) {
 	})
 }
 
-func (mu Mutator) findMutations(set *token.FileSet, file *ast.File, node *internal.NodeToken) {
+func (mu *Mutator) findMutations(set *token.FileSet, file *ast.File, node *internal.NodeToken) {
 	mutantTypes, ok := internal.TokenMutantType[node.Tok()]
 	if !ok {
 		return
@@ -179,7 +179,7 @@ func (mu Mutator) findMutations(set *token.FileSet, file *ast.File, node *intern
 	}
 }
 
-func (mu Mutator) mutationStatus(pos token.Position) mutant.Status {
+func (mu *Mutator) mutationStatus(pos token.Position) mutant.Status {
 	var status mutant.Status
 	if mu.covProfile.IsCovered(pos) {
 		status = mutant.Runnable
@@ -188,7 +188,7 @@ func (mu Mutator) mutationStatus(pos token.Position) mutant.Status {
 	return status
 }
 
-func (mu Mutator) executeTests() report.Results {
+func (mu *Mutator) executeTests() report.Results {
 	if mu.dryRun {
 		log.Infoln("Running in 'dry-run' mode.")
 	} else {
