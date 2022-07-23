@@ -380,14 +380,14 @@ func TestMutatorTestExecution(t *testing.T) {
 	}
 }
 
-func TestCoverageProcessSuccess(t *testing.T) {
+func TestCoverageProcessSuccess(_ *testing.T) {
 	if os.Getenv("GO_TEST_PROCESS") != "1" {
 		return
 	}
 	os.Exit(0)
 }
 
-func TestCoverageProcessFailure(t *testing.T) {
+func TestCoverageProcessFailure(_ *testing.T) {
 	if os.Getenv("GO_TEST_PROCESS") != "1" {
 		return
 	}

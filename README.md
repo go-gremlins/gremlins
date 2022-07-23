@@ -3,6 +3,7 @@
 [![Tests](https://github.com/k3rn31/gremlins/actions/workflows/ci.yml/badge.svg)](https://github.com/k3rn31/gremlins/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/k3rn31/gremlins)](https://goreportcard.com/report/github.com/k3rn31/gremlins)
 [![Maintainability](https://api.codeclimate.com/v1/badges/970114e2c5a770987a75/maintainability)](https://codeclimate.com/github/k3rn31/gremlins/maintainability)
+[![DeepSource](https://deepsource.io/gh/k3rn31/gremlins.svg/?label=active+issues&token=cE9h3dLg1IepQkfT26BMgObn)](https://deepsource.io/gh/k3rn31/gremlins/?ref=repository-badge)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/5b54f2c399214e53aa93cf0df837855a)](https://www.codacy.com/gh/k3rn31/gremlins/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=k3rn31/gremlins&amp;utm_campaign=Badge_Grade)
 [![codecov](https://codecov.io/gh/k3rn31/gremlins/branch/main/graph/badge.svg?token=MICF9A6U3J)](https://codecov.io/gh/k3rn31/gremlins)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fk3rn31%2Fgremlins.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fk3rn31%2Fgremlins?ref=badge_shield)
