@@ -140,7 +140,7 @@ func openFile(fs *token.FileSet, tokPos token.Pos, workdir string) (*os.File, er
 	if workdir != "" {
 		workdir += "/"
 	}
-	f, err := os.OpenFile(workdir+file.Name(), os.O_CREATE|os.O_WRONLY, 0777)
+	f, err := os.OpenFile(workdir+file.Name(), os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return nil, err
 	}
