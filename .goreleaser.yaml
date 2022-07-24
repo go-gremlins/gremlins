@@ -1,4 +1,8 @@
 project_name: gremlins
+before:
+  hooks:
+    - make clean
+    - go mod download
 builds:
   - main: ./cmd/gremlins
     env:
@@ -6,22 +10,52 @@ builds:
     goos:
       - linux
       - darwin
+    goarch:
+      - 386
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: 386
+release:
+  github:
+  draft: true
+  prerelease: auto
+nfpms:
+  - homepage: https://github.com/k3rn31/gremlins
+    description: A mutation testing tool for Go.
+    license: Apache 2.0 License
+    maintainer: Davide Petilli <davide.petilli@gmail.com>
+    formats:
+      - deb
+      - rpm
+brews:
+  - tap:
+      owner: k3rn31
+      name: gremlins-tap
+    homepage: https://github.com/k3rn31/gremlins
+    description: A mutation testing tool for Go.
+    license: Apache 2.0 License
+    skip_upload: auto
+    test: |
+      system "#{bin}/gremlins --version"
 checksum:
+  name_template: 'checksums.txt'
 source:
   enabled: true
 changelog:
   skip: false
-  use: github
+  sort: asc
   filters:
     exclude:
-      - '^test:'
-      - '^docs:'
-      - '^chore:'
-      - 'merge conflict'
+      - '(?i)^docs?:'
+      - '(?i)^docs\([^:]+\):'
+      - '(?i)^docs\[[^:]+\]:'
+      - '^tests?:'
+      - '(?i)^dev:'
+      - '^build\(deps\): bump .* in /docs \(#\d+\)'
+      - '^build\(deps\): bump .* in /\.github/peril \(#\d+\)'
       - Merge pull request
-      - Merge remote-tracking branch
       - Merge branch
-      - go mod tidy
-release:
-  draft: true
-  prerelease: auto
+snapshot:
+  name_template: "{{ .Tag }}-next"
