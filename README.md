@@ -8,8 +8,8 @@
 [![codecov](https://codecov.io/gh/k3rn31/gremlins/branch/main/graph/badge.svg?token=MICF9A6U3J)](https://codecov.io/gh/k3rn31/gremlins)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fk3rn31%2Fgremlins.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fk3rn31%2Fgremlins?ref=badge_shield)
 
-**WARNING: Gremlins is in its early stages of development, and it can be unstable, poorly performant and not really
-polished.**
+**WARNING1: Gremlins is in its early stages of development, and it can be unstable and/or poorly performant.**
+**WARNING2: Gremlins isn't currently supported on Windows.**
 
 Gremlins is a mutation testing tool for Go.
 
@@ -27,6 +27,7 @@ Gremlins is a mutation testing tool for Go.
 - [What Inspired Gremlins](#what-inspired-gremlins)
 - [Other Mutation Testing Tools for Go](#other-mutation-testing-tools-for-go)
 - [Contributing](#contributing)
+- [License](#license)
 
 ## What is Mutation Testing
 
@@ -101,6 +102,16 @@ To perform the analysis without actually running the tests:
 ```shell
 $ gremlins unleash --dry-run
 ```
+
+Gremlins will report each mutation as:
+
+- `RUNNABLE`: In _dry-run_ mode, a mutation that can be tested.
+- `NOT COVERED`: A mutation not covered by tests; it will not be tested.
+- `KILLED`: The mutation has been caught by the test suite.
+- `LIVED`: The mutation hasn't been caught by the test suite.
+- `TIMED OUT`: The tests timed out while testing the mutation: the mutation actually made the tests fail, but not
+  explicitly.
+- `NOT VIABLE`: The mutation makes the build fail.
 
 ### Supported mutations
 

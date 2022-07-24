@@ -33,6 +33,9 @@ brews:
   - tap:
       owner: k3rn31
       name: gremlins-tap
+      branch: main
+      token: "{{ .Env.WORKFLOW_PAT }}"
+    folder: Formula
     homepage: https://github.com/k3rn31/gremlins
     description: A mutation testing tool for Go.
     license: Apache 2.0 License

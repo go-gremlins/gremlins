@@ -48,6 +48,16 @@ func TestStatusString(t *testing.T) {
 			mutant.Killed,
 			"KILLED",
 		},
+		{
+			"NotViable",
+			mutant.NotViable,
+			"NOT VIABLE",
+		},
+		{
+			"TimedOut",
+			mutant.TimedOut,
+			"TIMED OUT",
+		},
 	}
 	for _, tc := range testCases {
 		tc := tc

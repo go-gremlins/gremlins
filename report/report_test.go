@@ -37,6 +37,8 @@ func TestReport(t *testing.T) {
 			stubMutant{mutant.Lived, mutant.ConditionalsNegation},
 			stubMutant{mutant.Killed, mutant.ConditionalsNegation},
 			stubMutant{mutant.NotCovered, mutant.ConditionalsNegation},
+			stubMutant{mutant.NotViable, mutant.ConditionalsBoundary},
+			stubMutant{mutant.TimedOut, mutant.ConditionalsBoundary},
 		}
 		data := report.Results{
 			Mutants: mutants,
@@ -51,6 +53,7 @@ func TestReport(t *testing.T) {
 			// Limit the time reporting to the first two units (millis are excluded)
 			"Mutation testing completed in 2 minutes 22 seconds\n" +
 			"Killed: 1, Lived: 1, Not covered: 1\n" +
+			"Timed out: 1, Not viable: 1\n" +
 			"Test efficacy: 50.00%\n" +
 			"Mutant coverage: 66.67%\n"
 
@@ -126,6 +129,10 @@ func TestMutantLog(t *testing.T) {
 	report.Mutant(m)
 	m = stubMutant{mutant.Runnable, mutant.ConditionalsBoundary}
 	report.Mutant(m)
+	m = stubMutant{mutant.NotViable, mutant.ConditionalsBoundary}
+	report.Mutant(m)
+	m = stubMutant{mutant.TimedOut, mutant.ConditionalsBoundary}
+	report.Mutant(m)
 
 	got := out.String()
 
@@ -133,7 +140,9 @@ func TestMutantLog(t *testing.T) {
 		"       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
 		"      KILLED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
 		" NOT COVERED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
-		"    RUNNABLE CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
+		"    RUNNABLE CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"  NOT VIABLE CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"   TIMED OUT CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
 
 	if !cmp.Equal(got, want) {
 		t.Errorf(cmp.Diff(got, want))

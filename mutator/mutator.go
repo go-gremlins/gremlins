@@ -17,6 +17,7 @@
 package mutator
 
 import (
+	"context"
 	"github.com/k3rn31/gremlins/coverage"
 	"github.com/k3rn31/gremlins/log"
 	"github.com/k3rn31/gremlins/mutant"
@@ -55,7 +56,7 @@ type Mutator struct {
 
 const timeoutCoefficient = 2
 
-type execContext = func(name string, args ...string) *exec.Cmd
+type execContext = func(ctx context.Context, name string, args ...string) *exec.Cmd
 
 // Option for the Mutator initialization.
 type Option func(m Mutator) Mutator
@@ -77,7 +78,7 @@ func New(fs fs.FS, r coverage.Result, manager workdir.Dealer, opts ...Option) Mu
 		covProfile:        r.Profile,
 		testExecutionTime: r.Elapsed * timeoutCoefficient,
 		fs:                fs,
-		execContext:       exec.Command,
+		execContext:       exec.CommandContext,
 		apply: func(m mutant.Mutant) error {
 			return m.Apply()
 		},
@@ -212,24 +213,19 @@ func (mu *Mutator) executeTests() report.Results {
 			report.Mutant(m)
 			continue
 		}
+
 		if err := mu.apply(m); err != nil {
 			log.Errorf("failed to apply mutation at %s - %s\n\t%v", m.Position(), m.Status(), err)
 			continue
 		}
-		m.SetStatus(mutant.Lived)
-		args := []string{"test", "-timeout", mu.testExecutionTime.String()}
-		if mu.buildTags != "" {
-			args = append(args, "-tags", mu.buildTags)
-		}
-		args = append(args, "./...")
-		cmd := mu.execContext("go", args...)
-		if err := cmd.Run(); err != nil {
-			m.SetStatus(mutant.Killed)
-		}
+
+		m.SetStatus(mu.runTests())
+
 		if err := mu.rollback(m); err != nil {
-			log.Errorf("failed to restore mutation at %s - %s\n\t%v", m.Position(), m.Status(), err)
 			// What should we do now?
+			log.Errorf("failed to restore mutation at %s - %s\n\t%v", m.Position(), m.Status(), err)
 		}
+
 		report.Mutant(m)
 		mutants = append(mutants, m)
 	}
@@ -238,4 +234,42 @@ func (mu *Mutator) executeTests() report.Results {
 		Mutants: mutants,
 	}
 	return results
+}
+
+func (mu *Mutator) runTests() mutant.Status {
+	ctx, cancel := context.WithTimeout(context.Background(), mu.testExecutionTime)
+	defer cancel()
+	cmd := mu.execContext(ctx, "go", mu.getTestArgs()...)
+
+	err := cmd.Run()
+	if ctx.Err() == context.DeadlineExceeded {
+		return mutant.TimedOut
+	}
+	if err != nil {
+		err, ok := err.(*exec.ExitError)
+		if ok {
+			return getTestFailedStatus(err.ExitCode())
+		}
+	}
+	return mutant.Lived
+}
+
+func (mu *Mutator) getTestArgs() []string {
+	args := []string{"test"}
+	if mu.buildTags != "" {
+		args = append(args, "-tags", mu.buildTags)
+	}
+	args = append(args, "./...")
+	return args
+}
+
+func getTestFailedStatus(exitCode int) mutant.Status {
+	switch exitCode {
+	case 1:
+		return mutant.Killed
+	case 2:
+		return mutant.NotViable
+	default:
+		return mutant.Lived
+	}
 }

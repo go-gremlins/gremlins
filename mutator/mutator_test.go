@@ -17,6 +17,7 @@
 package mutator_test
 
 import (
+	"context"
 	"fmt"
 	"github.com/google/go-cmp/cmp"
 	"github.com/k3rn31/gremlins/coverage"
@@ -32,16 +33,18 @@ import (
 	"time"
 )
 
+const expectedTimeout = 10 * time.Second
+
 func coveredPosition(fixture string) coverage.Result {
 	fn := filenameFromFixture(fixture)
 	p := coverage.Profile{fn: {{StartLine: 6, EndLine: 7, StartCol: 8, EndCol: 9}}}
-	return coverage.Result{Profile: p, Elapsed: 1 * time.Second}
+	return coverage.Result{Profile: p, Elapsed: expectedTimeout}
 }
 
 func notCoveredPosition(fixture string) coverage.Result {
 	fn := filenameFromFixture(fixture)
 	p := coverage.Profile{fn: {{StartLine: 9, EndLine: 9, StartCol: 8, EndCol: 9}}}
-	return coverage.Result{Profile: p, Elapsed: 1 * time.Second}
+	return coverage.Result{Profile: p, Elapsed: expectedTimeout}
 }
 
 type dealerStub struct{}
@@ -280,9 +283,10 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 type commandHolder struct {
 	command string
 	args    []string
+	timeout time.Duration
 }
 
-type execContext = func(name string, args ...string) *exec.Cmd
+type execContext = func(ctx context.Context, name string, args ...string) *exec.Cmd
 
 func TestMutatorRun(t *testing.T) {
 	t.Parallel()
@@ -308,12 +312,25 @@ func TestMutatorRun(t *testing.T) {
 
 	_ = mut.Run()
 
-	want := "go test -timeout 2s -tags tag1 tag2 ./..."
+	want := "go test -tags tag1 tag2 ./..."
 	got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
 
 	if !cmp.Equal(got, want) {
 		t.Errorf(cmp.Diff(got, want))
 	}
+
+	timeoutDifference := absTimeDiff(holder.timeout, expectedTimeout*2)
+	diffThreshold := 50 * time.Microsecond
+	if timeoutDifference > diffThreshold {
+		t.Errorf("expected timeout to be within %s from the set timeout, got %s", diffThreshold, timeoutDifference)
+	}
+}
+
+func absTimeDiff(a, b time.Duration) time.Duration {
+	if a > b {
+		return a - b
+	}
+	return b - a
 }
 
 func TestMutatorTestExecution(t *testing.T) {
@@ -341,9 +358,16 @@ func TestMutatorTestExecution(t *testing.T) {
 		{
 			name:          "if tests fails then mutation is KILLED",
 			fixture:       "testdata/fixtures/gtr_go",
-			testResult:    fakeExecCommandFailure,
+			testResult:    fakeExecCommandTestsFailure,
 			covResult:     coveredPosition("testdata/fixtures/gtr_go"),
 			wantMutStatus: mutant.Killed,
+		},
+		{
+			name:          "if build fails then mutation is BUILD FAILED",
+			fixture:       "testdata/fixtures/gtr_go",
+			testResult:    fakeExecCommandBuildFailure,
+			covResult:     coveredPosition("testdata/fixtures/gtr_go"),
+			wantMutStatus: mutant.NotViable,
 		},
 	}
 	for _, tc := range testCases {
@@ -390,43 +414,58 @@ func TestCoverageProcessSuccess(_ *testing.T) {
 	os.Exit(0)
 }
 
-func TestCoverageProcessFailure(_ *testing.T) {
+func TestProcessTestsFailure(_ *testing.T) {
 	if os.Getenv("GO_TEST_PROCESS") != "1" {
 		return
 	}
 	os.Exit(1)
 }
 
-func fakeExecCommandSuccess(command string, args ...string) *exec.Cmd {
+func TestProcessBuildFailure(_ *testing.T) {
+	if os.Getenv("GO_TEST_PROCESS") != "1" {
+		return
+	}
+	os.Exit(2)
+}
+
+func fakeExecCommandSuccess(ctx context.Context, command string, args ...string) *exec.Cmd {
 	cs := []string{"-test.run=TestCoverageProcessSuccess", "--", command}
 	cs = append(cs, args...)
 	// #nosec G204 - We are in tests, we don't care
-	cmd := exec.Command(os.Args[0], cs...)
+	cmd := exec.CommandContext(ctx, os.Args[0], cs...)
 	cmd.Env = []string{"GO_TEST_PROCESS=1"}
 	return cmd
 }
 
 func fakeExecCommandSuccessWithHolder(got *commandHolder) execContext {
-	return func(command string, args ...string) *exec.Cmd {
+	return func(ctx context.Context, command string, args ...string) *exec.Cmd {
+		dl, _ := ctx.Deadline()
 		if got != nil {
 			got.command = command
 			got.args = args
+			got.timeout = time.Until(dl)
 		}
 		cs := []string{"-test.run=TestCoverageProcessSuccess", "--", command}
 		cs = append(cs, args...)
-		// #nosec G204 - We are in tests, we don't care
-		cmd := exec.Command(os.Args[0], cs...)
-		cmd.Env = []string{"GO_TEST_PROCESS=1"}
-
-		return cmd
+		return getCmd(ctx, cs)
 	}
 }
 
-func fakeExecCommandFailure(command string, args ...string) *exec.Cmd {
-	cs := []string{"-test.run=TestCoverageProcessFailure", "--", command}
+func fakeExecCommandTestsFailure(ctx context.Context, command string, args ...string) *exec.Cmd {
+	cs := []string{"-test.run=TestProcessTestsFailure", "--", command}
 	cs = append(cs, args...)
+	return getCmd(ctx, cs)
+}
+
+func fakeExecCommandBuildFailure(ctx context.Context, command string, args ...string) *exec.Cmd {
+	cs := []string{"-test.run=TestProcessBuildFailure", "--", command}
+	cs = append(cs, args...)
+	return getCmd(ctx, cs)
+}
+
+func getCmd(ctx context.Context, cs []string) *exec.Cmd {
 	// #nosec G204 - We are in tests, we don't care
-	cmd := exec.Command(os.Args[0], cs...)
+	cmd := exec.CommandContext(ctx, os.Args[0], cs...)
 	cmd.Env = []string{"GO_TEST_PROCESS=1"}
 	return cmd
 }
