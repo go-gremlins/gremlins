@@ -15,6 +15,8 @@ Gremlins is a mutation testing tool for Go.
 
 - [What is Mutation Testing](#what-is-mutation-testing)
 - [How to Use Gremlins](#how-to-use-gremlins)
+  - [Obtain and install](#obtain-and-install)
+  - [Usage](#usage)
 - [Supported Mutations](#supported-mutations)
   - [Conditionals Boundaries](#conditionals-boundaries)
   - [Conditionals Negation](#conditionals-negation)
@@ -29,7 +31,8 @@ Gremlins is a mutation testing tool for Go.
 
 ## What is Mutation Testing
 
-Code coverage is unreliable as a measure of test quality. It is too easy to have tests that exercise a piece of code but don't
+Code coverage is unreliable as a measure of test quality. It is too easy to have tests that exercise a piece of code but
+don't
 test anything at all.
 _Mutation testing_ works by mutating the code exercised by the tests and verifying if the mutation is caught by
 the test suite. Imagine _gremlins_ going into your code and messing around: will your test suit catch their damage?
@@ -37,6 +40,47 @@ the test suite. Imagine _gremlins_ going into your code and messing around: will
 Here is a nice [intro to mutation testing](https://pedrorijo.com/blog/intro-mutation/).
 
 ## How to use Gremlins
+
+### Obtain and install
+
+#### Linux
+
+Download a `.deb` or `.rpm` file from the [release page](https://github.com/k3rn31/gremlins/releases) and install
+with `dpkg -i` and `rpm -i` respectively.
+
+#### MacOS
+
+On macOS, you can use [Homebrew](https://brew.sh/) to install by first tapping the repository. As of now, we use
+a homebrew tap.
+
+```shell
+brew tap k3rn31/gremlins https://github.com/k3rn31/gremlins-tap
+brew install gremlins
+```
+
+#### Manual
+
+- Download the binary appropriate for your platform from the [release page](https://github.com/k3rn31/gremlins/releases)
+  .
+- Put the `gremlins` executable somewhere in your `PATH` (ex. `/usr/local/bin`).
+
+#### From source
+
+To build Gremlins you need the Go compiler, make and golangci-lint for linting.
+You can clone the Gremlins repository and then build it:
+
+```shell
+git clone https://github.com/k3rn31/gremlins.git
+```
+
+Ad then:
+
+``` 
+cd gremlins
+make
+```
+
+### Usage
 
 To execute a mutation test run, from the root of a Go module execute:
 
@@ -84,7 +128,7 @@ Example:
 
 ```go
 if a > b {
-  // Do something
+// Do something
 }
 ```
 
@@ -92,7 +136,7 @@ will be changed to
 
 ```go
 if a < b {
-  // Do something
+// Do something
 }
 ```
 
@@ -111,7 +155,7 @@ Example:
 
 ```go
 if a == b {
-  // Do something
+// Do something
 }
 ```
 
@@ -119,7 +163,7 @@ will be changed to
 
 ```go
 if a != b {
-  // Do something
+// Do something
 }
 ```
 
@@ -134,7 +178,7 @@ Example:
 
 ```go
 func incr(i int) int
-  return i++
+return i++
 }
 ```
 
@@ -142,18 +186,19 @@ will be changed to
 
 ```go
 func incr(i int) int {
-  return i--
+return i--
 }
 ```
 
 #### Invert Negatives
+
 It will invert negative numbers.
 
 Example:
 
 ```go
 func negate(i int) int {
-  return -i
+return -i
 }
 ```
 
@@ -161,7 +206,7 @@ will be changed to
 
 ```go
 func negate(i int) int {
-  return +i
+return +i
 }
 ```
 
@@ -218,6 +263,7 @@ There is not much around, except from:
 See [contributing](CONTRIBUTING.md).
 
 ## License
+
 Gremlins is released under the [Apache 2.0 License](LICENSE)
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fk3rn31%2Fgremlins.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fk3rn31%2Fgremlins?ref=badge_large)
