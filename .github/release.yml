@@ -1,0 +1,16 @@
+changelog:
+  exclude:
+    labels:
+      - c/chore
+      - c/docs
+  categories:
+    - title: New Features and Enhancements 🎉
+      labels:
+        - c/feature
+        - c/enhancement
+    - title: Bugs fixes 🐞
+      labels:
+        - c/bug
+    - title: Other Changes
+      labels:
+        - "*"

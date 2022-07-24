@@ -49,16 +49,6 @@ source:
 changelog:
   skip: false
   sort: asc
-  filters:
-    exclude:
-      - '(?i)^docs?:'
-      - '(?i)^docs\([^:]+\):'
-      - '(?i)^docs\[[^:]+\]:'
-      - '^tests?:'
-      - '(?i)^dev:'
-      - '^build\(deps\): bump .* in /docs \(#\d+\)'
-      - '^build\(deps\): bump .* in /\.github/peril \(#\d+\)'
-      - Merge pull request
-      - Merge branch
+  use: github-native
 snapshot:
   name_template: "{{ .Tag }}-next"
