@@ -2,7 +2,7 @@
 name: 'Bug report'
 about: 'Create a report to help us improve'
 title: '[bug] '
-labels: 'C-bug, triage'
+labels: 'c/bug, c/to-triage'
 assignees: k3rn31
 
 ---

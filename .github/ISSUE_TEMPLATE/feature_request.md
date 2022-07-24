@@ -2,7 +2,7 @@
 name: Feature request
 about: Suggest an idea for this project
 title: ''
-labels: 'C-feature, triage'
+labels: 't/to-triage'
 assignees: k3rn31
 
 ---
