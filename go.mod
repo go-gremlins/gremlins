@@ -1,4 +1,4 @@
-module github.com/k3rn31/gremlins
+module github.com/go-gremlins/gremlins
 
 go 1.18
 

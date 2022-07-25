@@ -18,9 +18,9 @@ package report
 
 import (
 	"github.com/fatih/color"
+	"github.com/go-gremlins/gremlins/log"
+	"github.com/go-gremlins/gremlins/mutant"
 	"github.com/hako/durafmt"
-	"github.com/k3rn31/gremlins/log"
-	"github.com/k3rn31/gremlins/mutant"
 	"time"
 )
 

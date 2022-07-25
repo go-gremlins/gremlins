@@ -17,8 +17,8 @@
 package mutant_test
 
 import (
+	"github.com/go-gremlins/gremlins/mutant"
 	"github.com/google/go-cmp/cmp"
-	"github.com/k3rn31/gremlins/mutant"
 	"testing"
 )
 

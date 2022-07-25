@@ -17,7 +17,7 @@
 package workdir
 
 import (
-	"github.com/k3rn31/gremlins/log"
+	"github.com/go-gremlins/gremlins/log"
 	"io/fs"
 	"os"
 	"path/filepath"

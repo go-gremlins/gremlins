@@ -38,6 +38,7 @@ jobs:
       - name: Report coverage to CodeCov
         uses: codecov/codecov-action@v2
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           files: ./coverage.out
           flags: unittests
@@ -47,7 +48,7 @@ jobs:
         env:
           CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
         with:
-          prefix: github.com/k3rn31/gremlins
+          prefix: github.com/go-gremlins/gremlins
           coverageLocations: |
             ${{github.workspace}}/coverage.out:gocov
       - name: Report coverage to Codacy
