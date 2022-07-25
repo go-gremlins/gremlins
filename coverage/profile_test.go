@@ -17,9 +17,10 @@
 package coverage_test
 
 import (
-	"github.com/k3rn31/gremlins/coverage"
 	"go/token"
 	"testing"
+
+	"github.com/go-gremlins/gremlins/coverage"
 )
 
 func TestIsCovered(t *testing.T) {

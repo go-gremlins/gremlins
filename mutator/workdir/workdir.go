@@ -17,10 +17,11 @@
 package workdir
 
 import (
-	"github.com/k3rn31/gremlins/log"
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/go-gremlins/gremlins/log"
 )
 
 // Dealer is the responsible for creating and returning the reference

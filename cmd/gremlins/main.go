@@ -18,11 +18,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/fatih/color"
-	"github.com/k3rn31/gremlins/cmd"
-	"github.com/k3rn31/gremlins/log"
 	"os"
 	"runtime"
+
+	"github.com/fatih/color"
+
+	"github.com/go-gremlins/gremlins/cmd"
+	"github.com/go-gremlins/gremlins/log"
 )
 
 var (

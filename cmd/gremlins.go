@@ -37,7 +37,7 @@ func (gc gremlinsCmd) execute() error {
 func newRootCmd(version string) *gremlinsCmd {
 	cmd := &cobra.Command{
 		Use: "gremlins",
-		Short: `Gremlins is a mutation testing tool for Go projects, made with love by k3rn31 
+		Short: `Gremlins is a mutation testing tool for Go projects, made with love by k3rn31
 and friends.
 `,
 		Version: version,

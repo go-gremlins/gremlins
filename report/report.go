@@ -17,11 +17,13 @@
 package report
 
 import (
+	"time"
+
 	"github.com/fatih/color"
 	"github.com/hako/durafmt"
-	"github.com/k3rn31/gremlins/log"
-	"github.com/k3rn31/gremlins/mutant"
-	"time"
+
+	"github.com/go-gremlins/gremlins/log"
+	"github.com/go-gremlins/gremlins/mutant"
 )
 
 var (

@@ -18,13 +18,15 @@ package report_test
 
 import (
 	"bytes"
-	"github.com/google/go-cmp/cmp"
-	"github.com/k3rn31/gremlins/log"
-	"github.com/k3rn31/gremlins/mutant"
-	"github.com/k3rn31/gremlins/report"
 	"go/token"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
+
+	"github.com/go-gremlins/gremlins/log"
+	"github.com/go-gremlins/gremlins/mutant"
+	"github.com/go-gremlins/gremlins/report"
 )
 
 func TestReport(t *testing.T) {

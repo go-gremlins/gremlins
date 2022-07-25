@@ -19,10 +19,6 @@ package mutator_test
 import (
 	"context"
 	"fmt"
-	"github.com/google/go-cmp/cmp"
-	"github.com/k3rn31/gremlins/coverage"
-	"github.com/k3rn31/gremlins/mutant"
-	"github.com/k3rn31/gremlins/mutator"
 	"go/token"
 	"io/ioutil"
 	"os"
@@ -31,6 +27,12 @@ import (
 	"testing"
 	"testing/fstest"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
+
+	"github.com/go-gremlins/gremlins/coverage"
+	"github.com/go-gremlins/gremlins/mutant"
+	"github.com/go-gremlins/gremlins/mutator"
 )
 
 const expectedTimeout = 10 * time.Second

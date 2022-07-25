@@ -22,7 +22,7 @@ release:
   draft: true
   prerelease: auto
 nfpms:
-  - homepage: https://github.com/k3rn31/gremlins
+  - homepage: https://github.com/go-gremlins/gremlins
     description: A mutation testing tool for Go.
     license: Apache 2.0 License
     maintainer: Davide Petilli <davide.petilli@gmail.com>
@@ -31,12 +31,12 @@ nfpms:
       - rpm
 brews:
   - tap:
-      owner: k3rn31
-      name: gremlins-tap
+      owner: go-gremlins
+      name: homebrew-tap
       branch: main
       token: "{{ .Env.WORKFLOW_PAT }}"
     folder: Formula
-    homepage: https://github.com/k3rn31/gremlins
+    homepage: https://github.com/go-gremlins/gremlins
     description: A mutation testing tool for Go.
     license: Apache 2.0 License
     skip_upload: auto

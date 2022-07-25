@@ -18,12 +18,14 @@ package workdir_test
 
 import (
 	"fmt"
-	"github.com/google/go-cmp/cmp"
-	"github.com/k3rn31/gremlins/mutator/workdir"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+
+	"github.com/go-gremlins/gremlins/mutator/workdir"
 )
 
 func TestLinkFolder(t *testing.T) {

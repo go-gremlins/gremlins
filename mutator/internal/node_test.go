@@ -17,10 +17,11 @@
 package internal_test
 
 import (
-	"github.com/k3rn31/gremlins/mutator/internal"
 	"go/ast"
 	"go/token"
 	"testing"
+
+	"github.com/go-gremlins/gremlins/mutator/internal"
 )
 
 func TestNewTokenNode(t *testing.T) {

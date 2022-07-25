@@ -17,12 +17,13 @@
 package internal
 
 import (
-	"github.com/k3rn31/gremlins/log"
-	"github.com/k3rn31/gremlins/mutant"
 	"go/ast"
 	"go/printer"
 	"go/token"
 	"os"
+
+	"github.com/go-gremlins/gremlins/log"
+	"github.com/go-gremlins/gremlins/mutant"
 )
 
 // TokenMutant is a mutant.Mutant of a token.Token.
