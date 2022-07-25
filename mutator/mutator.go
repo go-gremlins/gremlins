@@ -18,12 +18,12 @@ package mutator
 
 import (
 	"context"
-	"github.com/k3rn31/gremlins/coverage"
-	"github.com/k3rn31/gremlins/log"
-	"github.com/k3rn31/gremlins/mutant"
-	"github.com/k3rn31/gremlins/mutator/internal"
-	"github.com/k3rn31/gremlins/mutator/workdir"
-	"github.com/k3rn31/gremlins/report"
+	"github.com/go-gremlins/gremlins/coverage"
+	"github.com/go-gremlins/gremlins/log"
+	"github.com/go-gremlins/gremlins/mutant"
+	"github.com/go-gremlins/gremlins/mutator/internal"
+	"github.com/go-gremlins/gremlins/mutator/workdir"
+	"github.com/go-gremlins/gremlins/report"
 	"go/ast"
 	"go/parser"
 	"go/token"

@@ -17,7 +17,7 @@
 package internal
 
 import (
-	"github.com/k3rn31/gremlins/mutant"
+	"github.com/go-gremlins/gremlins/mutant"
 	"go/token"
 )
 

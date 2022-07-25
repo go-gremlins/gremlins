@@ -17,8 +17,8 @@
 package internal
 
 import (
-	"github.com/k3rn31/gremlins/log"
-	"github.com/k3rn31/gremlins/mutant"
+	"github.com/go-gremlins/gremlins/log"
+	"github.com/go-gremlins/gremlins/mutant"
 	"go/ast"
 	"go/printer"
 	"go/token"

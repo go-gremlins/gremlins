@@ -18,8 +18,8 @@ package coverage_test
 
 import (
 	"fmt"
+	"github.com/go-gremlins/gremlins/coverage"
 	"github.com/google/go-cmp/cmp"
-	"github.com/k3rn31/gremlins/coverage"
 	"os"
 	"os/exec"
 	"strings"

@@ -17,7 +17,7 @@
 package internal_test
 
 import (
-	"github.com/k3rn31/gremlins/mutator/internal"
+	"github.com/go-gremlins/gremlins/mutator/internal"
 	"go/ast"
 	"go/token"
 	"testing"

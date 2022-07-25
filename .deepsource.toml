@@ -5,6 +5,6 @@ name = "go"
 enabled = true
 
 [analyzers.meta]
-import_root = "github.com/k3rn31/gremlins"
+import_root = "github.com/go-gremlins/gremlins"
 cgo_enabled = false
 dependencies_vendored = false

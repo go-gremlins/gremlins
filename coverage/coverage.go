@@ -20,7 +20,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/k3rn31/gremlins/log"
+	"github.com/go-gremlins/gremlins/log"
 	"golang.org/x/tools/cover"
 	"io"
 	"os"

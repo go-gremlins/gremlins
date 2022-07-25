@@ -1,14 +1,15 @@
 # Gremlins
 
-[![Tests](https://github.com/k3rn31/gremlins/actions/workflows/ci.yml/badge.svg)](https://github.com/k3rn31/gremlins/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/k3rn31/gremlins)](https://goreportcard.com/report/github.com/k3rn31/gremlins)
-[![Maintainability](https://api.codeclimate.com/v1/badges/970114e2c5a770987a75/maintainability)](https://codeclimate.com/github/k3rn31/gremlins/maintainability)
-[![DeepSource](https://deepsource.io/gh/k3rn31/gremlins.svg/?label=active+issues&token=cE9h3dLg1IepQkfT26BMgObn)](https://deepsource.io/gh/k3rn31/gremlins/?ref=repository-badge)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/5b54f2c399214e53aa93cf0df837855a)](https://www.codacy.com/gh/k3rn31/gremlins/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=k3rn31/gremlins&amp;utm_campaign=Badge_Grade)
-[![codecov](https://codecov.io/gh/k3rn31/gremlins/branch/main/graph/badge.svg?token=MICF9A6U3J)](https://codecov.io/gh/k3rn31/gremlins)
+[![Tests](https://github.com/go-gremlins/gremlins/actions/workflows/ci.yml/badge.svg)](https://github.com/go-gremlins/gremlins/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/go-gremlins/gremlins)](https://goreportcard.com/report/github.com/go-gremlins/gremlins)
+[![Maintainability](https://api.codeclimate.com/v1/badges/70142b378bff36c23550/maintainability)](https://codeclimate.com/github/go-gremlins/gremlins/maintainability)
+[![DeepSource](https://deepsource.io/gh/go-gremlins/gremlins.svg/?label=active+issues&token=posNnh5FHpZG9DhM23YH7h6d)](https://deepsource.io/gh/go-gremlins/gremlins/?ref=repository-badge)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/744b4ac720c34518b7578204cfc61997)](https://www.codacy.com/gh/go-gremlins/gremlins/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=go-gremlins/gremlins&amp;utm_campaign=Badge_Grade)
+[![codecov](https://codecov.io/gh/go-gremlins/gremlins/branch/main/graph/badge.svg?token=MICF9A6U3J)](https://codecov.io/gh/go-gremlins/gremlins)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fk3rn31%2Fgremlins.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fk3rn31%2Fgremlins?ref=badge_shield)
 
 **WARNING1: Gremlins is in its early stages of development, and it can be unstable and/or poorly performant.**
+
 **WARNING2: Gremlins isn't currently supported on Windows.**
 
 Gremlins is a mutation testing tool for Go.
@@ -45,7 +46,8 @@ Here is a nice [intro to mutation testing](https://pedrorijo.com/blog/intro-muta
 
 #### Linux
 
-Download a `.deb` or `.rpm` file from the [release page](https://github.com/k3rn31/gremlins/releases) and install
+Download a `.deb` or `.rpm` file from the [release page](https://github.com/go-gremlins/gremlins/releases/latest) and
+install
 with `dpkg -i` and `rpm -i` respectively.
 
 #### MacOS
@@ -54,13 +56,14 @@ On macOS, you can use [Homebrew](https://brew.sh/) to install by first tapping t
 a homebrew tap.
 
 ```shell
-brew tap k3rn31/gremlins https://github.com/k3rn31/gremlins-tap
+brew tap go-gremlins/gremlins https://github.com/go-gremlins/homebrew-tap
 brew install gremlins
 ```
 
 #### Manual
 
-- Download the binary appropriate for your platform from the [release page](https://github.com/k3rn31/gremlins/releases)
+- Download the binary appropriate for your platform from
+  the [release page](https://github.com/go-gremlins/gremlins/releases/latest)
   .
 - Put the `gremlins` executable somewhere in your `PATH` (ex. `/usr/local/bin`).
 
@@ -70,7 +73,7 @@ To build Gremlins you need the Go compiler, make and golangci-lint for linting.
 You can clone the Gremlins repository and then build it:
 
 ```shell
-git clone https://github.com/k3rn31/gremlins.git
+git clone https://github.com/go-gremlins/gremlins.git
 ```
 
 Ad then:
@@ -265,5 +268,3 @@ See [contributing](CONTRIBUTING.md).
 ## License
 
 Gremlins is released under the [Apache 2.0 License](LICENSE)
-
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fk3rn31%2Fgremlins.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fk3rn31%2Fgremlins?ref=badge_large)
