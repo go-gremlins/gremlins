@@ -18,7 +18,7 @@ package workdir_test
 
 import (
 	"fmt"
-	"github.com/go-gremlins/gremlins/mutator/workdir"
+	"github.com/go-gremlins/gremlins/pkg/mutator/workdir"
 	"github.com/google/go-cmp/cmp"
 	"io/fs"
 	"os"
