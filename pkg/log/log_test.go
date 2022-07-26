@@ -18,7 +18,7 @@ package log_test
 
 import (
 	"bytes"
-	"github.com/go-gremlins/gremlins/log"
+	"github.com/go-gremlins/gremlins/pkg/log"
 	"testing"
 )
 

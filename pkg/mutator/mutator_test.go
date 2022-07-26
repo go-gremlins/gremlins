@@ -19,9 +19,9 @@ package mutator_test
 import (
 	"context"
 	"fmt"
-	"github.com/go-gremlins/gremlins/coverage"
-	"github.com/go-gremlins/gremlins/mutant"
-	"github.com/go-gremlins/gremlins/mutator"
+	"github.com/go-gremlins/gremlins/pkg/coverage"
+	"github.com/go-gremlins/gremlins/pkg/mutant"
+	"github.com/go-gremlins/gremlins/pkg/mutator"
 	"github.com/google/go-cmp/cmp"
 	"go/token"
 	"io/ioutil"

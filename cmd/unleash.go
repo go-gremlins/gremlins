@@ -18,11 +18,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/go-gremlins/gremlins/coverage"
-	"github.com/go-gremlins/gremlins/log"
-	"github.com/go-gremlins/gremlins/mutator"
-	"github.com/go-gremlins/gremlins/mutator/workdir"
-	"github.com/go-gremlins/gremlins/report"
+	"github.com/go-gremlins/gremlins/pkg/coverage"
+	"github.com/go-gremlins/gremlins/pkg/log"
+	"github.com/go-gremlins/gremlins/pkg/mutator"
+	"github.com/go-gremlins/gremlins/pkg/mutator/workdir"
+	"github.com/go-gremlins/gremlins/pkg/report"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"

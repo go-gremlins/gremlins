@@ -17,7 +17,7 @@
 package coverage_test
 
 import (
-	"github.com/go-gremlins/gremlins/coverage"
+	"github.com/go-gremlins/gremlins/pkg/coverage"
 	"go/token"
 	"testing"
 )

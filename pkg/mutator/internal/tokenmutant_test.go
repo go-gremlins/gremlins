@@ -17,8 +17,8 @@
 package internal_test
 
 import (
-	"github.com/go-gremlins/gremlins/mutant"
-	"github.com/go-gremlins/gremlins/mutator/internal"
+	"github.com/go-gremlins/gremlins/pkg/mutant"
+	"github.com/go-gremlins/gremlins/pkg/mutator/internal"
 	"github.com/google/go-cmp/cmp"
 	"go/ast"
 	"go/parser"

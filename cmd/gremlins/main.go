@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/go-gremlins/gremlins/cmd"
-	"github.com/go-gremlins/gremlins/log"
+	"github.com/go-gremlins/gremlins/pkg/log"
 	"os"
 	"runtime"
 )

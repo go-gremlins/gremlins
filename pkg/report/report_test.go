@@ -18,9 +18,9 @@ package report_test
 
 import (
 	"bytes"
-	"github.com/go-gremlins/gremlins/log"
-	"github.com/go-gremlins/gremlins/mutant"
-	"github.com/go-gremlins/gremlins/report"
+	"github.com/go-gremlins/gremlins/pkg/log"
+	"github.com/go-gremlins/gremlins/pkg/mutant"
+	"github.com/go-gremlins/gremlins/pkg/report"
 	"github.com/google/go-cmp/cmp"
 	"go/token"
 	"testing"
