@@ -18,8 +18,9 @@ package log_test
 
 import (
 	"bytes"
-	"github.com/go-gremlins/gremlins/pkg/log"
 	"testing"
+
+	"github.com/go-gremlins/gremlins/pkg/log"
 )
 
 func TestUninitialised(t *testing.T) {

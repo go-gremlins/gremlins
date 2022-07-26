@@ -18,9 +18,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/google/go-cmp/cmp"
 	"runtime"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestVersionString(t *testing.T) {

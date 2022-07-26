@@ -17,8 +17,9 @@
 package internal
 
 import (
-	"github.com/go-gremlins/gremlins/pkg/mutant"
 	"go/token"
+
+	"github.com/go-gremlins/gremlins/pkg/mutant"
 )
 
 // TokenMutantType is the mapping from each token.Token and all the

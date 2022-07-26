@@ -18,12 +18,6 @@ package mutator
 
 import (
 	"context"
-	"github.com/go-gremlins/gremlins/pkg/coverage"
-	"github.com/go-gremlins/gremlins/pkg/log"
-	"github.com/go-gremlins/gremlins/pkg/mutant"
-	"github.com/go-gremlins/gremlins/pkg/mutator/internal"
-	"github.com/go-gremlins/gremlins/pkg/mutator/workdir"
-	"github.com/go-gremlins/gremlins/pkg/report"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -34,6 +28,13 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/go-gremlins/gremlins/pkg/coverage"
+	"github.com/go-gremlins/gremlins/pkg/log"
+	"github.com/go-gremlins/gremlins/pkg/mutant"
+	"github.com/go-gremlins/gremlins/pkg/mutator/internal"
+	"github.com/go-gremlins/gremlins/pkg/mutator/workdir"
+	"github.com/go-gremlins/gremlins/pkg/report"
 )
 
 // Mutator is the "engine" that performs the mutation testing.
