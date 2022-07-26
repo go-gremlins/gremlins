@@ -21,10 +21,14 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
-	"github.com/go-gremlins/gremlins/pkg/mutator/workdir"
+	"github.com/hectane/go-acl"
+
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/go-gremlins/gremlins/pkg/mutator/workdir"
 )
 
 func TestLinkFolder(t *testing.T) {
@@ -93,9 +97,18 @@ func TestCDealerErrors(t *testing.T) {
 		t.Parallel()
 		srcDir := t.TempDir()
 		err := os.Chmod(srcDir, 0000)
+		clean := os.Chmod
+		if runtime.GOOS == "windows" {
+			err = acl.Chmod(srcDir, 0000)
+			clean = acl.Chmod
+		}
 		if err != nil {
 			t.Fatal(err)
 		}
+		defer func(d string) {
+			_ = clean(d, 0700)
+		}(srcDir)
+
 		dstDir := t.TempDir()
 
 		mngr := workdir.NewDealer(dstDir, srcDir)
@@ -111,9 +124,17 @@ func TestCDealerErrors(t *testing.T) {
 		srcDir := t.TempDir()
 		dstDir := t.TempDir()
 		err := os.Chmod(dstDir, 0000)
+		clean := os.Chmod
+		if runtime.GOOS == "windows" {
+			err = acl.Chmod(dstDir, 0000)
+			clean = acl.Chmod
+		}
 		if err != nil {
 			t.Fatal(err)
 		}
+		defer func(d string) {
+			_ = clean(d, 0700)
+		}(dstDir)
 
 		mngr := workdir.NewDealer(dstDir, srcDir)
 

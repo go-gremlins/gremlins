@@ -6,6 +6,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/google/go-cmp v0.5.8
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
+	github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.12.0
 	golang.org/x/tools v0.1.12
