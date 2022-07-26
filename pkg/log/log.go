@@ -18,9 +18,10 @@ package log
 
 import (
 	"fmt"
-	"github.com/fatih/color"
 	"io"
 	"sync"
+
+	"github.com/fatih/color"
 )
 
 var fgRed = color.New(color.FgRed).SprintFunc()

@@ -18,14 +18,15 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+
 	"github.com/go-gremlins/gremlins/pkg/coverage"
 	"github.com/go-gremlins/gremlins/pkg/log"
 	"github.com/go-gremlins/gremlins/pkg/mutator"
 	"github.com/go-gremlins/gremlins/pkg/mutator/workdir"
 	"github.com/go-gremlins/gremlins/pkg/report"
 	"github.com/spf13/cobra"
-	"io/ioutil"
-	"os"
 )
 
 type unleashCmd struct {
