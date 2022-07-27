@@ -56,6 +56,7 @@ type Option func(c Coverage) Coverage
 func WithBuildTags(tags string) Option {
 	return func(c Coverage) Coverage {
 		c.buildTags = tags
+
 		return c
 	}
 }
@@ -70,6 +71,7 @@ func New(workdir, path string, opts ...Option) (Coverage, error) {
 	if err != nil {
 		return Coverage{}, err
 	}
+
 	return NewWithCmdAndPackage(exec.Command, mod, workdir, path, opts...), nil
 }
 
@@ -84,6 +86,7 @@ func getMod(path string) (string, error) {
 		return "", err
 	}
 	packageName := bytes.TrimPrefix(line, []byte("module "))
+
 	return string(packageName), nil
 }
 
@@ -99,6 +102,7 @@ func NewWithCmdAndPackage(cmdContext execContext, mod, workdir, path string, opt
 	for _, opt := range opts {
 		c = opt(c)
 	}
+
 	return c
 }
 
@@ -108,12 +112,12 @@ func (c Coverage) Run() (Result, error) {
 	log.Infof("Gathering coverage... ")
 	elapsed, err := c.execute()
 	if err != nil {
-		return Result{}, fmt.Errorf("impossible to execute coverage: %v", err)
+		return Result{}, fmt.Errorf("impossible to execute coverage: %w", err)
 	}
 	log.Infof("done in %s\n", elapsed)
 	profile, err := c.getProfile()
 	if err != nil {
-		return Result{}, fmt.Errorf("an error occurred while generating coverage profile: %v", err)
+		return Result{}, fmt.Errorf("an error occurred while generating coverage profile: %w", err)
 	}
 
 	return Result{profile, elapsed}, nil
@@ -128,6 +132,7 @@ func (c Coverage) getProfile() (Profile, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return profile, nil
 }
 
@@ -145,8 +150,7 @@ func (c Coverage) execute() (time.Duration, error) {
 	cmd.Stderr = os.Stderr
 
 	start := time.Now()
-	err := cmd.Run()
-	if err != nil {
+	if err := cmd.Run(); err != nil {
 		return 0, err
 	}
 
@@ -174,6 +178,7 @@ func (c Coverage) parse(data io.Reader) (Profile, error) {
 			status[fn] = append(status[fn], block)
 		}
 	}
+
 	return status, nil
 }
 

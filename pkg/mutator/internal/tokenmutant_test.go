@@ -55,6 +55,7 @@ func TestMutantApplyAndRollback(t *testing.T) {
 		if n, ok := n.(*ast.BinaryExpr); ok {
 			nodes = append(nodes, n)
 		}
+
 		return true
 	})
 

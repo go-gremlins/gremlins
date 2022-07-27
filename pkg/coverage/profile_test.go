@@ -125,30 +125,30 @@ func TestIsCovered(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		tCase := tc
+		t.Run(tCase.name, func(t *testing.T) {
 			profile := coverage.Profile{
-				tc.proFilename: {
+				tCase.proFilename: {
 					{
-						StartLine: tc.proStartL,
-						StartCol:  tc.proStartC,
-						EndLine:   tc.proEndL,
-						EndCol:    tc.proEndC,
+						StartLine: tCase.proStartL,
+						StartCol:  tCase.proStartC,
+						EndLine:   tCase.proEndL,
+						EndCol:    tCase.proEndC,
 					},
 				},
 			}
 
 			position := token.Position{
-				Filename: tc.posFilename,
+				Filename: tCase.posFilename,
 				Offset:   100,
-				Line:     tc.posL,
-				Column:   tc.posC,
+				Line:     tCase.posL,
+				Column:   tCase.posC,
 			}
 
 			got := profile.IsCovered(position)
 
-			if got != tc.expected {
-				t.Errorf("expected coverage to be %v, got %v", tc.expected, got)
+			if got != tCase.expected {
+				t.Errorf("expected coverage to be %v, got %v", tCase.expected, got)
 			}
 		})
 	}

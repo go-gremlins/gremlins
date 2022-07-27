@@ -111,6 +111,7 @@ func (m *TokenMutant) writeOnFile() error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -133,6 +134,7 @@ func removeFile(fs *token.FileSet, tokPos token.Pos, workdir string) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -141,16 +143,16 @@ func openFile(fs *token.FileSet, tokPos token.Pos, workdir string) (*os.File, er
 	if workdir != "" {
 		workdir += "/"
 	}
-	f, err := os.OpenFile(workdir+file.Name(), os.O_CREATE|os.O_WRONLY, 0600)
+	f, err := os.OpenFile(workdir+file.Name(), os.O_CREATE|os.O_WRONLY, 0600) //nolint:nosnakecase
 	if err != nil {
 		return nil, err
 	}
+
 	return f, err
 }
 
 func closeFile(f *os.File) {
-	err := f.Close()
-	if err != nil {
+	if err := f.Close(); err != nil {
 		log.Errorln("an error occurred while closing the mutated file")
 	}
 }

@@ -1,5 +1,24 @@
 linters:
   enable:
-    - revive
+    - durationcheck
+    - errname
+    - errorlint
+    - exhaustive
+    - exportloopref
+    - forbidigo
+    - forcetypeassert
+    - goconst
+    - godot
+    - goimports
     - gosec
     - gocritic
+    - ifshort
+    - makezero
+    - nlreturn
+    - nolintlint
+    - nonamedreturns
+    - nosnakecase
+    - revive
+    - tenv
+    - thelper
+    - unconvert

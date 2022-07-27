@@ -58,8 +58,7 @@ func TestCoverageRun(t *testing.T) {
 func TestCoverageRunFails(t *testing.T) {
 	t.Parallel()
 	cov := coverage.NewWithCmdAndPackage(fakeExecCommandFailure, "example.com", "workdir", "./...")
-	_, err := cov.Run()
-	if err == nil {
+	if _, err := cov.Run(); err == nil {
 		t.Error("expected run to report an error")
 	}
 }
@@ -146,8 +145,7 @@ func TestParseOutputFail(t *testing.T) {
 	t.Parallel()
 	cov := coverage.NewWithCmdAndPackage(fakeExecCommandSuccess(nil), "example.com", "testdata/invalid", "./...")
 
-	_, err := cov.Run()
-	if err == nil {
+	if _, err := cov.Run(); err == nil {
 		t.Errorf("espected an error")
 	}
 }
@@ -190,5 +188,6 @@ func fakeExecCommandFailure(command string, args ...string) *exec.Cmd {
 	// #nosec G204 - We are in tests, we don't care
 	cmd := exec.Command(os.Args[0], cs...)
 	cmd.Env = []string{"GO_TEST_PROCESS=1"}
+
 	return cmd
 }
