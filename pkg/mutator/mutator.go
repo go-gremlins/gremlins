@@ -253,7 +253,9 @@ func (mu *Mutator) runTests() mutant.Status {
 	defer cancel()
 	cmd := mu.execContext(ctx, "go", mu.getTestArgs()...)
 
-	err := cmd.Run() //nolint:ifshort
+	rel, err := run(cmd)
+	defer rel()
+
 	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 		return mutant.TimedOut
 	}
@@ -263,6 +265,20 @@ func (mu *Mutator) runTests() mutant.Status {
 	}
 
 	return mutant.Lived
+}
+
+func run(cmd *exec.Cmd) (func(), error) {
+	if err := cmd.Run(); err != nil {
+
+		return func() {}, err
+	}
+
+	return func() {
+		err := cmd.Process.Release()
+		if err != nil {
+			_ = cmd.Process.Kill()
+		}
+	}, nil
 }
 
 func (mu *Mutator) getTestArgs() []string {
