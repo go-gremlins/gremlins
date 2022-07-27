@@ -18,12 +18,6 @@ package mutator
 
 import (
 	"context"
-	"github.com/k3rn31/gremlins/coverage"
-	"github.com/k3rn31/gremlins/log"
-	"github.com/k3rn31/gremlins/mutant"
-	"github.com/k3rn31/gremlins/mutator/internal"
-	"github.com/k3rn31/gremlins/mutator/workdir"
-	"github.com/k3rn31/gremlins/report"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -34,6 +28,13 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/k3rn31/gremlins/coverage"
+	"github.com/k3rn31/gremlins/log"
+	"github.com/k3rn31/gremlins/mutant"
+	"github.com/k3rn31/gremlins/mutator/internal"
+	"github.com/k3rn31/gremlins/mutator/workdir"
+	"github.com/k3rn31/gremlins/report"
 )
 
 // Mutator is the "engine" that performs the mutation testing.
@@ -241,7 +242,9 @@ func (mu *Mutator) runTests() mutant.Status {
 	defer cancel()
 	cmd := mu.execContext(ctx, "go", mu.getTestArgs()...)
 
-	err := cmd.Run()
+	rel, err := run(cmd)
+	defer rel()
+
 	if ctx.Err() == context.DeadlineExceeded {
 		return mutant.TimedOut
 	}
@@ -252,6 +255,20 @@ func (mu *Mutator) runTests() mutant.Status {
 		}
 	}
 	return mutant.Lived
+}
+
+func run(cmd *exec.Cmd) (func(), error) {
+	if err := cmd.Run(); err != nil {
+
+		return func() {}, err
+	}
+
+	return func() {
+		err := cmd.Process.Release()
+		if err != nil {
+			_ = cmd.Process.Kill()
+		}
+	}, nil
 }
 
 func (mu *Mutator) getTestArgs() []string {
