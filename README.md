@@ -56,7 +56,7 @@ On macOS, you can use [Homebrew](https://brew.sh/) to install by first tapping t
 a homebrew tap.
 
 ```shell
-brew tap go-gremlins/gremlins https://github.com/go-gremlins/homebrew-tap
+brew tap go-gremlins/tap
 brew install gremlins
 ```
 
