@@ -8,7 +8,7 @@
 [![codecov](https://codecov.io/gh/go-gremlins/gremlins/branch/main/graph/badge.svg?token=MICF9A6U3J)](https://codecov.io/gh/go-gremlins/gremlins)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fgo-gremlins%2Fgremlins.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fgo-gremlins%2Fgremlins?ref=badge_shield)
 
-**WARNING2: Gremlins isn't currently supported on Windows.**
+**WARNING: Gremlins isn't currently supported on Windows.**
 
 Gremlins is a mutation testing tool for Go. It has been made to work well on _smallish_ Go modules, for example
 _microservices_, on which it helps validate the tests, aids the TDD process and can be used as a CI quality gate.
