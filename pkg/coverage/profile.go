@@ -56,5 +56,6 @@ func (p Profile) IsCovered(pos token.Position) bool {
 			}
 		}
 	}
+
 	return false
 }

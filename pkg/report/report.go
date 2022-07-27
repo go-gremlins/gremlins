@@ -47,6 +47,7 @@ type Results struct {
 func Do(results Results) {
 	if len(results.Mutants) == 0 {
 		log.Infoln("\nNo results to report.")
+
 		return
 	}
 	var k, l, t, nc, nv, r int
@@ -75,6 +76,7 @@ func Do(results Results) {
 		log.Infof("Dry run completed in %s\n", elapsed.String())
 		log.Infof("Runnable: %s, Not covered: %s\n", runnable, notCovered)
 		log.Infof("Mutant coverage: %.2f%%\n", rCoverage)
+
 		return
 	}
 	tEfficacy := float64(k) / float64(k+l) * 100
@@ -119,5 +121,6 @@ func padding(s mutant.Status) string {
 	for i := 0; i < padLen; i++ {
 		pad += " "
 	}
+
 	return pad
 }

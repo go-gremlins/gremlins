@@ -18,6 +18,7 @@ package mutator
 
 import (
 	"context"
+	"errors"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -90,6 +91,7 @@ func New(fs fs.FS, r coverage.Result, manager workdir.Dealer, opts ...Option) Mu
 	for _, opt := range opts {
 		mut = opt(mut)
 	}
+
 	return mut
 }
 
@@ -98,6 +100,7 @@ func New(fs fs.FS, r coverage.Result, manager workdir.Dealer, opts ...Option) Mu
 func WithDryRun(d bool) Option {
 	return func(m Mutator) Mutator {
 		m.dryRun = d
+
 		return m
 	}
 }
@@ -106,6 +109,7 @@ func WithDryRun(d bool) Option {
 func WithBuildTags(t string) Option {
 	return func(m Mutator) Mutator {
 		m.buildTags = t
+
 		return m
 	}
 }
@@ -114,6 +118,7 @@ func WithBuildTags(t string) Option {
 func WithExecContext(c execContext) Option {
 	return func(m Mutator) Mutator {
 		m.execContext = c
+
 		return m
 	}
 }
@@ -123,6 +128,7 @@ func WithApplyAndRollback(a func(m mutant.Mutant) error, r func(m mutant.Mutant)
 	return func(m Mutator) Mutator {
 		m.apply = a
 		m.rollback = r
+
 		return m
 	}
 }
@@ -144,6 +150,7 @@ func (mu *Mutator) Run() report.Results {
 				src, _ := mu.fs.Open(path)
 				mu.runOnFile(path, src)
 			}
+
 			return nil
 		})
 		close(mu.mutantStream)
@@ -165,6 +172,7 @@ func (mu *Mutator) runOnFile(fileName string, src io.Reader) {
 			return true
 		}
 		mu.findMutations(set, file, n)
+
 		return true
 	})
 }
@@ -199,41 +207,44 @@ func (mu *Mutator) executeTests() report.Results {
 	} else {
 		log.Infoln("Executing mutation testing on covered mutants...")
 	}
-	wd, cl, err := mu.wdManager.Get()
+	wDir, cl, err := mu.wdManager.Get()
 	if err != nil {
 		panic("error, this is temporary")
 	}
 	defer cl()
-	_ = os.Chdir(wd)
+	_ = os.Chdir(wDir)
 
 	var mutants []mutant.Mutant
-	for m := range mu.mutantStream {
-		m.SetWorkdir(wd)
-		if m.Status() == mutant.NotCovered || mu.dryRun {
-			mutants = append(mutants, m)
-			report.Mutant(m)
+	for mut := range mu.mutantStream {
+		mut.SetWorkdir(wDir)
+		if mut.Status() == mutant.NotCovered || mu.dryRun {
+			mutants = append(mutants, mut)
+			report.Mutant(mut)
+
 			continue
 		}
 
-		if err := mu.apply(m); err != nil {
-			log.Errorf("failed to apply mutation at %s - %s\n\t%v", m.Position(), m.Status(), err)
+		if err := mu.apply(mut); err != nil {
+			log.Errorf("failed to apply mutation at %s - %s\n\t%v", mut.Position(), mut.Status(), err)
+
 			continue
 		}
 
-		m.SetStatus(mu.runTests())
+		mut.SetStatus(mu.runTests())
 
-		if err := mu.rollback(m); err != nil {
+		if err := mu.rollback(mut); err != nil {
 			// What should we do now?
-			log.Errorf("failed to restore mutation at %s - %s\n\t%v", m.Position(), m.Status(), err)
+			log.Errorf("failed to restore mutation at %s - %s\n\t%v", mut.Position(), mut.Status(), err)
 		}
 
-		report.Mutant(m)
-		mutants = append(mutants, m)
+		report.Mutant(mut)
+		mutants = append(mutants, mut)
 	}
 
 	results := report.Results{
 		Mutants: mutants,
 	}
+
 	return results
 }
 
@@ -242,16 +253,15 @@ func (mu *Mutator) runTests() mutant.Status {
 	defer cancel()
 	cmd := mu.execContext(ctx, "go", mu.getTestArgs()...)
 
-	err := cmd.Run()
-	if ctx.Err() == context.DeadlineExceeded {
+	err := cmd.Run() //nolint:ifshort
+	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 		return mutant.TimedOut
 	}
-	if err != nil {
-		err, ok := err.(*exec.ExitError)
-		if ok {
-			return getTestFailedStatus(err.ExitCode())
-		}
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		return getTestFailedStatus(exitErr.ExitCode())
 	}
+
 	return mutant.Lived
 }
 
@@ -261,6 +271,7 @@ func (mu *Mutator) getTestArgs() []string {
 		args = append(args, "-tags", mu.buildTags)
 	}
 	args = append(args, "./...")
+
 	return args
 }
 

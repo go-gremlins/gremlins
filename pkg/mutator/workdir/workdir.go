@@ -85,6 +85,7 @@ func (fm CDealer) Get() (string, func(), error) {
 	if err != nil {
 		return "", nil, err
 	}
+
 	return dstDir, func() {
 		err := os.RemoveAll(dstDir)
 		if err != nil {

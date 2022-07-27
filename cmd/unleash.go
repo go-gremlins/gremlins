@@ -92,6 +92,7 @@ func newUnleashCmd() *unleashCmd {
 
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "find mutations but do not executes tests")
 	cmd.Flags().StringVarP(&buildTags, "tags", "t", "", "a comma-separated list of build tags")
+
 	return &unleashCmd{
 		cmd: cmd,
 	}

@@ -48,6 +48,7 @@ func NewTokenNode(n ast.Node) (*NodeToken, bool) {
 	default:
 		return &NodeToken{}, false
 	}
+
 	return &NodeToken{
 		tok:    tok,
 		TokPos: pos,
@@ -59,7 +60,7 @@ func (n *NodeToken) Tok() token.Token {
 	return *n.tok
 }
 
-// SetTok sets the token.Token of the tokenNode
+// SetTok sets the token.Token of the tokenNode.
 func (n *NodeToken) SetTok(t token.Token) {
 	*n.tok = t
 }

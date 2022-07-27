@@ -125,6 +125,7 @@ func TestCDealerErrors(t *testing.T) {
 }
 
 func populateSrcDir(t *testing.T, srcDir string, depth int) {
+	t.Helper()
 	if depth == 0 {
 		return
 	}

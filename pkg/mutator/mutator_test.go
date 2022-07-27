@@ -39,12 +39,14 @@ const expectedTimeout = 10 * time.Second
 func coveredPosition(fixture string) coverage.Result {
 	fn := filenameFromFixture(fixture)
 	p := coverage.Profile{fn: {{StartLine: 6, EndLine: 7, StartCol: 8, EndCol: 9}}}
+
 	return coverage.Result{Profile: p, Elapsed: expectedTimeout}
 }
 
 func notCoveredPosition(fixture string) coverage.Result {
 	fn := filenameFromFixture(fixture)
 	p := coverage.Profile{fn: {{StartLine: 9, EndLine: 9, StartCol: 8, EndCol: 9}}}
+
 	return coverage.Result{Profile: p, Elapsed: expectedTimeout}
 }
 
@@ -230,28 +232,29 @@ func TestMutations(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		tCase := tc
+		t.Run(tCase.name, func(t *testing.T) {
 			t.Parallel()
-			f, _ := os.Open(tc.fixture)
+			f, _ := os.Open(tCase.fixture)
 			src, _ := ioutil.ReadAll(f)
-			filename := filenameFromFixture(tc.fixture)
+			filename := filenameFromFixture(tCase.fixture)
 			mapFS := fstest.MapFS{
 				filename: {Data: src},
 			}
-			mut := mutator.New(mapFS, tc.covResult, dealerStub{}, mutator.WithDryRun(true))
+			mut := mutator.New(mapFS, tCase.covResult, dealerStub{}, mutator.WithDryRun(true))
 			res := mut.Run()
 			got := res.Mutants
 
-			if tc.token == token.ILLEGAL {
+			if tCase.token == token.ILLEGAL {
 				if len(got) != 0 {
 					t.Errorf("expected no mutator found")
 				}
+
 				return
 			}
 
 			for _, g := range got {
-				if g.Type() == tc.mutantType && g.Status() == tc.mutStatus && g.Pos() > 0 {
+				if g.Type() == tCase.mutantType && g.Status() == tCase.mutStatus && g.Pos() > 0 {
 					// PASS
 					return
 				}
@@ -274,9 +277,8 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 	}
 	mut := mutator.New(sys, coverage.Result{}, dealerStub{}, mutator.WithDryRun(true))
 	res := mut.Run()
-	got := res.Mutants
 
-	if len(got) != 0 {
+	if got := res.Mutants; len(got) != 0 {
 		t.Errorf("should not receive results")
 	}
 }
@@ -331,6 +333,7 @@ func absTimeDiff(a, b time.Duration) time.Duration {
 	if a > b {
 		return a - b
 	}
+
 	return b - a
 }
 
@@ -372,19 +375,19 @@ func TestMutatorTestExecution(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		tCase := tc
+		t.Run(tCase.name, func(t *testing.T) {
 			t.Parallel()
-			f, _ := os.Open(tc.fixture)
+			f, _ := os.Open(tCase.fixture)
 			defer f.Close()
 			src, _ := ioutil.ReadAll(f)
-			filename := filenameFromFixture(tc.fixture)
+			filename := filenameFromFixture(tCase.fixture)
 			mapFS := fstest.MapFS{
 				filename: {Data: src},
 			}
 
-			mut := mutator.New(mapFS, tc.covResult, dealerStub{},
-				mutator.WithExecContext(tc.testResult),
+			mut := mutator.New(mapFS, tCase.covResult, dealerStub{},
+				mutator.WithExecContext(tCase.testResult),
 				mutator.WithApplyAndRollback(
 					func(m mutant.Mutant) error {
 						return nil
@@ -398,8 +401,8 @@ func TestMutatorTestExecution(t *testing.T) {
 			if len(got) < 1 {
 				t.Fatal("no mutants received")
 			}
-			if got[0].Status() != tc.wantMutStatus {
-				t.Errorf("expected mutation to be %v, but got: %v", tc.wantMutStatus, got[0].Status())
+			if got[0].Status() != tCase.wantMutStatus {
+				t.Errorf("expected mutation to be %v, but got: %v", tCase.wantMutStatus, got[0].Status())
 			}
 			if res.Elapsed <= 0 {
 				t.Errorf("expected elapsed time to be greater than zero, got %s", res.Elapsed)
@@ -435,6 +438,7 @@ func fakeExecCommandSuccess(ctx context.Context, command string, args ...string)
 	// #nosec G204 - We are in tests, we don't care
 	cmd := exec.CommandContext(ctx, os.Args[0], cs...)
 	cmd.Env = []string{"GO_TEST_PROCESS=1"}
+
 	return cmd
 }
 
@@ -448,6 +452,7 @@ func fakeExecCommandSuccessWithHolder(got *commandHolder) execContext {
 		}
 		cs := []string{"-test.run=TestCoverageProcessSuccess", "--", command}
 		cs = append(cs, args...)
+
 		return getCmd(ctx, cs)
 	}
 }
@@ -455,12 +460,14 @@ func fakeExecCommandSuccessWithHolder(got *commandHolder) execContext {
 func fakeExecCommandTestsFailure(ctx context.Context, command string, args ...string) *exec.Cmd {
 	cs := []string{"-test.run=TestProcessTestsFailure", "--", command}
 	cs = append(cs, args...)
+
 	return getCmd(ctx, cs)
 }
 
 func fakeExecCommandBuildFailure(ctx context.Context, command string, args ...string) *exec.Cmd {
 	cs := []string{"-test.run=TestProcessBuildFailure", "--", command}
 	cs = append(cs, args...)
+
 	return getCmd(ctx, cs)
 }
 
@@ -468,6 +475,7 @@ func getCmd(ctx context.Context, cs []string) *exec.Cmd {
 	// #nosec G204 - We are in tests, we don't care
 	cmd := exec.CommandContext(ctx, os.Args[0], cs...)
 	cmd.Env = []string{"GO_TEST_PROCESS=1"}
+
 	return cmd
 }
 
