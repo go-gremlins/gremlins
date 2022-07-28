@@ -35,17 +35,17 @@ type unleashCmd struct {
 }
 
 const (
-	CommandName    = "unleash"
-	ParamDryRun    = "dry-run"
-	ParamBuildTags = "tags"
+	commandName    = "unleash"
+	paramDryRun    = "dry-run"
+	paramBuildTags = "tags"
 )
 
 func newUnleashCmd(v *viper.Viper) (*unleashCmd, error) {
-	dryRun := v.GetBool(fmt.Sprintf("%s.%s", CommandName, ParamDryRun))
-	buildTags := v.GetString(fmt.Sprintf("%s.%s", CommandName, ParamBuildTags))
+	dryRun := v.GetBool(fmt.Sprintf("%s.%s", commandName, paramDryRun))
+	buildTags := v.GetString(fmt.Sprintf("%s.%s", commandName, paramBuildTags))
 
 	cmd := &cobra.Command{
-		Use:     fmt.Sprintf("%s [path of the Go module]", CommandName),
+		Use:     fmt.Sprintf("%s [path of the Go module]", commandName),
 		Aliases: []string{"run", "r"},
 		Args:    cobra.MaximumNArgs(1),
 		Short:   "Executes the mutation testing process",
@@ -97,14 +97,14 @@ func newUnleashCmd(v *viper.Viper) (*unleashCmd, error) {
 		},
 	}
 
-	cmd.Flags().BoolVarP(&dryRun, ParamDryRun, "d", false, "find mutations but do not executes tests")
-	err := viper.BindPFlag(fmt.Sprintf("%s.%s", CommandName, ParamDryRun), cmd.Flags().Lookup(ParamDryRun))
+	cmd.Flags().BoolVarP(&dryRun, paramDryRun, "d", false, "find mutations but do not executes tests")
+	err := viper.BindPFlag(fmt.Sprintf("%s.%s", commandName, paramDryRun), cmd.Flags().Lookup(paramDryRun))
 	if err != nil {
 		return nil, err
 	}
 
-	cmd.Flags().StringVarP(&buildTags, ParamBuildTags, "t", "", "a comma-separated list of build tags")
-	err = viper.BindPFlag(fmt.Sprintf("%s.%s", CommandName, ParamBuildTags), cmd.Flags().Lookup(ParamBuildTags))
+	cmd.Flags().StringVarP(&buildTags, paramBuildTags, "t", "", "a comma-separated list of build tags")
+	err = viper.BindPFlag(fmt.Sprintf("%s.%s", commandName, paramBuildTags), cmd.Flags().Lookup(paramBuildTags))
 	if err != nil {
 		return nil, err
 	}
