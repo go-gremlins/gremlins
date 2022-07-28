@@ -17,15 +17,8 @@
 package cmd
 
 import (
-	"strings"
-
+	"github.com/go-gremlins/gremlins/cmd/configuration"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-)
-
-const (
-	gremlinsCfgName      = ".gremlins"
-	gremlinsEnvVarPrefix = "GREMLINS"
 )
 
 // Execute initialises a new Cobra root command (gremlins) with a custom version
@@ -63,7 +56,7 @@ and friends.
 		"/etc/gremlins",
 		"$HOME/.gremlins",
 	}
-	unleashCmd, err := newUnleashCmd(getViper(configPaths))
+	unleashCmd, err := newUnleashCmd(configuration.GetViper(configPaths))
 	if err != nil {
 		return nil, err
 
@@ -73,25 +66,4 @@ and friends.
 	return &gremlinsCmd{
 		cmd: cmd,
 	}, nil
-}
-
-func getViper(configPaths []string) *viper.Viper {
-	// setting viper
-	v := viper.New()
-	v.SetConfigName(gremlinsCfgName)
-	v.SetConfigType("yaml")
-
-	for _, p := range configPaths {
-		v.AddConfigPath(p)
-	}
-
-	v.SetEnvPrefix(gremlinsEnvVarPrefix)
-	replacer := strings.NewReplacer(".", "_", "-", "_")
-	v.SetEnvKeyReplacer(replacer)
-	v.AutomaticEnv()
-
-	_ = v.ReadInConfig() // ignoring error if file not present
-
-	return v
-
 }
