@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	GremlinsCfgName      = ".gremlins"
-	GremlinsEnvVarPrefix = "GREMLINS"
+	gremlinsCfgName      = ".gremlins"
+	gremlinsEnvVarPrefix = "GREMLINS"
 )
 
 // Execute initialises a new Cobra root command (gremlins) with a custom version
@@ -78,14 +78,14 @@ and friends.
 func getViper(configPaths []string) *viper.Viper {
 	// setting viper
 	v := viper.New()
-	v.SetConfigName(GremlinsCfgName)
+	v.SetConfigName(gremlinsCfgName)
 	v.SetConfigType("yaml")
 
 	for _, p := range configPaths {
 		v.AddConfigPath(p)
 	}
 
-	v.SetEnvPrefix(GremlinsEnvVarPrefix)
+	v.SetEnvPrefix(gremlinsEnvVarPrefix)
 	replacer := strings.NewReplacer(".", "_", "-", "_")
 	v.SetEnvKeyReplacer(replacer)
 	v.AutomaticEnv()
