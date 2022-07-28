@@ -54,6 +54,7 @@ and friends.
 	configPaths := []string{
 		".",
 		"/etc/gremlins",
+		"$HOME/.config/gremlins/gremlins",
 		"$HOME/.gremlins",
 	}
 	unleashCmd, err := newUnleashCmd(configuration.GetViper(configPaths))

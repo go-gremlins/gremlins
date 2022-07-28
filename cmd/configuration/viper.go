@@ -27,6 +27,13 @@ const (
 	gremlinsEnvVarPrefix = "GREMLINS"
 )
 
+// GetViper gets the viper configuration for Gremlins
+//
+// It sets the configuration file name as .gremlins.yaml, adds the passed paths as ConfigPaths
+// AutomaticEnv configuration having GREMLINS as prefix.
+// The environment variables take precedence over the configuration file and must be set in the
+// format:
+//   GREMLINS_<COMMAND NAME>_<FLAG NAME>
 func GetViper(configPaths []string) *viper.Viper {
 	// setting viper
 	v := viper.New()
