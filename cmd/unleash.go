@@ -41,8 +41,8 @@ const (
 )
 
 func newUnleashCmd(v *viper.Viper) (*unleashCmd, error) {
-	var dryRun bool
-	var buildTags string
+	dryRun := v.GetBool(fmt.Sprintf("%s.%s", CommandName, ParamDryRun))
+	buildTags := v.GetString(fmt.Sprintf("%s.%s", CommandName, ParamBuildTags))
 
 	cmd := &cobra.Command{
 		Use:     fmt.Sprintf("%s [path of the Go module]", CommandName),
@@ -87,8 +87,8 @@ func newUnleashCmd(v *viper.Viper) (*unleashCmd, error) {
 
 			d := workdir.NewDealer(workDir, currentPath)
 			mut := mutator.New(os.DirFS(currentPath), p, d,
-				mutator.WithDryRun(v.GetBool(fmt.Sprintf("%s.%s", CommandName, ParamDryRun))),
-				mutator.WithBuildTags(v.GetString(fmt.Sprintf("%s.%s", CommandName, ParamBuildTags))))
+				mutator.WithDryRun(dryRun),
+				mutator.WithBuildTags(buildTags))
 			results := mut.Run()
 
 			report.Do(results)
