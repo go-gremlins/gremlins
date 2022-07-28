@@ -45,6 +45,7 @@ jobs:
           env_vars: OS
       - name: Report coverage to CodeClimate
         uses: paambaati/codeclimate-action@v3.0.0
+        continue-on-error: true
         env:
           CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
         with:
@@ -53,6 +54,7 @@ jobs:
             ${{github.workspace}}/coverage.out:gocov
       - name: Report coverage to Codacy
         uses: codacy/codacy-coverage-reporter-action@v1
+        continue-on-error: true
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           coverage-reports: coverage.out

@@ -22,13 +22,13 @@ ${BIN}/${BINARY_NAME}:
 
 .PHONY: test
 test:
-	${GO_TEST} ./...
+	${GO_TEST} -race ./...
 
 .PHONY: cover
 cover: ${COVER_OUT}
 
 ${COVER_OUT}:
-	${GO_TEST} -cover -coverprofile ${COVER_OUT} ./...
+	${GO_TEST} -race -cover -coverprofile ${COVER_OUT} ./...
 
 .PHONY: lint
 lint:
