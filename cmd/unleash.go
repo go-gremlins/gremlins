@@ -27,18 +27,25 @@ import (
 	"github.com/go-gremlins/gremlins/pkg/mutator/workdir"
 	"github.com/go-gremlins/gremlins/pkg/report"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 type unleashCmd struct {
 	cmd *cobra.Command
 }
 
-func newUnleashCmd() *unleashCmd {
+const (
+	CommandName    = "unleash"
+	ParamDryRun    = "dry-run"
+	ParamBuildTags = "tags"
+)
+
+func newUnleashCmd(v *viper.Viper) (*unleashCmd, error) {
 	var dryRun bool
 	var buildTags string
 
 	cmd := &cobra.Command{
-		Use:     "unleash [path of the Go module]",
+		Use:     fmt.Sprintf("%s [path of the Go module]", CommandName),
 		Aliases: []string{"run", "r"},
 		Args:    cobra.MaximumNArgs(1),
 		Short:   "Executes the mutation testing process",
@@ -80,8 +87,8 @@ func newUnleashCmd() *unleashCmd {
 
 			d := workdir.NewDealer(workDir, currentPath)
 			mut := mutator.New(os.DirFS(currentPath), p, d,
-				mutator.WithDryRun(dryRun),
-				mutator.WithBuildTags(buildTags))
+				mutator.WithDryRun(v.GetBool(fmt.Sprintf("%s.%s", CommandName, ParamDryRun))),
+				mutator.WithBuildTags(v.GetString(fmt.Sprintf("%s.%s", CommandName, ParamBuildTags))))
 			results := mut.Run()
 
 			report.Do(results)
@@ -90,10 +97,19 @@ func newUnleashCmd() *unleashCmd {
 		},
 	}
 
-	cmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "find mutations but do not executes tests")
-	cmd.Flags().StringVarP(&buildTags, "tags", "t", "", "a comma-separated list of build tags")
+	cmd.Flags().BoolVarP(&dryRun, ParamDryRun, "d", false, "find mutations but do not executes tests")
+	err := viper.BindPFlag(fmt.Sprintf("%s.%s", CommandName, ParamDryRun), cmd.Flags().Lookup(ParamDryRun))
+	if err != nil {
+		return nil, err
+	}
+
+	cmd.Flags().StringVarP(&buildTags, ParamBuildTags, "t", "", "a comma-separated list of build tags")
+	err = viper.BindPFlag(fmt.Sprintf("%s.%s", CommandName, ParamBuildTags), cmd.Flags().Lookup(ParamBuildTags))
+	if err != nil {
+		return nil, err
+	}
 
 	return &unleashCmd{
 		cmd: cmd,
-	}
+	}, nil
 }
