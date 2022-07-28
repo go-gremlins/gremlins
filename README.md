@@ -116,6 +116,68 @@ Gremlins will report each mutation as:
   explicitly.
 - `NOT VIABLE`: The mutation makes the build fail.
 
+
+### Configuration
+
+Gremlins uses [viper](https://github.com/spf13/viper) for the configuration. 
+In particular, the options can be passed in the following ways
+
+- specific command flags
+- environment variables
+- configuration file
+
+in which each item takes precedence over the following in the list.
+
+<u>1. Specific command flags</u>
+
+Example:
+```
+$ gremlins unleash -h
+Unleashes the gremlins and performs mutation testing on a Go module.
+
+Usage:
+  gremlins unleash [path of the Go module] [flags]
+
+Aliases:
+  unleash, run, r
+
+Flags:
+  -d, --dry-run       find mutations but do not executes tests
+  -h, --help          help for unleash
+  -t, --tags string   a comma-separated list of build tags
+```
+<u>2. Environment Variables</u>
+
+The environment variables must be set with the following syntax:
+
+```
+GREMLINS_<COMMAND NAME>_<FLAG NAME>
+```
+
+In which every dash in the option name  must be replaced with an underscore 
+
+Example:
+
+```
+$ GREMLINS_UNLEASH_DRY_RUN=true gremlins unleash
+```
+
+<u>3. Configuration File</u>
+
+The configuration must be named `.gremlins.yaml` and must be in the following format: 
+
+```yaml
+unleash:
+  dry-run: false
+  tags: ...
+```
+
+and can be placed in one of the following folder (in order)
+
+- the current folder
+- `/etc/gremlins`
+- `$HOME/.gremlins`
+
 ### Supported mutations
 
 #### Conditionals Boundaries
