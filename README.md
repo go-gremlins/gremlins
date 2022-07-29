@@ -70,6 +70,13 @@ brew install gremlins
 Download the appropriate release package from the [release page](https://github.com/go-gremlins/gremlins/releases/latest), 
 extract the zip archive and copy the `.exe` file somewhere in your `PATH`.
 
+#### Docker 
+
+You can also run Gremlins using the official Docker image:
+
+```shell
+docker run --rm -v $(pwd):/app -w /app gogremlins/gremlins gremlins unleash .
+```
 #### Manual
 
 - Download the binary appropriate for your platform from
