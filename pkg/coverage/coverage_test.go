@@ -23,8 +23,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-gremlins/gremlins/pkg/coverage"
 	"github.com/google/go-cmp/cmp"
+	"github.com/spf13/viper"
+
+	"github.com/go-gremlins/gremlins/configuration"
+	"github.com/go-gremlins/gremlins/pkg/coverage"
 )
 
 type commandHolder struct {
@@ -33,7 +36,9 @@ type commandHolder struct {
 }
 
 func TestCoverageRun(t *testing.T) {
-	t.Parallel()
+	viper.Set(configuration.UnleashTagsKey, "tag1 tag2")
+	defer viper.Reset()
+
 	wantWorkdir := "workdir"
 	wantFilename := "coverage"
 	wantFilePath := wantWorkdir + "/" + wantFilename
@@ -42,12 +47,11 @@ func TestCoverageRun(t *testing.T) {
 		fakeExecCommandSuccess(holder),
 		"example.com",
 		wantWorkdir,
-		".",
-		coverage.WithBuildTags("tag1 tag1"))
+		".")
 
 	_, _ = cov.Run()
 
-	want := fmt.Sprintf("go test -tags tag1 tag1 -cover -coverprofile %v ./...", wantFilePath)
+	want := fmt.Sprintf("go test -tags tag1 tag2 -cover -coverprofile %v ./...", wantFilePath)
 	got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
 
 	if !cmp.Equal(got, want) {

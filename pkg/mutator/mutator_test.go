@@ -18,6 +18,7 @@ package mutator_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"go/token"
 	"io/ioutil"
@@ -28,10 +29,13 @@ import (
 	"testing/fstest"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/spf13/viper"
+
+	"github.com/go-gremlins/gremlins/configuration"
 	"github.com/go-gremlins/gremlins/pkg/coverage"
 	"github.com/go-gremlins/gremlins/pkg/mutant"
 	"github.com/go-gremlins/gremlins/pkg/mutator"
-	"github.com/google/go-cmp/cmp"
 )
 
 const expectedTimeout = 10 * time.Second
@@ -234,14 +238,15 @@ func TestMutations(t *testing.T) {
 	for _, tc := range testCases {
 		tCase := tc
 		t.Run(tCase.name, func(t *testing.T) {
-			t.Parallel()
 			f, _ := os.Open(tCase.fixture)
 			src, _ := ioutil.ReadAll(f)
 			filename := filenameFromFixture(tCase.fixture)
 			mapFS := fstest.MapFS{
 				filename: {Data: src},
 			}
-			mut := mutator.New(mapFS, tCase.covResult, dealerStub{}, mutator.WithDryRun(true))
+			viper.Set(configuration.UnleashDryRunKey, true)
+			defer viper.Reset()
+			mut := mutator.New(mapFS, tCase.covResult, dealerStub{})
 			res := mut.Run()
 			got := res.Mutants
 
@@ -267,7 +272,6 @@ func TestMutations(t *testing.T) {
 }
 
 func TestSkipTestAndNonGoFiles(t *testing.T) {
-	t.Parallel()
 	f, _ := os.Open("testdata/fixtures/geq_go")
 	file, _ := ioutil.ReadAll(f)
 
@@ -275,7 +279,9 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 		"file_test.go": {Data: file},
 		"folder1/file": {Data: file},
 	}
-	mut := mutator.New(sys, coverage.Result{}, dealerStub{}, mutator.WithDryRun(true))
+	viper.Set(configuration.UnleashDryRunKey, true)
+	defer viper.Reset()
+	mut := mutator.New(sys, coverage.Result{}, dealerStub{})
 	res := mut.Run()
 
 	if got := res.Mutants; len(got) != 0 {
@@ -292,7 +298,6 @@ type commandHolder struct {
 type execContext = func(ctx context.Context, name string, args ...string) *exec.Cmd
 
 func TestMutatorRun(t *testing.T) {
-	t.Parallel()
 	f, _ := os.Open("testdata/fixtures/gtr_go")
 	defer f.Close()
 	src, _ := ioutil.ReadAll(f)
@@ -301,10 +306,11 @@ func TestMutatorRun(t *testing.T) {
 		filename: {Data: src},
 	}
 
+	viper.Set(configuration.UnleashTagsKey, "tag1 tag2")
+	defer viper.Reset()
 	holder := &commandHolder{}
 	mut := mutator.New(mapFS, coveredPosition("testdata/fixtures/gtr_go"), dealerStub{},
 		mutator.WithExecContext(fakeExecCommandSuccessWithHolder(holder)),
-		mutator.WithBuildTags("tag1 tag2"),
 		mutator.WithApplyAndRollback(
 			func(m mutant.Mutant) error {
 				return nil
@@ -409,6 +415,62 @@ func TestMutatorTestExecution(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestApplyAndRollbackError(t *testing.T) {
+	t.Run("apply fails", func(t *testing.T) {
+		t.Parallel()
+		f, _ := os.Open("testdata/fixtures/gtr_go")
+		defer f.Close()
+		src, _ := ioutil.ReadAll(f)
+		filename := filenameFromFixture("testdata/fixtures/gtr_go")
+		mapFS := fstest.MapFS{
+			filename: {Data: src},
+		}
+
+		mut := mutator.New(mapFS, coveredPosition("testdata/fixtures/gtr_go"), dealerStub{},
+			mutator.WithExecContext(fakeExecCommandSuccess),
+			mutator.WithApplyAndRollback(
+				func(m mutant.Mutant) error {
+					return errors.New("test error")
+				},
+				func(m mutant.Mutant) error {
+					return nil
+				}))
+		res := mut.Run()
+		got := res.Mutants
+
+		if len(got) != 0 {
+			t.Fatal("expected no mutants")
+		}
+	})
+
+	t.Run("rollback fails", func(t *testing.T) {
+		t.Parallel()
+		f, _ := os.Open("testdata/fixtures/gtr_go")
+		defer f.Close()
+		src, _ := ioutil.ReadAll(f)
+		filename := filenameFromFixture("testdata/fixtures/gtr_go")
+		mapFS := fstest.MapFS{
+			filename: {Data: src},
+		}
+
+		mut := mutator.New(mapFS, coveredPosition("testdata/fixtures/gtr_go"), dealerStub{},
+			mutator.WithExecContext(fakeExecCommandSuccess),
+			mutator.WithApplyAndRollback(
+				func(m mutant.Mutant) error {
+					return nil
+				},
+				func(m mutant.Mutant) error {
+					return errors.New("test error")
+				}))
+		res := mut.Run()
+		got := res.Mutants
+
+		if len(got) < 1 { // For now, in case of rollback failure, we expect the mutations still to be reported.
+			t.Fatal("expected no mutants")
+		}
+	})
 }
 
 func TestCoverageProcessSuccess(_ *testing.T) {

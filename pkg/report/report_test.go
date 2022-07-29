@@ -18,14 +18,19 @@ package report_test
 
 import (
 	"bytes"
+	"errors"
 	"go/token"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/spf13/viper"
+
+	"github.com/go-gremlins/gremlins/configuration"
+	"github.com/go-gremlins/gremlins/internal/execution"
 	"github.com/go-gremlins/gremlins/pkg/log"
 	"github.com/go-gremlins/gremlins/pkg/mutant"
 	"github.com/go-gremlins/gremlins/pkg/report"
-	"github.com/google/go-cmp/cmp"
 )
 
 func TestReport(t *testing.T) {
@@ -46,7 +51,7 @@ func TestReport(t *testing.T) {
 			Elapsed: (2 * time.Minute) + (22 * time.Second) + (123 * time.Millisecond),
 		}
 
-		report.Do(data)
+		_ = report.Do(data)
 
 		got := out.String()
 
@@ -78,7 +83,7 @@ func TestReport(t *testing.T) {
 			Elapsed: (2 * time.Minute) + (22 * time.Second) + (123 * time.Millisecond),
 		}
 
-		report.Do(data)
+		_ = report.Do(data)
 
 		got := out.String()
 
@@ -103,7 +108,7 @@ func TestReport(t *testing.T) {
 			Mutants: mutants,
 		}
 
-		report.Do(data)
+		_ = report.Do(data)
 
 		got := out.String()
 
@@ -114,6 +119,94 @@ func TestReport(t *testing.T) {
 			t.Errorf(cmp.Diff(want, got))
 		}
 	})
+}
+
+func TestAssessment(t *testing.T) {
+	testCases := []struct {
+		name        string
+		confKey     string
+		value       any
+		expectError bool
+	}{
+		// Efficacy-threshold
+		{
+			name:        "efficacy < efficacy-threshold",
+			confKey:     configuration.UnleashThresholdEfficacyKey,
+			value:       51,
+			expectError: true,
+		},
+		{
+			name:        "efficacy >= efficacy-threshold",
+			confKey:     configuration.UnleashThresholdEfficacyKey,
+			value:       50,
+			expectError: false,
+		},
+		{
+			name:        "efficacy-threshold == 0",
+			confKey:     configuration.UnleashThresholdEfficacyKey,
+			value:       0,
+			expectError: false,
+		},
+		// Mutant coverage-threshold
+		{
+			name:        "coverage < coverage-threshold",
+			confKey:     configuration.UnleashThresholdMCoverageKey,
+			value:       51,
+			expectError: true,
+		},
+		{
+			name:        "coverage >= coverage-threshold",
+			confKey:     configuration.UnleashThresholdMCoverageKey,
+			value:       50,
+			expectError: false,
+		},
+		{
+			name:        "coverage-threshold == 0",
+			confKey:     configuration.UnleashThresholdMCoverageKey,
+			value:       0,
+			expectError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			log.Init(&bytes.Buffer{}, &bytes.Buffer{})
+			defer log.Reset()
+
+			viper.Set(tc.confKey, tc.value)
+			defer viper.Reset()
+
+			// Always 50%
+			mutants := []mutant.Mutant{
+				stubMutant{mutant.Killed, mutant.ConditionalsNegation},
+				stubMutant{mutant.Lived, mutant.ConditionalsNegation},
+				stubMutant{mutant.NotCovered, mutant.ConditionalsNegation},
+				stubMutant{mutant.NotCovered, mutant.ConditionalsNegation},
+			}
+			data := report.Results{
+				Mutants: mutants,
+				Elapsed: 1 * time.Minute,
+			}
+
+			err := report.Do(data)
+
+			if tc.expectError && err == nil {
+				t.Fatal("expected an error")
+			}
+			if !tc.expectError {
+				return
+			}
+			var exitErr *execution.ExitError
+			if errors.As(err, &exitErr) {
+				if exitErr.ExitCode() == 0 {
+					t.Errorf("expected exit code to be different from 0, got %d", exitErr.ExitCode())
+				}
+			} else {
+				t.Errorf("expected err to be ExitError")
+			}
+		})
+	}
 }
 
 func TestMutantLog(t *testing.T) {

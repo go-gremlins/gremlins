@@ -16,6 +16,7 @@ As of now, Gremlins doesn't work very well on very big Go modules, mainly becaus
 - [How to Use Gremlins](#how-to-use-gremlins)
   - [Obtain and install](#obtain-and-install)
   - [Usage](#usage)
+  - [Configuration](#configuration)
 - [Supported Mutations](#supported-mutations)
   - [Conditionals Boundaries](#conditionals-boundaries)
   - [Conditionals Negation](#conditionals-negation)
@@ -119,21 +120,19 @@ Gremlins will report each mutation as:
   explicitly.
 - `NOT VIABLE`: The mutation makes the build fail.
 
-
 ### Configuration
 
-Gremlins uses [viper](https://github.com/spf13/viper) for the configuration. 
-In particular, the options can be passed in the following ways
+Gremlins can be configured via flags, environment variables and configuration files, with the following precedence
+(on top the higher priority):
 
-- specific command flags
+- command flags
 - environment variables
-- configuration file
+- configuration files
 
-in which each item takes precedence over the following in the list.
-
-<u>1. Specific command flags</u>
+#### Command flags
 
 Example:
+
 ```
 $ gremlins unleash -h
 Unleashes the gremlins and performs mutation testing on a Go module.
@@ -149,7 +148,8 @@ Flags:
   -h, --help          help for unleash
   -t, --tags string   a comma-separated list of build tags
 ```
-<u>2. Environment Variables</u>
+
+#### Environment Variables
 
 The environment variables must be set with the following syntax:
 
@@ -157,7 +157,7 @@ The environment variables must be set with the following syntax:
 GREMLINS_<COMMAND NAME>_<FLAG NAME>
 ```
 
-In which every dash in the option name  must be replaced with an underscore 
+In which every dash in the option name must be replaced with an underscore
 
 Example:
 
@@ -165,9 +165,10 @@ Example:
 $ GREMLINS_UNLEASH_DRY_RUN=true gremlins unleash
 ```
 
-<u>3. Configuration File</u>
+#### Configuration File
 
-The configuration must be named `.gremlins.yaml` and must be in the following format: 
+Gremlins configuration files are in YAML format, and must be named `.gremlins.yaml` and must respect the
+following structure:
 
 ```yaml
 unleash:
@@ -175,11 +176,30 @@ unleash:
   tags: ...
 ```
 
-and can be placed in one of the following folder (in order)
+Config files can be located in one of the following folders (in order of precedence):
 
 - the current folder
-- `/etc/gremlins`
-- `$HOME/.gremlins`
+- `/etc/gremlins.yaml`
+- `$HOME/.gremlins.yaml`
+- `$XDG_CONFIG_HOME/gremlins/.gremlins.yaml` (usually `$HOME/.config/gremlins/gremlins.yaml`)
+
+The configuration file can be overridden with the `--config` flag.
+
+### CI Usage
+
+Gremlins can be used as a CI quality gate tool. It supports configurable thresholds below which Gremlins will exit
+with an error code (making the pipeline fail). Each threshold failure will trigger a specific exit code.
+
+The thresholds can be set via flags or config file.
+
+| Threshold       | Flag                   | Config                              | Error Code |
+|-----------------|------------------------|-------------------------------------|------------|
+| test efficacy   | `--threshold-efficacy` | `unleash.threshold.efficacy`        | 10         |
+| mutant coverage | `--threshold-mcover`   | `unleash.threshold.mutant-coverage` | 11         |
+
+Please refer to the Gremlins command help (`gremlins unleash -h`) for details on usage.
+
+Note that if more than one threshold hasn't been met, Gremlins will report only the first occurrence.
 
 ### Supported mutations
 
@@ -196,7 +216,7 @@ Example:
 
 ```go
 if a > b {
-// Do something
+  // Do something
 }
 ```
 
@@ -204,7 +224,7 @@ will be changed to
 
 ```go
 if a < b {
-// Do something
+  // Do something
 }
 ```
 
@@ -223,7 +243,7 @@ Example:
 
 ```go
 if a == b {
-// Do something
+  // Do something
 }
 ```
 
@@ -231,7 +251,7 @@ will be changed to
 
 ```go
 if a != b {
-// Do something
+  // Do something
 }
 ```
 
@@ -246,7 +266,7 @@ Example:
 
 ```go
 func incr(i int) int
-return i++
+  return i++
 }
 ```
 
@@ -254,7 +274,7 @@ will be changed to
 
 ```go
 func incr(i int) int {
-return i--
+  return i--
 }
 ```
 
@@ -266,7 +286,7 @@ Example:
 
 ```go
 func negate(i int) int {
-return -i
+  return -i
 }
 ```
 
@@ -274,7 +294,7 @@ will be changed to
 
 ```go
 func negate(i int) int {
-return +i
+  return +i
 }
 ```
 

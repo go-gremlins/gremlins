@@ -29,6 +29,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/viper"
+
+	"github.com/go-gremlins/gremlins/configuration"
 	"github.com/go-gremlins/gremlins/pkg/coverage"
 	"github.com/go-gremlins/gremlins/pkg/log"
 	"github.com/go-gremlins/gremlins/pkg/mutant"
@@ -74,6 +77,9 @@ type Option func(m Mutator) Mutator
 // rollback. These can be overridden with nop functions in tests. Not an
 // ideal setup. In the future we can think of a better way to handle this.
 func New(fs fs.FS, r coverage.Result, manager workdir.Dealer, opts ...Option) Mutator {
+	buildTags := viper.GetString(configuration.UnleashTagsKey)
+	dryRun := viper.GetBool(configuration.UnleashDryRunKey)
+
 	mut := Mutator{
 		wdManager:         manager,
 		covProfile:        r.Profile,
@@ -86,31 +92,15 @@ func New(fs fs.FS, r coverage.Result, manager workdir.Dealer, opts ...Option) Mu
 		rollback: func(m mutant.Mutant) error {
 			return m.Rollback()
 		},
+
+		buildTags: buildTags,
+		dryRun:    dryRun,
 	}
 	for _, opt := range opts {
 		mut = opt(mut)
 	}
 
 	return mut
-}
-
-// WithDryRun sets the dry-run flag. If true, it will not perform the actual
-// mutant testing, only discovery will be executed.
-func WithDryRun(d bool) Option {
-	return func(m Mutator) Mutator {
-		m.dryRun = d
-
-		return m
-	}
-}
-
-// WithBuildTags sets the build tags for the go test command.
-func WithBuildTags(t string) Option {
-	return func(m Mutator) Mutator {
-		m.buildTags = t
-
-		return m
-	}
 }
 
 // WithExecContext overrides the default exec.Command with a custom executor.
@@ -165,7 +155,7 @@ func (mu *Mutator) runOnFile(fileName string) {
 	src, _ := mu.fs.Open(fileName)
 	set := token.NewFileSet()
 	file, _ := parser.ParseFile(set, fileName, src, parser.ParseComments)
-	src.Close()
+	_ = src.Close()
 
 	ast.Inspect(file, func(node ast.Node) bool {
 		n, ok := internal.NewTokenNode(node)
