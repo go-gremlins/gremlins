@@ -56,6 +56,12 @@ Download the appropriate release package from
 the [release page](https://github.com/go-gremlins/gremlins/releases/latest),
 extract the zip archive and copy the `.exe` file somewhere in your execution `PATH`.
 
+### :material-docker: Docker
+
+```shell
+docker run --rm -v $(pwd):/app -w /app gogremlins/gremlins gremlins unleash .
+```
+
 ### :material-bash: Manual install
 
 Alternatively, you can download the binary for your OS/ARCH, _untar_ it.

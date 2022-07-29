@@ -12,16 +12,50 @@ builds:
       - darwin
       - windows
     goarch:
-      - 386
+      - "386"
       - amd64
       - arm64
     ignore:
       - goos: darwin
-        goarch: 386
+        goarch: "386"
 release:
   github:
   draft: true
   prerelease: auto
+dockers:
+  - image_templates: ["docker.io/gogremlins/{{ .ProjectName }}:{{ .Version }}-386"]
+    use: buildx
+    build_flag_templates:
+      - --platform=linux/386
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.description={{ .ProjectName }}
+      - --label=org.opencontainers.image.url=https://github.com/go-gremlins/{{ .ProjectName }}
+      - --label=org.opencontainers.image.source=https://github.com/go-gremlins/{{ .ProjectName }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.licenses=Apache-2.0
+  - image_templates: ["docker.io/gogremlins/{{ .ProjectName }}:{{ .Version }}-amd64"]
+    use: buildx
+    build_flag_templates:
+      - --platform=linux/amd64
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.description={{ .ProjectName }}
+      - --label=org.opencontainers.image.url=https://github.com/go-gremlins/{{ .ProjectName }}
+      - --label=org.opencontainers.image.source=https://github.com/go-gremlins/{{ .ProjectName }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.licenses=Apache-2.0
+docker_manifests:
+  - name_template: docker.io/gogremlins/{{ .ProjectName }}:{{ .Version }}
+    image_templates:
+      - docker.io/gogremlins/{{ .ProjectName }}:{{ .Version }}-amd64
+      - docker.io/gogremlins/{{ .ProjectName }}:{{ .Version }}-386
+  - name_template: docker.io/gogremlins/{{ .ProjectName }}:latest
+    image_templates:
+      - docker.io/gogremlins/{{ .ProjectName }}:{{ .Version }}-amd64
+      - docker.io/gogremlins/{{ .ProjectName }}:{{ .Version }}-386
 nfpms:
   - homepage: https://github.com/go-gremlins/gremlins
     description: A mutation testing tool for Go.

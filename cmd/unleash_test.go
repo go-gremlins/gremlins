@@ -157,3 +157,21 @@ func TestRunUnleashCmd(t *testing.T) {
 		}
 	})
 }
+
+func TestRun(t *testing.T) {
+	wd := t.TempDir()
+	cd, _ := os.Getwd()
+	defer func(dir string) {
+		_ = os.Chdir(dir)
+	}(cd)
+
+	_ = os.Chdir("./testmodule")
+	r, err := run(wd, ".")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.Elapsed <= 0 {
+		t.Errorf("should pass some time!")
+	}
+}
