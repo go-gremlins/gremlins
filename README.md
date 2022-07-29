@@ -8,8 +8,6 @@
 [![codecov](https://codecov.io/gh/go-gremlins/gremlins/branch/main/graph/badge.svg?token=MICF9A6U3J)](https://codecov.io/gh/go-gremlins/gremlins)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fgo-gremlins%2Fgremlins.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fgo-gremlins%2Fgremlins?ref=badge_shield)
 
-**WARNING: Gremlins isn't currently supported on Windows.**
-
 Gremlins is a mutation testing tool for Go. It has been made to work well on _smallish_ Go modules, for example
 _microservices_, on which it helps validate the tests, aids the TDD process and can be used as a CI quality gate.
 As of now, Gremlins doesn't work very well on very big Go modules, mainly because a run can take hours to complete.
@@ -59,6 +57,11 @@ a homebrew tap.
 brew tap go-gremlins/tap
 brew install gremlins
 ```
+
+#### Windows
+
+Download the appropriate release package from the [release page](https://github.com/go-gremlins/gremlins/releases/latest), 
+extract the zip archive and copy the `.exe` file somewhere in your `PATH`.
 
 #### Manual
 
@@ -308,7 +311,6 @@ There are some limitations on how Gremlins works right now, but rest assured we'
 - Gremlins doesn't support custom test commands; if you have to do anything different from `go test [-tags t1 t2] ./...`
   to run your test suite, most probably it will not work with Gremlins.
 - There is no way to implement custom mutations.
-- It is not tested on Windows as of now and most probably it will not work there.
 
 ## What inspired Gremlins
 

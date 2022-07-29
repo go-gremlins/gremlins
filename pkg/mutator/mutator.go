@@ -22,7 +22,6 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"io"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -147,8 +146,7 @@ func (mu *Mutator) Run() report.Results {
 	go func() {
 		_ = fs.WalkDir(mu.fs, ".", func(path string, d fs.DirEntry, err error) error {
 			if filepath.Ext(path) == ".go" && !strings.HasSuffix(path, "_test.go") {
-				src, _ := mu.fs.Open(path)
-				mu.runOnFile(path, src)
+				mu.runOnFile(path)
 			}
 
 			return nil
@@ -163,9 +161,12 @@ func (mu *Mutator) Run() report.Results {
 	return res
 }
 
-func (mu *Mutator) runOnFile(fileName string, src io.Reader) {
+func (mu *Mutator) runOnFile(fileName string) {
+	src, _ := mu.fs.Open(fileName)
 	set := token.NewFileSet()
 	file, _ := parser.ParseFile(set, fileName, src, parser.ParseComments)
+	src.Close()
+
 	ast.Inspect(file, func(node ast.Node) bool {
 		n, ok := internal.NewTokenNode(node)
 		if !ok {
@@ -207,11 +208,16 @@ func (mu *Mutator) executeTests() report.Results {
 	} else {
 		log.Infoln("Executing mutation testing on covered mutants...")
 	}
+	currDir, _ := os.Getwd()
 	wDir, cl, err := mu.wdManager.Get()
 	if err != nil {
 		panic("error, this is temporary")
 	}
-	defer cl()
+	defer func(d string) {
+		_ = os.Chdir(d)
+		cl()
+	}(currDir)
+
 	_ = os.Chdir(wDir)
 
 	var mutants []mutant.Mutant

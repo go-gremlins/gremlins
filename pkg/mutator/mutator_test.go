@@ -404,7 +404,7 @@ func TestMutatorTestExecution(t *testing.T) {
 			if got[0].Status() != tCase.wantMutStatus {
 				t.Errorf("expected mutation to be %v, but got: %v", tCase.wantMutStatus, got[0].Status())
 			}
-			if res.Elapsed <= 0 {
+			if tCase.wantMutStatus != mutant.NotCovered && res.Elapsed <= 0 {
 				t.Errorf("expected elapsed time to be greater than zero, got %s", res.Elapsed)
 			}
 		})

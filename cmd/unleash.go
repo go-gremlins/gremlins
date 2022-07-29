@@ -21,13 +21,14 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
 	"github.com/go-gremlins/gremlins/pkg/coverage"
 	"github.com/go-gremlins/gremlins/pkg/log"
 	"github.com/go-gremlins/gremlins/pkg/mutator"
 	"github.com/go-gremlins/gremlins/pkg/mutator/workdir"
 	"github.com/go-gremlins/gremlins/pkg/report"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 type unleashCmd struct {
@@ -52,6 +53,11 @@ func newUnleashCmd(v *viper.Viper) (*unleashCmd, error) {
 		Long:    `Unleashes the gremlins and performs mutation testing on a Go module.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			log.Infoln("Starting...")
+			runDir, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
 			currentPath := "."
 			if len(args) > 0 {
 				currentPath = args[0]
@@ -68,12 +74,13 @@ func newUnleashCmd(v *viper.Viper) (*unleashCmd, error) {
 			if err != nil {
 				return fmt.Errorf("impossible to create the workdir: %w", err)
 			}
-			defer func(n string) {
-				err := os.RemoveAll(n)
+			defer func(wd string, rd string) {
+				_ = os.Chdir(rd)
+				err := os.RemoveAll(wd)
 				if err != nil {
-					log.Errorf("impossible to remove temporary folder: %s\n\t%s", err, workDir)
+					log.Errorf("impossible to remove temporary folder: %s\n\t%s", err, wd)
 				}
-			}(workDir)
+			}(workDir, runDir)
 
 			c, err := coverage.New(workDir, currentPath, coverage.WithBuildTags(buildTags))
 			if err != nil {
