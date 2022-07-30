@@ -20,13 +20,16 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	"github.com/spf13/pflag"
 
+	"github.com/go-gremlins/gremlins/cmd/internal/flags"
 	"github.com/go-gremlins/gremlins/configuration"
 	"github.com/go-gremlins/gremlins/pkg/coverage"
 	"github.com/go-gremlins/gremlins/pkg/log"
+	"github.com/go-gremlins/gremlins/pkg/mutant"
 	"github.com/go-gremlins/gremlins/pkg/mutator"
 	"github.com/go-gremlins/gremlins/pkg/mutator/workdir"
 	"github.com/go-gremlins/gremlins/pkg/report"
@@ -37,9 +40,12 @@ type unleashCmd struct {
 }
 
 const (
-	commandName             = "unleash"
-	paramBuildTags          = "tags"
-	paramDryRun             = "dry-run"
+	commandName = "unleash"
+
+	paramBuildTags = "tags"
+	paramDryRun    = "dry-run"
+
+	// Thresholds.
 	paramThresholdEfficacy  = "threshold-efficacy"
 	paramThresholdMCoverage = "threshold-mcover"
 )
@@ -49,96 +55,144 @@ func newUnleashCmd() (*unleashCmd, error) {
 		Use:     fmt.Sprintf("%s [path]", commandName),
 		Aliases: []string{"run", "r"},
 		Args:    cobra.MaximumNArgs(1),
-		Short:   "Executes the mutation testing process",
-		Long:    `Unleashes the gremlins and performs mutation testing on a Go module.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			log.Infoln("Starting...")
-			runDir, err := os.Getwd()
-			if err != nil {
-				return err
-			}
+		Short:   "Unleash the gremlins.",
+		Long: `'gremlins unleash' unleashes the gremlins and performs mutation testing on 
+a Go module. It works by first gathering the coverage of the test suite and then
+analysing the source code to look for supported mutants.
 
-			currPath, err := currentPath(args)
-			if err != nil {
-				return err
-			}
+Unleash only tests covered mutants, since it doesn't make sense to test mutants 
+that no test case is able to catch.
 
-			workDir, err := ioutil.TempDir(os.TempDir(), "gremlins-")
-			if err != nil {
-				return fmt.Errorf("impossible to create the workdir: %w", err)
-			}
-			defer func(wd string, rd string) {
-				_ = os.Chdir(rd)
-				err := os.RemoveAll(wd)
-				if err != nil {
-					log.Errorf("impossible to remove temporary folder: %s\n\t%s", err, wd)
-				}
-			}(workDir, runDir)
+In 'dry-run' mode, unleash only performs the analysis of the source code, but it
+doesn't actually perform the test.
 
-			c, err := coverage.New(workDir, currPath)
-			if err != nil {
-				return fmt.Errorf("directory %q does not contain main module: %w", currPath, err)
-			}
-
-			p, err := c.Run()
-			if err != nil {
-				return err
-			}
-
-			d := workdir.NewDealer(workDir, currPath)
-			mut := mutator.New(os.DirFS(currPath), p, d)
-			results := mut.Run()
-
-			err = report.Do(results)
-			if err != nil {
-				return err
-			}
-
-			return nil
-		},
+Thresholds are configurable quality gates that make gremlins exit with an error 
+if those values are not met. Efficacy is the percent of KILLED mutants over
+the total KILLED and LIVED mutants. Mutant coverage is the percent of total
+KILLED + LIVED mutants, over the total mutants.`,
+		RunE: runUnleash,
 	}
 
-	cmd.Flags().BoolP(paramDryRun, "d", false, "find mutations but do not executes tests")
-	err := viper.BindPFlag(configuration.UnleashDryRunKey, cmd.Flags().Lookup(paramDryRun))
-	if err != nil {
+	if err := setFlagsOnCmd(cmd); err != nil {
 		return nil, err
 	}
 
-	cmd.Flags().StringP(paramBuildTags, "t", "", "a comma-separated list of build tags")
-	err = viper.BindPFlag(configuration.UnleashTagsKey, cmd.Flags().Lookup(paramBuildTags))
-	if err != nil {
-		return nil, err
-	}
-
-	cmd.Flags().Float64(paramThresholdEfficacy, 0, "threshold for code-efficacy percent")
-	err = viper.BindPFlag(configuration.UnleashThresholdEfficacyKey, cmd.Flags().Lookup(paramThresholdEfficacy))
-	if err != nil {
-		return nil, err
-	}
-
-	cmd.Flags().Float64(paramThresholdMCoverage, 0, "threshold for mutant-coverage percent")
-	err = viper.BindPFlag(configuration.UnleashThresholdMCoverageKey, cmd.Flags().Lookup(paramThresholdMCoverage))
-	if err != nil {
-		return nil, err
-	}
-
-	return &unleashCmd{
-		cmd: cmd,
-	}, nil
+	return &unleashCmd{cmd: cmd}, nil
 }
 
-func currentPath(args []string) (string, error) {
+func runUnleash(_ *cobra.Command, args []string) error {
+	log.Infoln("Starting...")
+	currPath, runDir, err := changePath(args, os.Chdir, os.Getwd)
+	if err != nil {
+		return err
+	}
+
+	workDir, err := ioutil.TempDir(os.TempDir(), "gremlins-")
+	if err != nil {
+		return fmt.Errorf("impossible to create the workdir: %w", err)
+	}
+	defer func(wd string, rd string) {
+		_ = os.Chdir(rd)
+		e := os.RemoveAll(wd)
+		if e != nil {
+			log.Errorf("impossible to remove temporary folder: %s\n\t%s", err, wd)
+		}
+	}(workDir, runDir)
+
+	results, err := run(workDir, currPath)
+	if err != nil {
+		return err
+	}
+
+	return report.Do(results)
+}
+
+func run(workDir string, currPath string) (report.Results, error) {
+	c, err := coverage.New(workDir, currPath)
+	if err != nil {
+		return report.Results{}, fmt.Errorf("failed to gather coverage in %q: %w", currPath, err)
+	}
+
+	p, err := c.Run()
+	if err != nil {
+		return report.Results{}, fmt.Errorf("failed to gather coverage: %w", err)
+	}
+
+	d := workdir.NewDealer(workDir, currPath)
+
+	mut := mutator.New(os.DirFS(currPath), p, d)
+	results := mut.Run()
+
+	return results, nil
+}
+
+func changePath(args []string, chdir func(dir string) error, getwd func() (string, error)) (string, string, error) {
+	rd, err := getwd()
+	if err != nil {
+		return "", "", err
+	}
 	cp := "."
 	if len(args) > 0 {
 		cp = args[0]
 	}
 	if cp != "." {
-		err := os.Chdir(cp)
+		err = chdir(cp)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 		cp = "."
 	}
 
-	return cp, nil
+	return cp, rd, nil
+}
+
+func setFlagsOnCmd(cmd *cobra.Command) error {
+	cmd.Flags().SortFlags = false
+	cmd.Flags().SetNormalizeFunc(func(f *pflag.FlagSet, name string) pflag.NormalizedName {
+		from := []string{"-", "_"}
+		to := "."
+		for _, sep := range from {
+			name = strings.ReplaceAll(name, sep, to)
+		}
+
+		return pflag.NormalizedName(name)
+	})
+
+	fls := []flags.Flag{
+		{Name: paramDryRun, CfgKey: configuration.UnleashDryRunKey, Shorthand: "d", DefaultV: false, Usage: "find mutations but do not executes tests"},
+		{Name: paramBuildTags, CfgKey: configuration.UnleashTagsKey, Shorthand: "t", DefaultV: "", Usage: "a comma-separated list of build tags"},
+		{Name: paramThresholdEfficacy, CfgKey: configuration.UnleashThresholdEfficacyKey, DefaultV: float64(0), Usage: "threshold for code-efficacy percent"},
+		{Name: paramThresholdMCoverage, CfgKey: configuration.UnleashThresholdMCoverageKey, DefaultV: float64(0), Usage: "threshold for mutant-coverage percent"},
+	}
+
+	for _, f := range fls {
+		err := flags.Set(cmd, f)
+		if err != nil {
+			return err
+		}
+	}
+
+	return setMutantTypeFlags(cmd)
+}
+
+func setMutantTypeFlags(cmd *cobra.Command) error {
+	for _, mt := range mutant.MutantTypes {
+		name := mt.String()
+		usage := fmt.Sprintf("enable %q mutants", name)
+		param := strings.ReplaceAll(name, "_", "-")
+		param = strings.ToLower(param)
+		confKey := configuration.MutantTypeEnabledKey(mt)
+
+		err := flags.Set(cmd, flags.Flag{
+			Name:     param,
+			CfgKey:   confKey,
+			DefaultV: configuration.IsDefaultEnabled(mt),
+			Usage:    usage,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

@@ -1,4 +1,4 @@
 unleash:
   threshold:
-    efficacy: 83
-    mutant-coverage: 84
+    efficacy: 80
+    mutant-coverage: 90

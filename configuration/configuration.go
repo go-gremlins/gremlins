@@ -17,6 +17,7 @@
 package configuration
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -24,6 +25,8 @@ import (
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
+
+	"github.com/go-gremlins/gremlins/pkg/mutant"
 )
 
 // This is the list of the keys available in config files and ad flags.
@@ -75,6 +78,21 @@ func Init(cPaths []string) error {
 	_ = viper.ReadInConfig() // ignoring error if file not present
 
 	return nil
+}
+
+// MutantTypeEnabledKey returns the configuration key for a mutant.
+// The generated key will have the format 'mutants.mutant-name.enabled",
+// which corresponds to the Yaml:
+//
+// 		mutants:
+//  		mutant-name:
+//  			enabled: [bool]
+func MutantTypeEnabledKey(mt mutant.Type) string {
+	m := mt.String()
+	m = strings.ReplaceAll(m, "_", "-")
+	m = strings.ToLower(m)
+
+	return fmt.Sprintf("mutants.%s.enabled", m)
 }
 
 func isSpecificFile(cPaths []string) bool {

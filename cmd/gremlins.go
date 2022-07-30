@@ -17,6 +17,7 @@
 package cmd
 
 import (
+	"errors"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -57,12 +58,16 @@ func (gc gremlinsCmd) execute() error {
 }
 
 func newRootCmd(version string) (*gremlinsCmd, error) {
+	if version == "" {
+		return nil, errors.New("expected a version string")
+	}
+
 	cmd := &cobra.Command{
 		Hidden:        true,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Use:           "gremlins <command> [arguments]",
-		Short: `Gremlins is a mutation testing tool for Go projects, made with love by go-gremlins 
+		Short: `Gremlins is a mutation testing tool for Go projects, made with love by k3rn31 
 and friends.
 `,
 		Version: version,

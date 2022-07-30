@@ -69,12 +69,21 @@ type Type int
 
 // The currently supported Type in Gremlins.
 const (
-	ConditionalsBoundary Type = iota
+	ArithmeticBase Type = iota
+	ConditionalsBoundary
 	ConditionalsNegation
 	IncrementDecrement
 	InvertNegatives
-	ArithmeticBase
 )
+
+// MutantTypes allows to iterate over Type.
+var MutantTypes = []Type{
+	ArithmeticBase,
+	ConditionalsBoundary,
+	ConditionalsNegation,
+	IncrementDecrement,
+	InvertNegatives,
+}
 
 func (mt Type) String() string {
 	switch mt {

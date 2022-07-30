@@ -1,0 +1,27 @@
+package fixtures
+
+import "fmt"
+
+func main() {
+	n := 1 + 1
+	n = 1 - 1
+	n = 1 * 1
+	n = 1 / 1
+	n = 1 % 1
+
+	n++
+	n--
+
+	if n > 0 || n > 100 || n >= 200 || n <= 300 {
+		fmt.Println(n)
+	}
+
+	if n == 0 {
+		fmt.Println(n)
+	}
+	if n != 100 {
+		fmt.Println(n)
+	}
+
+	n = -n
+}
