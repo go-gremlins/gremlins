@@ -28,5 +28,26 @@ jobs:
           version: latest
           args: release --rm-dist
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+  documentation:
+    if: ${{ github.event_name != 'pull_request' }}
+    needs: [ goreleaser ]
+    steps:
+      - name: Set version env
+        # This strips the patch version (ex. v1.2.3 -> v1.2) and sets it to GR_MINOR_VERSION
+        # And also sets the patch version to GR_PATCH_VERSION
+        run: |
+          echo "GR_MINOR_VERSION=$(echo $GITHUB_REF | cut -d '.' -f 1,2)" >> $GITHUB_ENV
+          echo "GR_PATCH_VERSION=$(echo $GITHUB_REF | cut -d '.' -f 3)" >> $GITHUB_ENV
+      - name: Build latest documentation
+        if: ${{ env.GR_PATCH_VERSION == "0" }}
+        uses: ./.github/workflows/docs.yml
+        with:
+          version: ${{ env.GR_MINOR_VERSION }}
+          default: true
+      - name: Build patch documentation
+        if: ${{ env.GR_PATCH_VERSION != "0" }}
+        uses: ./.github/workflows/docs.yml
+        with:
+          version: ${{ env.GR_MINOR_VERSION }}
+          default: false
