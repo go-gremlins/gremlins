@@ -17,12 +17,15 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"runtime"
 
 	"github.com/fatih/color"
+
 	"github.com/go-gremlins/gremlins/cmd"
+	"github.com/go-gremlins/gremlins/internal/execution"
 	"github.com/go-gremlins/gremlins/pkg/log"
 )
 
@@ -33,6 +36,7 @@ var (
 )
 
 func main() {
+	var exitErr *execution.ExitError
 	var exitCode int
 	defer func() {
 		os.Exit(exitCode)
@@ -42,6 +46,9 @@ func main() {
 	if err != nil {
 		log.Errorln(err)
 		exitCode = 1
+	}
+	if errors.As(err, &exitErr) {
+		exitCode = exitErr.ExitCode()
 	}
 }
 

@@ -17,10 +17,13 @@
 package configuration
 
 import (
-	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/mitchellh/go-homedir"
+	"github.com/spf13/viper"
 )
 
 type envEntry struct {
@@ -35,7 +38,25 @@ func TestConfiguration(t *testing.T) {
 		configPaths  []string
 		envEntries   []envEntry
 		wantedConfig map[string]interface{}
+		expectErr    bool
 	}{
+		{
+			name:        "from single file",
+			configPaths: []string{"testdata/config1/.gremlins.yaml"},
+			wantedConfig: map[string]interface{}{
+				"unleash.dry-run": true,
+				"unleash.tags":    "tag1,tag2,tag3",
+			},
+		},
+		{
+			name:        "from returns error if unreadable",
+			configPaths: []string{"testdata/config1/.gremlin"},
+			wantedConfig: map[string]interface{}{
+				"unleash.dry-run": true,
+				"unleash.tags":    "tag1,tag2,tag3",
+			},
+			expectErr: true,
+		},
 		{
 			name:        "from cfg",
 			configPaths: []string{"./testdata/config1"},
@@ -81,23 +102,62 @@ func TestConfiguration(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.envEntries != nil {
 				for _, e := range tc.envEntries {
-					os.Setenv(e.name, e.value)
+					t.Setenv(e.name, e.value)
 				}
 			}
-			v := GetViper(tc.configPaths)
+			err := Init(tc.configPaths)
+			if tc.expectErr && err == nil {
+				t.Fatal("expected error")
+			}
+			if tc.expectErr {
+				return
+			}
 
 			for key, wanted := range tc.wantedConfig {
-				got := v.Get(key)
+				got := viper.Get(key)
 				if got != wanted {
 					t.Errorf(cmp.Diff(got, wanted))
 				}
 			}
-
-			if tc.envEntries != nil {
-				for _, e := range tc.envEntries {
-					os.Unsetenv(e.name)
-				}
-			}
+			viper.Reset()
 		})
 	}
+}
+
+func TestConfigPaths(t *testing.T) {
+	home, _ := homedir.Dir()
+
+	t.Run("it lookups in default locations", func(t *testing.T) {
+		var want []string
+		want = append(want, ".")
+		if runtime.GOOS != "windows" {
+			want = append(want, "/etc/gremlins")
+		}
+		want = append(want, filepath.Join(home, ".config", "gremlins", "gremlins"))
+		want = append(want, filepath.Join(home, ".gremlins"))
+
+		got := defaultConfigPaths()
+
+		if !cmp.Equal(got, want) {
+			t.Errorf(cmp.Diff(got, want))
+		}
+	})
+
+	t.Run("when XDG_CONFIG_HOME is set, it lookups in that locations", func(t *testing.T) {
+		customPath := filepath.Join("my", "custom", "path")
+		t.Setenv("XDG_CONFIG_HOME", customPath)
+		var want []string
+		want = append(want, ".")
+		if runtime.GOOS != "windows" {
+			want = append(want, "/etc/gremlins")
+		}
+		want = append(want, filepath.Join(customPath, "gremlins", "gremlins"))
+		want = append(want, filepath.Join(home, ".gremlins"))
+
+		got := defaultConfigPaths()
+
+		if !cmp.Equal(got, want) {
+			t.Errorf(cmp.Diff(got, want))
+		}
+	})
 }

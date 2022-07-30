@@ -20,9 +20,13 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/hako/durafmt"
+	"github.com/spf13/viper"
+
+	"github.com/go-gremlins/gremlins/configuration"
+	"github.com/go-gremlins/gremlins/internal/execution"
 	"github.com/go-gremlins/gremlins/pkg/log"
 	"github.com/go-gremlins/gremlins/pkg/mutant"
-	"github.com/hako/durafmt"
 )
 
 var (
@@ -44,11 +48,11 @@ type Results struct {
 // This function uses the log package in gremlins to write to the
 // chosen io.Writer, so it is necessary to call log.Init before
 // the report generation.
-func Do(results Results) {
+func Do(results Results) error {
 	if len(results.Mutants) == 0 {
 		log.Infoln("\nNo results to report.")
 
-		return
+		return nil
 	}
 	var k, l, t, nc, nv, r int
 	for _, m := range results.Mutants {
@@ -77,7 +81,7 @@ func Do(results Results) {
 		log.Infof("Runnable: %s, Not covered: %s\n", runnable, notCovered)
 		log.Infof("Mutant coverage: %.2f%%\n", rCoverage)
 
-		return
+		return nil
 	}
 	tEfficacy := float64(k) / float64(k+l) * 100
 	rCoverage := float64(k+l) / float64(k+l+nc) * 100
@@ -91,6 +95,21 @@ func Do(results Results) {
 	log.Infof("Timed out: %s, Not viable: %s\n", timedOut, notViable)
 	log.Infof("Test efficacy: %.2f%%\n", tEfficacy)
 	log.Infof("Mutant coverage: %.2f%%\n", rCoverage)
+
+	return assess(tEfficacy, rCoverage)
+}
+
+func assess(tEfficacy, rCoverage float64) error {
+	et := viper.GetFloat64(configuration.UnleashThresholdEfficacyKey)
+	if et > 0 && tEfficacy <= et {
+		return execution.NewExitErr(execution.EfficacyThreshold)
+	}
+	ct := viper.GetFloat64(configuration.UnleashThresholdMCoverageKey)
+	if ct > 0 && rCoverage <= ct {
+		return execution.NewExitErr(execution.MutantCoverageThreshold)
+	}
+
+	return nil
 }
 
 // Mutant logs a mutant.Mutant.

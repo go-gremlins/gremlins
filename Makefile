@@ -28,7 +28,7 @@ test:
 cover: ${COVER_OUT}
 
 ${COVER_OUT}:
-	${GO_TEST} -race -cover -coverprofile ${COVER_OUT} ./...
+	${GO_TEST} -race -covermode=atomic -cover -coverprofile ${COVER_OUT} ./...
 
 .PHONY: lint
 lint:

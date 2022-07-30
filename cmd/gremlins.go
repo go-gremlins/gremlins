@@ -17,9 +17,15 @@
 package cmd
 
 import (
-	"github.com/go-gremlins/gremlins/cmd/configuration"
+	"os"
+
 	"github.com/spf13/cobra"
+
+	"github.com/go-gremlins/gremlins/configuration"
+	"github.com/go-gremlins/gremlins/pkg/log"
 )
+
+const paramConfigFile = "config"
 
 // Execute initialises a new Cobra root command (gremlins) with a custom version
 // string used in the `-v` flag results.
@@ -37,32 +43,37 @@ type gremlinsCmd struct {
 }
 
 func (gc gremlinsCmd) execute() error {
+	var cfgFile string
+	cobra.OnInitialize(func() {
+		err := configuration.Init([]string{cfgFile})
+		if err != nil {
+			log.Errorf("initialization error: %s\n", err)
+			os.Exit(1)
+		}
+	})
+	gc.cmd.PersistentFlags().StringVar(&cfgFile, paramConfigFile, "", "override config file")
 
 	return gc.cmd.Execute()
 }
 
 func newRootCmd(version string) (*gremlinsCmd, error) {
-
 	cmd := &cobra.Command{
-		Use: "gremlins",
+		Hidden:        true,
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		Use:           "gremlins <command> [arguments]",
 		Short: `Gremlins is a mutation testing tool for Go projects, made with love by go-gremlins 
 and friends.
 `,
 		Version: version,
 	}
 
-	configPaths := []string{
-		".",
-		"/etc/gremlins",
-		"$HOME/.config/gremlins/gremlins",
-		"$HOME/.gremlins",
-	}
-	unleashCmd, err := newUnleashCmd(configuration.GetViper(configPaths))
+	uc, err := newUnleashCmd()
 	if err != nil {
 		return nil, err
 
 	}
-	cmd.AddCommand(unleashCmd.cmd)
+	cmd.AddCommand(uc.cmd)
 
 	return &gremlinsCmd{
 		cmd: cmd,

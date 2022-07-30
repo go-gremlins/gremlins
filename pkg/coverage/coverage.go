@@ -26,8 +26,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/viper"
 	"golang.org/x/tools/cover"
 
+	"github.com/go-gremlins/gremlins/configuration"
 	"github.com/go-gremlins/gremlins/pkg/log"
 )
 
@@ -53,21 +55,11 @@ type Coverage struct {
 // Option for the Coverage initialization.
 type Option func(c Coverage) Coverage
 
-// WithBuildTags sets the build tags for the go test command.
-func WithBuildTags(tags string) Option {
-	return func(c Coverage) Coverage {
-		c.buildTags = tags
-
-		return c
-	}
-}
-
 type execContext = func(name string, args ...string) *exec.Cmd
 
 // New instantiates a Coverage element using exec.Command as execContext,
 // actually running the command on the OS.
 func New(workdir, path string, opts ...Option) (Coverage, error) {
-	path = strings.TrimSuffix(path, "/")
 	mod, err := getMod(path)
 	if err != nil {
 		return Coverage{}, err
@@ -96,12 +88,16 @@ func getMod(path string) (string, error) {
 
 // NewWithCmdAndPackage instantiates a Coverage element given a custom execContext.
 func NewWithCmdAndPackage(cmdContext execContext, mod, workdir, path string, opts ...Option) Coverage {
+	buildTags := viper.GetString(configuration.UnleashTagsKey)
+	path = strings.TrimSuffix(path, "/")
+
 	c := Coverage{
 		cmdContext: cmdContext,
 		workDir:    workdir,
 		path:       path + "/...",
 		fileName:   "coverage",
 		mod:        mod,
+		buildTags:  buildTags,
 	}
 	for _, opt := range opts {
 		c = opt(c)

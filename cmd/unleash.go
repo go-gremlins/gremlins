@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/go-gremlins/gremlins/configuration"
 	"github.com/go-gremlins/gremlins/pkg/coverage"
 	"github.com/go-gremlins/gremlins/pkg/log"
 	"github.com/go-gremlins/gremlins/pkg/mutator"
@@ -36,17 +37,16 @@ type unleashCmd struct {
 }
 
 const (
-	commandName    = "unleash"
-	paramDryRun    = "dry-run"
-	paramBuildTags = "tags"
+	commandName             = "unleash"
+	paramBuildTags          = "tags"
+	paramDryRun             = "dry-run"
+	paramThresholdEfficacy  = "threshold-efficacy"
+	paramThresholdMCoverage = "threshold-mcover"
 )
 
-func newUnleashCmd(v *viper.Viper) (*unleashCmd, error) {
-	dryRun := v.GetBool(fmt.Sprintf("%s.%s", commandName, paramDryRun))
-	buildTags := v.GetString(fmt.Sprintf("%s.%s", commandName, paramBuildTags))
-
+func newUnleashCmd() (*unleashCmd, error) {
 	cmd := &cobra.Command{
-		Use:     fmt.Sprintf("%s [path of the Go module]", commandName),
+		Use:     fmt.Sprintf("%s [path]", commandName),
 		Aliases: []string{"run", "r"},
 		Args:    cobra.MaximumNArgs(1),
 		Short:   "Executes the mutation testing process",
@@ -58,16 +58,9 @@ func newUnleashCmd(v *viper.Viper) (*unleashCmd, error) {
 				return err
 			}
 
-			currentPath := "."
-			if len(args) > 0 {
-				currentPath = args[0]
-			}
-			if currentPath != "." {
-				err := os.Chdir(currentPath)
-				if err != nil {
-					return err
-				}
-				currentPath = "."
+			currPath, err := currentPath(args)
+			if err != nil {
+				return err
 			}
 
 			workDir, err := ioutil.TempDir(os.TempDir(), "gremlins-")
@@ -82,9 +75,9 @@ func newUnleashCmd(v *viper.Viper) (*unleashCmd, error) {
 				}
 			}(workDir, runDir)
 
-			c, err := coverage.New(workDir, currentPath, coverage.WithBuildTags(buildTags))
+			c, err := coverage.New(workDir, currPath)
 			if err != nil {
-				return fmt.Errorf("directory %q does not contain main module: %w", currentPath, err)
+				return fmt.Errorf("directory %q does not contain main module: %w", currPath, err)
 			}
 
 			p, err := c.Run()
@@ -92,26 +85,39 @@ func newUnleashCmd(v *viper.Viper) (*unleashCmd, error) {
 				return err
 			}
 
-			d := workdir.NewDealer(workDir, currentPath)
-			mut := mutator.New(os.DirFS(currentPath), p, d,
-				mutator.WithDryRun(dryRun),
-				mutator.WithBuildTags(buildTags))
+			d := workdir.NewDealer(workDir, currPath)
+			mut := mutator.New(os.DirFS(currPath), p, d)
 			results := mut.Run()
 
-			report.Do(results)
+			err = report.Do(results)
+			if err != nil {
+				return err
+			}
 
 			return nil
 		},
 	}
 
-	cmd.Flags().BoolVarP(&dryRun, paramDryRun, "d", false, "find mutations but do not executes tests")
-	err := viper.BindPFlag(fmt.Sprintf("%s.%s", commandName, paramDryRun), cmd.Flags().Lookup(paramDryRun))
+	cmd.Flags().BoolP(paramDryRun, "d", false, "find mutations but do not executes tests")
+	err := viper.BindPFlag(configuration.UnleashDryRunKey, cmd.Flags().Lookup(paramDryRun))
 	if err != nil {
 		return nil, err
 	}
 
-	cmd.Flags().StringVarP(&buildTags, paramBuildTags, "t", "", "a comma-separated list of build tags")
-	err = viper.BindPFlag(fmt.Sprintf("%s.%s", commandName, paramBuildTags), cmd.Flags().Lookup(paramBuildTags))
+	cmd.Flags().StringP(paramBuildTags, "t", "", "a comma-separated list of build tags")
+	err = viper.BindPFlag(configuration.UnleashTagsKey, cmd.Flags().Lookup(paramBuildTags))
+	if err != nil {
+		return nil, err
+	}
+
+	cmd.Flags().Float64(paramThresholdEfficacy, 0, "threshold for code-efficacy percent")
+	err = viper.BindPFlag(configuration.UnleashThresholdEfficacyKey, cmd.Flags().Lookup(paramThresholdEfficacy))
+	if err != nil {
+		return nil, err
+	}
+
+	cmd.Flags().Float64(paramThresholdMCoverage, 0, "threshold for mutant-coverage percent")
+	err = viper.BindPFlag(configuration.UnleashThresholdMCoverageKey, cmd.Flags().Lookup(paramThresholdMCoverage))
 	if err != nil {
 		return nil, err
 	}
@@ -119,4 +125,20 @@ func newUnleashCmd(v *viper.Viper) (*unleashCmd, error) {
 	return &unleashCmd{
 		cmd: cmd,
 	}, nil
+}
+
+func currentPath(args []string) (string, error) {
+	cp := "."
+	if len(args) > 0 {
+		cp = args[0]
+	}
+	if cp != "." {
+		err := os.Chdir(cp)
+		if err != nil {
+			return "", err
+		}
+		cp = "."
+	}
+
+	return cp, nil
 }
