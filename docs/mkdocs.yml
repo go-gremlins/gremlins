@@ -1,0 +1,74 @@
+site_name: Gremlins
+site_url: https://gremlins.dev
+repo_url: https://github.com/go-gremlins/gremlins
+site_description: A mutation testing tool for Go.
+copyright: Made with ❤️ by Gremlins contributors.
+repo_name: go-gremlins/gremlins
+theme:
+  name: material
+  custom_dir: overrides
+  language: en
+  features:
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.annotate
+    - content.tabs.link
+extra:
+  social:
+    - icon: fontawesome/brands/github-alt
+      link: https://github.com/go-gremlins
+  version:
+    provider: mike
+
+nav:
+  - Home: index.md
+  - Install: install.md
+  - Quick start: quick-start.md
+  - Usage:
+      - Commands:
+          - usage/commands/gremlins.md
+          - usage/commands/unleash.md
+      - usage/configuration.md
+      - Mutations:
+          - usage/mutations/about.md
+          - usage/mutations/arithmetic_base.md
+          - usage/mutations/conditionals_boundary.md
+          - usage/mutations/conditionals_negation.md
+          - usage/mutations/increment_decrement.md
+          - usage/mutations/invert_negatives.md
+
+markdown_extensions:
+
+  # Python Markdown
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - meta
+  - md_in_html
+  - toc:
+      permalink: true
+
+  # Python Markdown Extensions
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
