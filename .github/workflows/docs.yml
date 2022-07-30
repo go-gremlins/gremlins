@@ -1,0 +1,49 @@
+name: Documentation
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: The version of the documentation
+        required: true
+        type: string
+      label:
+        description: The alias for the documentation
+        required: false
+        type: string
+      default:
+        description: Is this the default documentation?
+        required: false
+        type: boolean
+
+jobs:
+  documentation:
+    name: Build documentation
+    needs: [ lint, test ]
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: '0'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.x
+      - run: git fetch origin gh-pages --depth=1
+      - run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+      - run: |
+          pip install \
+            mkdocs-material \
+            mike
+      - run: |
+          mike deploy --update-aliases --push ${{ inputs.version }} ${{ inputs.label }}
+          mike list
+        working-directory: docs
+      - run: |
+          mike set-default ${{ inputs.label }}
+        if: ${{ inputs.default == true }}
+        working-directory: docs

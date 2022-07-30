@@ -1,4 +1,5 @@
 dist/
+/docs/site/
 out
 .idea
 
