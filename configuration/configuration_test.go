@@ -24,6 +24,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
+
+	"github.com/go-gremlins/gremlins/pkg/mutant"
 )
 
 type envEntry struct {
@@ -160,4 +162,15 @@ func TestConfigPaths(t *testing.T) {
 			t.Errorf(cmp.Diff(got, want))
 		}
 	})
+}
+
+func TestGeneratesMutantTypeEnabledKey(t *testing.T) {
+	mt := mutant.ArithmeticBase
+	want := "mutants.arithmetic-base.enabled"
+
+	got := MutantTypeEnabledKey(mt)
+
+	if got != want {
+		t.Errorf("expected %q, got %q", mt, want)
+	}
 }

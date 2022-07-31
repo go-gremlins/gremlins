@@ -174,6 +174,9 @@ func (mu *Mutator) findMutations(set *token.FileSet, file *ast.File, node *inter
 		return
 	}
 	for _, mt := range mutantTypes {
+		if !viper.GetBool(configuration.MutantTypeEnabledKey(mt)) {
+			return
+		}
 		mutantType := mt
 		tm := internal.NewTokenMutant(set, file, node)
 		tm.SetType(mutantType)

@@ -25,6 +25,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"testing"
 	"testing/fstest"
 	"time"
@@ -37,6 +38,28 @@ import (
 	"github.com/go-gremlins/gremlins/pkg/mutant"
 	"github.com/go-gremlins/gremlins/pkg/mutator"
 )
+
+func init() {
+	viperMutex.Lock()
+	viperReset()
+}
+
+var viperMutex = sync.Mutex{}
+
+func viperSet(set map[string]any) {
+	viperMutex.Lock()
+	for k, v := range set {
+		viper.Set(k, v)
+	}
+}
+
+func viperReset() {
+	viper.Reset()
+	for _, mt := range mutant.MutantTypes {
+		viper.Set(configuration.MutantTypeEnabledKey(mt), true)
+	}
+	viperMutex.Unlock()
+}
 
 const expectedTimeout = 10 * time.Second
 
@@ -238,14 +261,15 @@ func TestMutations(t *testing.T) {
 	for _, tc := range testCases {
 		tCase := tc
 		t.Run(tCase.name, func(t *testing.T) {
+			t.Parallel()
 			f, _ := os.Open(tCase.fixture)
 			src, _ := ioutil.ReadAll(f)
 			filename := filenameFromFixture(tCase.fixture)
 			mapFS := fstest.MapFS{
 				filename: {Data: src},
 			}
-			viper.Set(configuration.UnleashDryRunKey, true)
-			defer viper.Reset()
+			viperSet(map[string]any{configuration.UnleashDryRunKey: true})
+			defer viperReset()
 			mut := mutator.New(mapFS, tCase.covResult, dealerStub{})
 			res := mut.Run()
 			got := res.Mutants
@@ -271,7 +295,40 @@ func TestMutations(t *testing.T) {
 	}
 }
 
+func TestMutantSkipDisabled(t *testing.T) {
+	for _, mt := range mutant.MutantTypes {
+		t.Run(mt.String(), func(t *testing.T) {
+			t.Parallel()
+			fixture := "testdata/fixtures/0_all_go"
+			f, _ := os.Open(fixture)
+			src, _ := ioutil.ReadAll(f)
+			filename := filenameFromFixture(fixture)
+			mapFS := fstest.MapFS{
+				filename: {Data: src},
+			}
+
+			viperSet(map[string]any{
+				configuration.UnleashDryRunKey:         true,
+				configuration.MutantTypeEnabledKey(mt): false},
+			)
+			defer viperReset()
+
+			mut := mutator.New(mapFS, coveredPosition(fixture), dealerStub{},
+				mutator.WithExecContext(fakeExecCommandSuccess))
+			res := mut.Run()
+			got := res.Mutants
+
+			for _, m := range got {
+				if m.Type() == mt {
+					t.Fatalf("expected %q not to be in the found tokens", mt)
+				}
+			}
+		})
+	}
+}
+
 func TestSkipTestAndNonGoFiles(t *testing.T) {
+	t.Parallel()
 	f, _ := os.Open("testdata/fixtures/geq_go")
 	file, _ := ioutil.ReadAll(f)
 
@@ -279,8 +336,8 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 		"file_test.go": {Data: file},
 		"folder1/file": {Data: file},
 	}
-	viper.Set(configuration.UnleashDryRunKey, true)
-	defer viper.Reset()
+	viperSet(map[string]any{configuration.UnleashDryRunKey: true})
+	defer viperReset()
 	mut := mutator.New(sys, coverage.Result{}, dealerStub{})
 	res := mut.Run()
 
@@ -298,6 +355,7 @@ type commandHolder struct {
 type execContext = func(ctx context.Context, name string, args ...string) *exec.Cmd
 
 func TestMutatorRun(t *testing.T) {
+	t.Parallel()
 	f, _ := os.Open("testdata/fixtures/gtr_go")
 	defer f.Close()
 	src, _ := ioutil.ReadAll(f)
@@ -306,8 +364,8 @@ func TestMutatorRun(t *testing.T) {
 		filename: {Data: src},
 	}
 
-	viper.Set(configuration.UnleashTagsKey, "tag1 tag2")
-	defer viper.Reset()
+	viperSet(map[string]any{configuration.UnleashTagsKey: "tag1 tag2"})
+	defer viperReset()
 	holder := &commandHolder{}
 	mut := mutator.New(mapFS, coveredPosition("testdata/fixtures/gtr_go"), dealerStub{},
 		mutator.WithExecContext(fakeExecCommandSuccessWithHolder(holder)),
