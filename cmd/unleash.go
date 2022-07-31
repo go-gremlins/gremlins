@@ -149,8 +149,8 @@ func changePath(args []string, chdir func(dir string) error, getwd func() (strin
 func setFlagsOnCmd(cmd *cobra.Command) error {
 	cmd.Flags().SortFlags = false
 	cmd.Flags().SetNormalizeFunc(func(f *pflag.FlagSet, name string) pflag.NormalizedName {
-		from := []string{"-", "_"}
-		to := "."
+		from := []string{".", "_"}
+		to := "-"
 		for _, sep := range from {
 			name = strings.ReplaceAll(name, sep, to)
 		}
