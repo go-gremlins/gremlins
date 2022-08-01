@@ -8,6 +8,7 @@ on:
 
 jobs:
   lint:
+    name: Validate source code with linters
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -22,6 +23,7 @@ jobs:
           skip-build-cache: true
           skip-pkg-cache: true
   test:
+    name: Run the tests suite
     needs: lint
     runs-on: ${{ matrix.os }}
     strategy:
@@ -60,3 +62,11 @@ jobs:
           coverage-reports: coverage.out
           language: go
           force-coverage-parser: go
+  documentation:
+    name: Build documentation
+    if: ${{ github.event_name != 'pull_request' }}
+    needs: [ test, lint ]
+    uses: go-gremlins/gremlins/.github/workflows/docs.yml
+    with:
+      version: next
+      default: false

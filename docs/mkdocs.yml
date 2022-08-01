@@ -6,6 +6,7 @@ copyright: Made with ❤️ by Gremlins contributors.
 repo_name: go-gremlins/gremlins
 theme:
   name: material
+  custom_dir: overrides
   language: en
   features:
     - search.suggest
@@ -21,12 +22,13 @@ extra:
     provider: mike
 
 nav:
-  - Install: 'install.md'
-  - Quick start: 'quick-start.md'
+  - Home: index.md
+  - Install: install.md
+  - Quick start: quick-start.md
   - Usage:
       - Commands:
-        - usage/commands/gremlins.md
-        - usage/commands/unleash.md
+          - usage/commands/gremlins.md
+          - usage/commands/unleash.md
       - usage/configuration.md
       - Mutations:
           - usage/mutations/about.md
