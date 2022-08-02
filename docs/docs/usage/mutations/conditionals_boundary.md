@@ -1,4 +1,8 @@
-# Conditionals boundaries
+---
+title: Conditionals boundary
+---
+
+# Conditionals boundary <small>:material-sign-direction: default</small>
 
 _Conditionals boundaries_ modify the boundary of a conditional, which means that exclusive/inclusive ranges will be
 inverted.
@@ -15,11 +19,11 @@ inverted.
 ## Examples
 
 === "Original"
-    ```go
-    if a > b {
-      // Do something
-    }
-    ```
+```go
+if a > b {
+// Do something
+}
+```
 
 === "Mutated"
 

@@ -2,7 +2,7 @@ site_name: Gremlins
 site_url: https://gremlins.dev
 repo_url: https://github.com/go-gremlins/gremlins
 site_description: A mutation testing tool for Go.
-copyright: Made with ❤️ by Gremlins contributors.
+copyright: Made with ❤️ by Gremlins contributors. <span xmlns:cc="http://creativecommons.org/ns#" >This work is licensed under <a href="http://creativecommons.org/licenses/by-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">CC BY-SA 4.0<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1"></a></span>
 repo_name: go-gremlins/gremlins
 theme:
   name: material
@@ -18,6 +18,10 @@ extra:
   social:
     - icon: fontawesome/brands/github-alt
       link: https://github.com/go-gremlins
+      name: GitHub
+    - icon: fontawesome/brands/docker
+      link: https://hub.docker.com/r/gogremlins/gremlins
+      name: Docker
   version:
     provider: mike
 

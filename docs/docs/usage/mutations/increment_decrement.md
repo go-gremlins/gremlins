@@ -1,4 +1,8 @@
-# Increment decrement
+---
+title: Increment decrement
+---
+
+# Increment decrement <small>:material-sign-direction: default</small>
 
 _Increment decrement_ will invert the sign of the increment or decrement.
 
@@ -12,11 +16,11 @@ _Increment decrement_ will invert the sign of the increment or decrement.
 ## Examples
 
 === "Original"
-    ```go
-    for i := 0; i < 10; i++ {
-      // Do something
-    }
-    ```
+```go
+for i := 0; i < 10; i++ {
+// Do something
+}
+```
 
 === "Mutated"
 
