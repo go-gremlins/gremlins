@@ -1,13 +1,12 @@
 # Unleash
 
-The main command used in Gremlins is `unleash`, that _unleashes_ the _gremlins_ and start a mutation test of your code.
+The main command used in Gremlins is `unleash`, that _unleashes_ the _gremlins_ and starts a mutation test of your code.
 If `unleash` is too long to type for you, you can use its aliases `run` and `r`.
 
 !!! warning
     At this time, this only works in the root of a Go module (where the `go.mod` file resides).
 
-To execute a mut
-ation testing run just type
+To execute a mutation testing run just type
 
 ```shell
 gremlins unleash
@@ -23,26 +22,92 @@ gremlins unleash --tags "tag1,tag2"
 
 `unleash` supports several flags to fine tune its behaviour.
 
-### `--dry-run`
-
+### Dry run
+:material-flag:`--dry-run` · :material-sign-direction: Default: false
+  
 Just performs the analysis but not the mutation testing.
 
 ```shell
 gremlins unleash --dry-run
 ```
 
-### `--tags`
+### Tags
+:material-flag: `--tags`/`-t` · :material-sign-direction: Default: empty
 
-### `--threshold-efficacy`
 
-### `--threshold-mcover`
+Sets the `go` command build tags.
 
-### `--arithmetic-base`
+```shell
+gremlins unleash --tags "tag1,tag2"
+```
 
-### `--conditionals-boundary`
+### Threshold efficacy
+:material-flag: `--threshold-efficacy` · :material-sign-direction: Default: 0
 
-### `--conditionals-negation`
+When set, it makes Gremlins exit with an error (code 10) if the _test efficacy_ threshold is not met. By default it is
+zero, which
+means Gremlins never exits with an error.
 
-### `--increment-decrement`
+The _test efficacy_ is calculated as `KILLED / (KILLED + LIVED)` and assesses how effective are the tests.
 
-### `--invert-negatives`
+```shell
+gremlins unleash --threshold-efficacy 80
+```
+
+### Threshold mutant coverage
+:material-flag: `--threshold-mcover` · :material-sign-direction: Default: 0
+
+When set, it makes Gremlins exit with an error (code 11) if the _mutant coverage_ threshold is not met. By default
+it is zero, which means Gremlins never exits with an error.
+
+The _mutant coverage_ is calculated as `(KILLED + LIVED) / (KILLED + LIVED + NOT_COVERED)` and assesses how many mutants
+are covered by tests.
+
+```shell
+gremlins unleash --threshold-mcover 80
+```
+
+### Arithmetic base
+:material-flag: `--arithmetic-base` · :material-sign-direction: Default: `true`
+
+Enables/disables the [ARITHMETIC BASE](../mutations/arithmetic_base.md) mutant type.
+
+```shell
+gremlins unleash --arithmetic-base=false
+```
+
+### Conditionals-boundary
+:material-flag: `--conditionals-boundary` · :material-sign-direction: Default: `true`
+
+Enables/disables the [CONDITIONALS BOUNDARY](../mutations/conditionals_boundary.md) mutant type.
+
+```shell
+gremlins unleash --conditionals_boundary=false
+```
+
+### Conditionals negation
+:material-flag: `--conditionals-negation` · :material-sign-direction: Default: `true`
+
+Enables/disables the [CONDITIONALS NEGATION](../mutations/conditionals_negation.md) mutant type.
+
+```shell
+gremlins unleash --conditionals_negation=false
+```
+
+### Increment decrement
+:material-flag: `--increment-decrement` · :material-sign-direction: Default: `true`
+
+Enables/disables the [INCREMENT DECREMENT](../mutations/increment_decrement.md) mutant type.
+
+```shell
+gremlins unleash --increment-decrement=false
+```
+
+### Invert negatives
+:material-flag: `--invert-negatives` · :material-sign-direction: Default: `true`
+
+Enables/disables the [INVERT NEGATIVES](../mutations/invert_negatives.md) mutant type.
+
+```shell
+gremlins unleash --invert_negatives=false
+```

@@ -1,4 +1,8 @@
-# Arithmetic base
+---
+title: Arithmetic base
+---
+
+# Arithmetic base <small>:material-sign-direction: default</small>
 
 _Arithmetic base_ will perform inversions on basic arithmetic operations.
 
