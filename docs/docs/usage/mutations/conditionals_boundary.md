@@ -19,11 +19,11 @@ inverted.
 ## Examples
 
 === "Original"
-```go
-if a > b {
-// Do something
-}
-```
+    ```go
+    if a > b {
+      // Do something
+    }
+    ```
 
 === "Mutated"
 

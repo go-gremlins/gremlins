@@ -20,11 +20,11 @@ _Conditionals negation_ inverts the conditional direction, which means a `==` wi
 ## Examples
 
 === "Original"
-```go
-if a == b {
-// Do something
-}
-```
+    ```go
+    if a == b {
+      // Do something
+    }
+    ```
 
 === "Mutated"
 

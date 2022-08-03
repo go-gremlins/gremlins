@@ -16,11 +16,11 @@ _Increment decrement_ will invert the sign of the increment or decrement.
 ## Examples
 
 === "Original"
-```go
-for i := 0; i < 10; i++ {
-// Do something
-}
-```
+    ```go
+    for i := 0; i < 10; i++ {
+      // Do something
+    }
+    ```
 
 === "Mutated"
 
