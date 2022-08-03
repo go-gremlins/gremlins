@@ -22,6 +22,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/go-gremlins/gremlins/cmd/internal/flags"
 	"github.com/go-gremlins/gremlins/configuration"
 	"github.com/go-gremlins/gremlins/pkg/log"
 )
@@ -79,6 +80,11 @@ and friends.
 
 	}
 	cmd.AddCommand(uc.cmd)
+
+	flag := flags.Flag{Name: "silent", CfgKey: configuration.GremlinsSilentKey, Shorthand: "s", DefaultV: false, Usage: "suppress output and run in silent mode"}
+	if err := flags.SetPersistent(cmd, flag); err != nil {
+		return nil, err
+	}
 
 	return &gremlinsCmd{
 		cmd: cmd,

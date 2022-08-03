@@ -20,6 +20,8 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/spf13/viper"
+
 	"github.com/go-gremlins/gremlins/pkg/log"
 )
 
@@ -113,4 +115,29 @@ func TestLogError(t *testing.T) {
 			t.Errorf("expected out to be empty, got %s", got)
 		}
 	})
+}
+
+func TestSilentMode(t *testing.T) {
+	viper.Set("silent", true)
+	defer viper.Reset()
+
+	sOut := &bytes.Buffer{}
+	defer sOut.Reset()
+	eOut := &bytes.Buffer{}
+	defer eOut.Reset()
+	log.Init(sOut, eOut)
+	defer log.Reset()
+
+	log.Infof("%s", "test")
+	log.Infoln("test")
+	log.Errorf("%s\n", "test")
+	log.Errorln("test")
+
+	if sOut.String() != "" {
+		t.Errorf("expected empty string")
+	}
+	if eOut.String() != "ERROR: test\nERROR: test\n" {
+		t.Log(eOut.String())
+		t.Errorf("expected errors to be reported")
+	}
 }
