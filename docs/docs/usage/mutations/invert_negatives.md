@@ -2,7 +2,7 @@
 title: Invert negatives
 ---
 
-# Invert negatives <small>:material-sign-direction: default</small>
+# Invert negatives  <small>:material-sign-direction: default</small>
 
 _Invert negatives_ will invert the sign of negative numbers, making them positive.
 
