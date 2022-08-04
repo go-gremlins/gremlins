@@ -11,6 +11,7 @@ on:
         description: The full version in the X.Y.Z format
         required: false
         type: string
+        default: x.y.z
       label:
         description: The alias for the documentation
         required: false
