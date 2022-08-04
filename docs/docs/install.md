@@ -4,12 +4,12 @@ Gremlins can be installed via pre-compiled binaries or from source.
 
 ## Pre compiled binaries
 
-### Linux
+### :material-linux: Linux
 
 We don't have public repositories yet. To install, you have to download the package appropriate to your architecture/OS
 and install it "manually".
 
-=== "deb"
+=== ":material-debian: deb"
 
     Download a `.deb` file appropriate for your ARCH from
     the [release page](https://github.com/go-gremlins/gremlins/releases/latest), the install with:
@@ -18,7 +18,7 @@ and install it "manually".
     dpkg -i gremlins_{{ release }}_linux_amd64.deb
     ```
 
-=== "rpm"
+=== ":material-redhat: rpm"
 
     Download a `.rpm` file appropriate for your ARCH from
     the [release page](https://github.com/go-gremlins/gremlins/releases/latest), the install with:
@@ -27,7 +27,7 @@ and install it "manually".
     rpm -i gremlins_{{ release }}_linux_amd64.rpm
     ```
 
-### MacOS
+### :material-apple: MacOS
 
 On macOS, you can use [Homebrew](https://brew.sh/). As of now, Gremlins uses only an Homebrew _tap_.
 
@@ -49,14 +49,14 @@ Then you can install it:
 brew install gremlins
 ```
 
-### Windows
+### :material-microsoft-windows: Windows
 
 As of now, only manual installation is supported.
 Download the appropriate release package from
 the [release page](https://github.com/go-gremlins/gremlins/releases/latest),
 extract the zip archive and copy the `.exe` file somewhere in your execution `PATH`.
 
-### Manual install
+### :material-bash: Manual install
 
 Alternatively, you can download the binary for your OS/ARCH, _untar_ it.
 
