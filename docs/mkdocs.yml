@@ -16,6 +16,9 @@ theme:
     - content.code.annotate
     - content.tabs.link
     - navigation.indexes
+  # Don't include MkDocs' JavaScript
+  include_search_page: false
+  search_index_only: true
 extra:
   social:
     - icon: fontawesome/brands/github-alt
@@ -26,7 +29,9 @@ extra:
       name: Docker
   version:
     provider: mike
-  release: !ENV [GR_VERSION, 'X.Y.Z']
+  release:
+    full_version: !ENV [GR_VERSION, 'X.Y.Z']
+    short_version: !ENV [GR_SHORT_VERSION, 'vX.Y']
 
 nav:
   - Home: index.md

@@ -15,7 +15,7 @@ and install it "manually".
     the [release page](https://github.com/go-gremlins/gremlins/releases/latest), then install with:
 
     ```sh
-    dpkg -i gremlins_{{ release }}_linux_amd64.deb
+    dpkg -i gremlins_{{ release.full_version }}_linux_amd64.deb
     ```
 
 === ":material-redhat: rpm"
@@ -24,7 +24,7 @@ and install it "manually".
     the [release page](https://github.com/go-gremlins/gremlins/releases/latest), then install with:
 
     ```sh
-    rpm -i gremlins_{{ release }}_linux_amd64.rpm
+    rpm -i gremlins_{{ release.full_version }}_linux_amd64.rpm
     ```
 
 ### :material-apple: MacOS
@@ -63,13 +63,13 @@ Alternatively, you can download the binary for your OS/ARCH, _untar_ it.
 For example, on GNU/Linux it could be:
 
 ```shell
-tar -xvf gremlins_{{ release }}_linux_amd64.tar.gz
+tar -xvf gremlins_{{ release.full_version }}_linux_amd64.tar.gz
 ```
 
 then copy it somewhere in `PATH`:
 
 ```shell
-sudo cp gremlins_{{ release }}_linux_amd64/gremlins /usr/bin
+sudo cp gremlins_{{ release.full_version }}_linux_amd64/gremlins /usr/bin
 ```
 
 ## From source
@@ -79,13 +79,13 @@ linting. You can clone download the source tarball from
 the [release page](https://github.com/go-gremlins/gremlins/releases/latest), then:
 
 ```sh
-tar -xvf gremlins-{{ release }}.tar.gz
+tar -xvf gremlins-{{ release.full_version }}.tar.gz
 ```
 
 Ad then:
 
 ```sh
-cd gremlins-{{ release }}
+cd gremlins-{{ release.full_version }}
 ```
 
 ```sh
