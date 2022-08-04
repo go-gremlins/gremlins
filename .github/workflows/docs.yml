@@ -3,9 +3,13 @@ name: Documentation
 on:
   workflow_call:
     inputs:
-      version:
-        description: The version of the documentation
+      short_version:
+        description: The version in the format vX.Y
         required: true
+        type: string
+      full_version:
+        description: The full version in the X.Y.Z format
+        required: false
         type: string
       label:
         description: The alias for the documentation
@@ -22,6 +26,8 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
+    env:
+      GR_VERSION: ${{ inputs.full_version }}
     if: ${{ github.event_name != 'pull_request' }}
     steps:
       - uses: actions/checkout@v2
@@ -37,9 +43,10 @@ jobs:
       - run: |
           pip install \
             mkdocs-material \
+            mkdocs-macros-plugin \
             mike
       - run: |
-          mike deploy --update-aliases --push ${{ inputs.version }} ${{ inputs.label }}
+          mike deploy --update-aliases --push ${{ inputs.short_version }} ${{ inputs.label }}
           mike list
         working-directory: docs
       - run: |

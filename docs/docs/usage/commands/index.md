@@ -1,3 +1,7 @@
+---
+title: The gremlins command
+---
+
 # Gremlins
 
 The `gremlins` command works with command and flags. Think of commands as verbs and flags as adjectives.

@@ -347,7 +347,7 @@ There is not much around, except from:
 
 ## Contributing
 
-See [contributing](CONTRIBUTING.md).
+See [contributing](docs/CONTRIBUTING.md).
 
 ## License
 

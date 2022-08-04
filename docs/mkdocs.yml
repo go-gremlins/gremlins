@@ -1,6 +1,7 @@
 site_name: Gremlins
 site_url: https://gremlins.dev
 repo_url: https://github.com/go-gremlins/gremlins
+edit_uri: edit/main/docs/docs
 site_description: A mutation testing tool for Go.
 copyright: Made with ❤️ by Gremlins contributors. <span xmlns:cc="http://creativecommons.org/ns#" >This work is licensed under <a href="http://creativecommons.org/licenses/by-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">CC BY-SA 4.0<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1"></a></span>
 repo_name: go-gremlins/gremlins
@@ -14,6 +15,7 @@ theme:
     - search.share
     - content.code.annotate
     - content.tabs.link
+    - navigation.indexes
 extra:
   social:
     - icon: fontawesome/brands/github-alt
@@ -24,6 +26,7 @@ extra:
       name: Docker
   version:
     provider: mike
+  release: !ENV [GR_VERSION, 'X.Y.Z']
 
 nav:
   - Home: index.md
@@ -31,16 +34,20 @@ nav:
   - Quick start: quick-start.md
   - Usage:
       - Commands:
-          - usage/commands/gremlins.md
+          - usage/commands/index.md
           - usage/commands/unleash.md
       - usage/configuration.md
       - Mutations:
-          - usage/mutations/about.md
+          - usage/mutations/index.md
           - usage/mutations/arithmetic_base.md
           - usage/mutations/conditionals_boundary.md
           - usage/mutations/conditionals_negation.md
           - usage/mutations/increment_decrement.md
           - usage/mutations/invert_negatives.md
+  - Contributing: CONTRIBUTING.md
+
+plugins:
+  - macros
 
 markdown_extensions:
 

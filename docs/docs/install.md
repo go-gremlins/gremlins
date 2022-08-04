@@ -15,7 +15,7 @@ and install it "manually".
     the [release page](https://github.com/go-gremlins/gremlins/releases/latest), the install with:
 
     ```sh
-    dpkg -i package.deb
+    dpkg -i gremlins_{{ release }}_linux_amd64.deb
     ```
 
 === "rpm"
@@ -24,7 +24,7 @@ and install it "manually".
     the [release page](https://github.com/go-gremlins/gremlins/releases/latest), the install with:
 
     ```sh
-    rpm -i package.rpm
+    rpm -i gremlins_{{ release }}_linux_amd64.rpm
     ```
 
 ### MacOS
@@ -58,16 +58,18 @@ extract the zip archive and copy the `.exe` file somewhere in your execution `PA
 
 ### Manual install
 
-Alternatively, you can download the binary for your ARCH/OS, _untar_ it:
+Alternatively, you can download the binary for your OS/ARCH, _untar_ it.
+
+For example, on GNU/Linux it could be:
 
 ```shell
-tar -xvf gremlins_XXX.tar.gz
+tar -xvf gremlins_{{ release }}_linux_amd64.tar.gz
 ```
 
 then copy it somewhere in `PATH`:
 
 ```shell
-sudo cp gremlins_XXX/gremlins /usr/bin
+sudo cp gremlins_{{ release }}_linux_amd64/gremlins /usr/bin
 ```
 
 ## From source
@@ -77,13 +79,13 @@ linting. You can clone download the source tarball from
 the [release page](https://github.com/go-gremlins/gremlins/releases/latest), then:
 
 ```sh
-tar -xvf gremlins_vXXX.tar.gz
+tar -xvf gremlins-{{ release }}.tar.gz
 ```
 
 Ad then:
 
 ```sh
-cd gremlins
+cd gremlins-{{ release }}
 ```
 
 ```sh
