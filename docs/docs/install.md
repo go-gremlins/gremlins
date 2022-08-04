@@ -12,7 +12,7 @@ and install it "manually".
 === ":material-debian: deb"
 
     Download a `.deb` file appropriate for your ARCH from
-    the [release page](https://github.com/go-gremlins/gremlins/releases/latest), the install with:
+    the [release page](https://github.com/go-gremlins/gremlins/releases/latest), then install with:
 
     ```sh
     dpkg -i gremlins_{{ release }}_linux_amd64.deb
@@ -21,7 +21,7 @@ and install it "manually".
 === ":material-redhat: rpm"
 
     Download a `.rpm` file appropriate for your ARCH from
-    the [release page](https://github.com/go-gremlins/gremlins/releases/latest), the install with:
+    the [release page](https://github.com/go-gremlins/gremlins/releases/latest), then install with:
 
     ```sh
     rpm -i gremlins_{{ release }}_linux_amd64.rpm
