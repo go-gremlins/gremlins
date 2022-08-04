@@ -689,13 +689,13 @@ and install it "manually".</p>
 <div class="tabbed-block">
 <p>Download a <code>.deb</code> file appropriate for your ARCH from
 the <a href="https://github.com/go-gremlins/gremlins/releases/latest">release page</a>, the install with:</p>
-<div class="highlight"><pre><span></span><code>dpkg -i gremlins_None_linux_amd64.deb
+<div class="highlight"><pre><span></span><code>dpkg -i gremlins_x.y.z_linux_amd64.deb
 </code></pre></div>
 </div>
 <div class="tabbed-block">
 <p>Download a <code>.rpm</code> file appropriate for your ARCH from
 the <a href="https://github.com/go-gremlins/gremlins/releases/latest">release page</a>, the install with:</p>
-<div class="highlight"><pre><span></span><code>rpm -i gremlins_None_linux_amd64.rpm
+<div class="highlight"><pre><span></span><code>rpm -i gremlins_x.y.z_linux_amd64.rpm
 </code></pre></div>
 </div>
 </div>
@@ -722,19 +722,19 @@ extract the zip archive and copy the <code>.exe</code> file somewhere in your ex
 <h3 id="manual-install">Manual install<a class="headerlink" href="#manual-install" title="Permanent link">&para;</a></h3>
 <p>Alternatively, you can download the binary for your OS/ARCH, <em>untar</em> it.</p>
 <p>For example, on GNU/Linux it could be:</p>
-<div class="highlight"><pre><span></span><code>tar -xvf gremlins_None_linux_amd64.tar.gz
+<div class="highlight"><pre><span></span><code>tar -xvf gremlins_x.y.z_linux_amd64.tar.gz
 </code></pre></div>
 <p>then copy it somewhere in <code>PATH</code>:</p>
-<div class="highlight"><pre><span></span><code>sudo cp gremlins_None_linux_amd64/gremlins /usr/bin
+<div class="highlight"><pre><span></span><code>sudo cp gremlins_x.y.z_linux_amd64/gremlins /usr/bin
 </code></pre></div>
 <h2 id="from-source">From source<a class="headerlink" href="#from-source" title="Permanent link">&para;</a></h2>
 <p>To build Gremlins you need the <a href="https://go.dev">Go compiler</a>, <code>make</code> and <a href="https://golangci-lint.run">golangci-lint</a> for
 linting. You can clone download the source tarball from
 the <a href="https://github.com/go-gremlins/gremlins/releases/latest">release page</a>, then:</p>
-<div class="highlight"><pre><span></span><code>tar -xvf gremlins-None.tar.gz
+<div class="highlight"><pre><span></span><code>tar -xvf gremlins-x.y.z.tar.gz
 </code></pre></div>
 <p>Ad then:</p>
-<div class="highlight"><pre><span></span><code><span class="nb">cd</span> gremlins-None
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span> gremlins-x.y.z
 </code></pre></div>
 <div class="highlight"><pre><span></span><code>make
 </code></pre></div>
