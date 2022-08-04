@@ -20,14 +20,14 @@ import "go/token"
 
 // Status represents the status of a given TokenMutant.
 //
-// - NotCovered means that a TokenMutant has been identified, but is not covered
-//   by tests.
-// - Runnable means that a TokenMutant has been identified and is covered by tests,
-//   which means it can be executed.
-// - Lived means that the TokenMutant has been tested, but the tests did pass, which
-//   means the test suite is not effective in catching it.
-// - Killed means that the TokenMutant has been tested and the tests failed, which
-//   means they are effective in covering this regression.
+//   - NotCovered means that a TokenMutant has been identified, but is not covered
+//     by tests.
+//   - Runnable means that a TokenMutant has been identified and is covered by tests,
+//     which means it can be executed.
+//   - Lived means that the TokenMutant has been tested, but the tests did pass, which
+//     means the test suite is not effective in catching it.
+//   - Killed means that the TokenMutant has been tested and the tests failed, which
+//     means they are effective in covering this regression.
 type Status int
 
 // Currently supported MutantStatus.

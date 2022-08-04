@@ -18,7 +18,6 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -87,7 +86,7 @@ func runUnleash(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	workDir, err := ioutil.TempDir(os.TempDir(), "gremlins-")
+	workDir, err := os.MkdirTemp(os.TempDir(), "gremlins-")
 	if err != nil {
 		return fmt.Errorf("impossible to create the workdir: %w", err)
 	}
@@ -107,7 +106,7 @@ func runUnleash(_ *cobra.Command, args []string) error {
 	return report.Do(results)
 }
 
-func run(workDir string, currPath string) (report.Results, error) {
+func run(workDir, currPath string) (report.Results, error) {
 	c, err := coverage.New(workDir, currPath)
 	if err != nil {
 		return report.Results{}, fmt.Errorf("failed to gather coverage in %q: %w", currPath, err)

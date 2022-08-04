@@ -16,12 +16,14 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version-file: 'go.mod'
-      - name: Run lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: latest
-          skip-build-cache: true
-          skip-pkg-cache: true
+          cache: true
+          cache-dependency-path: go.sum
+        # Run golangci-lint without action because it is not ready yet fo go1.19
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.47.3
+      - name: Run golangci-lint
+        run: golangci-lint run --version --verbose --out-format=github-actions
+
   test:
     name: Run the tests suite
     needs: lint
