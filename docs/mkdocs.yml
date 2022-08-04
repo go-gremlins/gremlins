@@ -31,7 +31,7 @@ extra:
     provider: mike
   release:
     full_version: !ENV [GR_VERSION, 'X.Y.Z']
-    short_version: !ENV [GR_SHORT_VERSION, 'vX.Y']
+    short_version: !ENV [GR_SHORT_VERSION, 'X.Y']
 
 nav:
   - Home: index.md
