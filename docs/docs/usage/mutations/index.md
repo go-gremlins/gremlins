@@ -1,3 +1,7 @@
+---
+title: Mutations
+---
+
 # About Mutations
 
 Mutations are the core of Gremlins' activity. Each mutation belongs to a group that defines its _flavour_. These

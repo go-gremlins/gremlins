@@ -34,21 +34,28 @@ jobs:
     needs: [ goreleaser ]
     steps:
       - name: Set version env
-        # This strips the patch version (ex. v1.2.3 -> v1.2) and sets it to GR_MINOR_VERSION
-        # And also sets the patch version to GR_PATCH_VERSION
+        # v1.2.3 ->
+        #   GR_FULL_VERSION=1.2.3
+        #   GR_SHORT_VERSION=v1.2
+        #   GR_PATCH_VERSION=2
         run: |
-          echo "GR_MINOR_VERSION=$(echo $GITHUB_REF | cut -d '.' -f 1,2)" >> $GITHUB_ENV
+          echo "GR_FULL_VERSION=$(echo $GITHUB_REF | cut -c2-)" >> $GITHUB_ENV
+          echo "GR_SHORT_VERSION=$(echo $GITHUB_REF | cut -d '.' -f 1,2)" >> $GITHUB_ENV
           echo "GR_PATCH_VERSION=$(echo $GITHUB_REF | cut -d '.' -f 3)" >> $GITHUB_ENV
       - name: Build latest documentation
+        # If patch is 0, it is a new release; set as new default
         if: ${{ env.GR_PATCH_VERSION == "0" }}
         uses: ./.github/workflows/docs.yml
         with:
-          version: ${{ env.GR_MINOR_VERSION }}
+          short_version: ${{ env.GR_SHORT_VERSION }}
+          full_version: ${{ env.GR_FULL_VERSION }}
           label: latest
           default: true
       - name: Build patch documentation
+        # If patch is not 0, it is a patch release; don't set as default
         if: ${{ env.GR_PATCH_VERSION != "0" }}
         uses: ./.github/workflows/docs.yml
         with:
-          version: ${{ env.GR_MINOR_VERSION }}
+          short_version: ${{ env.GR_SHORT_VERSION }}
+          full_version: ${{ env.GR_FULL_VERSION }}
           default: false

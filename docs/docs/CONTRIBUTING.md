@@ -2,16 +2,6 @@
 
 First, thanks for you wanting to contribute, the Gremlins project welcomes contributors!
 
-- [What can I contribute?](#what-can-i-contribute)
-  - [Report bugs](#report-bugs)
-  - [Suggest enhancements](#suggest-enhancements)
-  - [Send pull requests](#send-pull-requests)
-- [Becoming a contributor](#becoming-a-contributor)
-  - [Before contributing](#before-contributing)
-  - [Open an issue](#open-an-issue)
-  - [Submit a contribution](#submit-a-contribution)
-  - [Commit messages](#commit-messages)
-
 ## What can I contribute?
 
 ### Report bugs
