@@ -67,8 +67,8 @@ mutants:
 You can validate the configuration file using the provided JSON Schema (ex. using it in your editor). The schema
 can be found at 
 
-- Latest: [{{ config.site_url }}schema/configuration.json]({{ config.site_url }}schema/configuration.json)
-- Specific version: [{{ config.site_url }}{{ release.short_version }}/schema/configuration.json]({{ config.site_url }}{{ release.short_version }}/schema/configuration.json) 
+- Latest: [https://gremlins.dev/schema/configuration.json](https://gremlins.dev/schema/configuration.json)
+- Specific version: [{{ config.site_url }}/schema/configuration.json]({{ config.site_url }}/schema/configuration.json) 
 
 ## Environment variables
 
