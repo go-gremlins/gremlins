@@ -21,7 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"go/token"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -263,7 +263,7 @@ func TestMutations(t *testing.T) {
 		t.Run(tCase.name, func(t *testing.T) {
 			t.Parallel()
 			f, _ := os.Open(tCase.fixture)
-			src, _ := ioutil.ReadAll(f)
+			src, _ := io.ReadAll(f)
 			filename := filenameFromFixture(tCase.fixture)
 			mapFS := fstest.MapFS{
 				filename: {Data: src},
@@ -301,7 +301,7 @@ func TestMutantSkipDisabled(t *testing.T) {
 			t.Parallel()
 			fixture := "testdata/fixtures/0_all_go"
 			f, _ := os.Open(fixture)
-			src, _ := ioutil.ReadAll(f)
+			src, _ := io.ReadAll(f)
 			filename := filenameFromFixture(fixture)
 			mapFS := fstest.MapFS{
 				filename: {Data: src},
@@ -330,7 +330,7 @@ func TestMutantSkipDisabled(t *testing.T) {
 func TestSkipTestAndNonGoFiles(t *testing.T) {
 	t.Parallel()
 	f, _ := os.Open("testdata/fixtures/geq_go")
-	file, _ := ioutil.ReadAll(f)
+	file, _ := io.ReadAll(f)
 
 	sys := fstest.MapFS{
 		"file_test.go": {Data: file},
@@ -357,8 +357,10 @@ type execContext = func(ctx context.Context, name string, args ...string) *exec.
 func TestMutatorRun(t *testing.T) {
 	t.Parallel()
 	f, _ := os.Open("testdata/fixtures/gtr_go")
-	defer f.Close()
-	src, _ := ioutil.ReadAll(f)
+	defer func(f *os.File) {
+		_ = f.Close()
+	}(f)
+	src, _ := io.ReadAll(f)
 	filename := filenameFromFixture("testdata/fixtures/gtr_go")
 	mapFS := fstest.MapFS{
 		filename: {Data: src},
@@ -443,8 +445,10 @@ func TestMutatorTestExecution(t *testing.T) {
 		t.Run(tCase.name, func(t *testing.T) {
 			t.Parallel()
 			f, _ := os.Open(tCase.fixture)
-			defer f.Close()
-			src, _ := ioutil.ReadAll(f)
+			defer func(f *os.File) {
+				_ = f.Close()
+			}(f)
+			src, _ := io.ReadAll(f)
 			filename := filenameFromFixture(tCase.fixture)
 			mapFS := fstest.MapFS{
 				filename: {Data: src},
@@ -479,8 +483,10 @@ func TestApplyAndRollbackError(t *testing.T) {
 	t.Run("apply fails", func(t *testing.T) {
 		t.Parallel()
 		f, _ := os.Open("testdata/fixtures/gtr_go")
-		defer f.Close()
-		src, _ := ioutil.ReadAll(f)
+		defer func(f *os.File) {
+			_ = f.Close()
+		}(f)
+		src, _ := io.ReadAll(f)
 		filename := filenameFromFixture("testdata/fixtures/gtr_go")
 		mapFS := fstest.MapFS{
 			filename: {Data: src},
@@ -506,8 +512,10 @@ func TestApplyAndRollbackError(t *testing.T) {
 	t.Run("rollback fails", func(t *testing.T) {
 		t.Parallel()
 		f, _ := os.Open("testdata/fixtures/gtr_go")
-		defer f.Close()
-		src, _ := ioutil.ReadAll(f)
+		defer func(f *os.File) {
+			_ = f.Close()
+		}(f)
+		src, _ := io.ReadAll(f)
 		filename := filenameFromFixture("testdata/fixtures/gtr_go")
 		mapFS := fstest.MapFS{
 			filename: {Data: src},

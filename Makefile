@@ -34,6 +34,10 @@ ${COVER_OUT}:
 lint:
 	${LINT} ./...
 
+.PHONY: goimports
+goimports:
+	goimports --local 'github.com/go-gremlins/gremlins' -v -w .
+
 .PHONY: snapshot
 snapshot:
 	${RELEASE} --snapshot --rm-dist

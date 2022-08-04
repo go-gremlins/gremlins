@@ -19,8 +19,9 @@ package mutant_test
 import (
 	"testing"
 
-	"github.com/go-gremlins/gremlins/pkg/mutant"
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/go-gremlins/gremlins/pkg/mutant"
 )
 
 func TestStatusString(t *testing.T) {

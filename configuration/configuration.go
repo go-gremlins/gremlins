@@ -52,7 +52,8 @@ const (
 // AutomaticEnv configuration having GREMLINS as prefix.
 // The environment variables take precedence over the configuration file and must be set in the
 // format:
-//   GREMLINS_<COMMAND NAME>_<FLAG NAME>
+//
+//	GREMLINS_<COMMAND NAME>_<FLAG NAME>
 func Init(cPaths []string) error {
 	replacer := strings.NewReplacer(".", "_", "-", "_")
 	viper.SetEnvKeyReplacer(replacer)
@@ -84,9 +85,9 @@ func Init(cPaths []string) error {
 // The generated key will have the format 'mutants.mutant-name.enabled",
 // which corresponds to the Yaml:
 //
-// 		mutants:
-//  		mutant-name:
-//  			enabled: [bool]
+//			mutants:
+//	 		mutant-name:
+//	 			enabled: [bool]
 func MutantTypeEnabledKey(mt mutant.Type) string {
 	m := mt.String()
 	m = strings.ReplaceAll(m, "_", "-")
