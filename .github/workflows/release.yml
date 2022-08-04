@@ -40,7 +40,7 @@ jobs:
         #   GR_PATCH_VERSION=2
         run: |
           echo "GR_FULL_VERSION=$(echo $GITHUB_REF | cut -c2-)" >> $GITHUB_ENV
-          echo "GR_SHORT_VERSION=$(echo $GITHUB_REF | cut -d '.' -f 1,2)" >> $GITHUB_ENV
+          echo "GR_SHORT_VERSION=$(echo $GITHUB_REF | cut -d '.' -f 1,2 | cut -c2-)" >> $GITHUB_ENV
           echo "GR_PATCH_VERSION=$(echo $GITHUB_REF | cut -d '.' -f 3)" >> $GITHUB_ENV
       - name: Build latest documentation
         # If patch is 0, it is a new release; set as new default
