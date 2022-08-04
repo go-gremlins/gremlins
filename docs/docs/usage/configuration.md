@@ -64,6 +64,12 @@ mutants:
 1. Thresholds are set by default to `0`, which means they are not enforced. For further information check the specific
    documentation.
 
+You can validate the configuration file using the provided JSON Schema (ex. using it in your editor). The schema
+can be found at 
+
+- Latest: [{{ config.site_url }}schema/configuration.json]({{ config.site_url }}schema/configuration.json)
+- Specific version: [{{ config.site_url }}{{ release.short_version }}/schema/configuration.json]({{ config.site_url }}{{ release.short_version }}/schema/configuration.json) 
+
 ## Environment variables
 
 Gremlins can be configured via environment variables as well. You can construct the variable name referring to the
