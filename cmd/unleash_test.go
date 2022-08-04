@@ -40,40 +40,59 @@ func TestUnleash(t *testing.T) {
 
 	flags := cmd.Flags()
 
-	// Test for dry-run
-	f := flags.Lookup("dry-run")
-	if f.Value.Type() != "bool" {
-		t.Errorf("expected 'dry-run' to be a 'bool', got %q", f.Value.Type())
-	}
-	if f.DefValue != "false" {
-		t.Errorf("expected 'dry-run' have default 'false', got %q", f.DefValue)
+	testCases := []struct {
+		name      string
+		shorthand string
+		flagType  string
+		defValue  string
+	}{
+		{
+			name:      "dry-run",
+			shorthand: "d",
+			flagType:  "bool",
+			defValue:  "false",
+		},
+		{
+			name:      "tags",
+			shorthand: "t",
+			flagType:  "string",
+			defValue:  "",
+		},
+		{
+			name:     "threshold-efficacy",
+			flagType: "float64",
+			defValue: "0",
+		},
+		{
+			name:     "threshold-mcover",
+			flagType: "float64",
+			defValue: "0",
+		},
+		{
+			name:      "output",
+			shorthand: "o",
+			flagType:  "string",
+			defValue:  "",
+		},
 	}
 
-	// Test for tags
-	f = flags.Lookup("tags")
-	if f.Value.Type() != "string" {
-		t.Errorf("expected 'tags' to be a 'string', got %q", f.Value.Type())
-	}
-	if f.DefValue != "" {
-		t.Errorf("expected 'tags' not to be set by default, got %q", f.DefValue)
-	}
-
-	// test threshold-efficacy
-	f = flags.Lookup("threshold-efficacy")
-	if f.Value.Type() != "float64" {
-		t.Errorf("expected 'threshold-efficacy' to be a 'float64', got %q", f.Value.Type())
-	}
-	if f.DefValue != "0" {
-		t.Errorf("expected 'threshold-efficacy' have default '0', got %q", f.DefValue)
-	}
-
-	// test threshold-mcover
-	f = flags.Lookup("threshold-mcover")
-	if f.Value.Type() != "float64" {
-		t.Errorf("expected 'threshold-mcover' to be a 'float64', got %q", f.Value.Type())
-	}
-	if f.DefValue != "0" {
-		t.Errorf("expected 'threshold-mcover' have default '0', got %q", f.DefValue)
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			f := flags.Lookup(tc.name)
+			if f == nil {
+				t.Fatalf("expected flag %q to be registered", tc.name)
+			}
+			if tc.shorthand != "" && f.Shorthand != tc.shorthand {
+				t.Errorf("expected %q to have a shorthand %q, got %q", tc.name, tc.shorthand, f.Shorthand)
+			}
+			if f.Value.Type() != tc.flagType {
+				t.Errorf("expected %q to be type %q, got %q", tc.name, f.Value.Type(), f.Value.Type())
+			}
+			if f.DefValue != tc.defValue {
+				t.Errorf("expected %q to have default value %q, got %q", tc.name, tc.defValue, f.DefValue)
+			}
+		})
 	}
 
 	// test for MutantTypes flags

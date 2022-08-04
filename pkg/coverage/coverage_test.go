@@ -69,7 +69,8 @@ func TestCoverageRunFails(t *testing.T) {
 
 func TestCoverageParsesOutput(t *testing.T) {
 	t.Parallel()
-	cov := coverage.NewWithCmdAndPackage(fakeExecCommandSuccess(nil), "example.com", "testdata/valid", "./...")
+	module := "example.com"
+	cov := coverage.NewWithCmdAndPackage(fakeExecCommandSuccess(nil), module, "testdata/valid", "./...")
 	profile := coverage.Profile{
 		"path/file1.go": {
 			{
@@ -89,6 +90,7 @@ func TestCoverageParsesOutput(t *testing.T) {
 		},
 	}
 	want := coverage.Result{
+		Module:  module,
 		Profile: profile,
 	}
 
@@ -98,6 +100,9 @@ func TestCoverageParsesOutput(t *testing.T) {
 	}
 
 	if !cmp.Equal(got.Profile, want.Profile) {
+		t.Error(cmp.Diff(got, want))
+	}
+	if !cmp.Equal(got.Module, want.Module) {
 		t.Error(cmp.Diff(got, want))
 	}
 	if got.Elapsed == 0 {

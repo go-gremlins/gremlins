@@ -17,6 +17,8 @@
 package report
 
 import (
+	"encoding/json"
+	"os"
 	"time"
 
 	"github.com/fatih/color"
@@ -27,6 +29,7 @@ import (
 	"github.com/go-gremlins/gremlins/internal/execution"
 	"github.com/go-gremlins/gremlins/pkg/log"
 	"github.com/go-gremlins/gremlins/pkg/mutant"
+	"github.com/go-gremlins/gremlins/pkg/report/internal"
 )
 
 var (
@@ -40,66 +43,149 @@ var (
 // Results contains the list of mutant.Mutant to be reported
 // and the time it took to discover and test them.
 type Results struct {
+	Module  string
 	Mutants []mutant.Mutant
 	Elapsed time.Duration
 }
 
-// Do generates the report of the Results received.
-// This function uses the log package in gremlins to write to the
-// chosen io.Writer, so it is necessary to call log.Init before
-// the report generation.
-func Do(results Results) error {
-	if len(results.Mutants) == 0 {
-		log.Infoln("\nNo results to report.")
+type reportStatus struct {
+	files map[string][]internal.Mutation
 
-		return nil
-	}
-	var k, l, t, nc, nv, r int
-	for _, m := range results.Mutants {
-		switch m.Status() {
-		case mutant.Killed:
-			k++
-		case mutant.Lived:
-			l++
-		case mutant.NotCovered:
-			nc++
-		case mutant.TimedOut:
-			t++
-		case mutant.NotViable:
-			nv++
-		case mutant.Runnable:
-			r++
-		}
-	}
-	elapsed := durafmt.Parse(results.Elapsed).LimitFirstN(2)
-	notCovered := fgHiYellow(nc)
-	if r > 0 {
-		runnable := fgGreen(r)
-		rCoverage := float64(r) / float64(r+nc) * 100
-		log.Infoln("")
-		log.Infof("Dry run completed in %s\n", elapsed.String())
-		log.Infof("Runnable: %s, Not covered: %s\n", runnable, notCovered)
-		log.Infof("Mutant coverage: %.2f%%\n", rCoverage)
+	elapsed *durafmt.Durafmt
+	module  string
 
-		return nil
-	}
-	tEfficacy := float64(k) / float64(k+l) * 100
-	rCoverage := float64(k+l) / float64(k+l+nc) * 100
-	killed := fgHiGreen(k)
-	lived := fgRed(l)
-	timedOut := fgGreen(t)
-	notViable := fgHiBlack(nv)
-	log.Infoln("")
-	log.Infof("Mutation testing completed in %s\n", elapsed.String())
-	log.Infof("Killed: %s, Lived: %s, Not covered: %s\n", killed, lived, notCovered)
-	log.Infof("Timed out: %s, Not viable: %s\n", timedOut, notViable)
-	log.Infof("Test efficacy: %.2f%%\n", tEfficacy)
-	log.Infof("Mutant coverage: %.2f%%\n", rCoverage)
+	killed     int
+	lived      int
+	timedOut   int
+	notCovered int
+	notViable  int
+	runnable   int
 
-	return assess(tEfficacy, rCoverage)
+	tEfficacy float64
+	mCovered  float64
 }
 
-func assess(tEfficacy, rCoverage float64) error {
+func newReport(results Results) (*reportStatus, bool) {
+	if len(results.Mutants) == 0 {
+
+		return nil, false
+	}
+	rep := &reportStatus{
+		module:  results.Module,
+		elapsed: durafmt.Parse(results.Elapsed).LimitFirstN(2),
+	}
+	rep.files = make(map[string][]internal.Mutation)
+	for _, m := range results.Mutants {
+		rep.files[m.Position().Filename] = append(rep.files[m.Position().Filename], internal.Mutation{
+			Line:   m.Position().Line,
+			Column: m.Position().Column,
+			Type:   m.Type().String(),
+			Status: m.Status().String(),
+		})
+
+		switch m.Status() {
+		case mutant.Killed:
+			rep.killed++
+		case mutant.Lived:
+			rep.lived++
+		case mutant.NotCovered:
+			rep.notCovered++
+		case mutant.TimedOut:
+			rep.timedOut++
+		case mutant.NotViable:
+			rep.notViable++
+		case mutant.Runnable:
+			rep.runnable++
+		}
+	}
+	if !rep.isDryRun() {
+		rep.tEfficacy = float64(rep.killed) / float64(rep.killed+rep.lived) * 100
+		rep.mCovered = float64(rep.killed+rep.lived) / float64(rep.killed+rep.lived+rep.notCovered) * 100
+	} else {
+		rep.mCovered = float64(rep.runnable) / float64(rep.runnable+rep.notCovered) * 100
+	}
+
+	return rep, true
+}
+
+func (*reportStatus) isDryRun() bool {
+	return viper.GetBool(configuration.UnleashDryRunKey)
+}
+
+func (r *reportStatus) reportFindings() {
+	if r.isDryRun() {
+		r.dryRunReport()
+	} else {
+		r.fullRunReport()
+	}
+	r.fileReport()
+}
+
+func (r *reportStatus) fileReport() {
+	if output := viper.GetString(configuration.UnleashOutputKey); output != "" {
+		files := make([]internal.OutputFile, 0, len(r.files))
+		for fName, mutations := range r.files {
+			of := internal.OutputFile{Filename: fName}
+			of.Mutations = append(of.Mutations, mutations...)
+			files = append(files, of)
+		}
+
+		result := internal.OutputResult{
+			GoModule:          r.module,
+			TestEfficacy:      r.tEfficacy,
+			MutationsCoverage: r.mCovered,
+			MutantsTotal:      r.lived + r.killed + r.notViable,
+			MutantsKilled:     r.killed,
+			MutantsLived:      r.lived,
+			MutantsNotViable:  r.notViable,
+			MutantsNotCovered: r.notCovered,
+			ElapsedTime:       r.elapsed.Duration().Seconds(),
+			Files:             files,
+		}
+
+		jsonResult, _ := json.Marshal(result)
+		f, err := os.Create(output)
+		if err != nil {
+			log.Errorf("impossible to write file: %s\n", err)
+		}
+		defer func(f *os.File) {
+			_ = f.Close()
+		}(f)
+		if _, err := f.Write(jsonResult); err != nil {
+			log.Errorf("impossible to write file: %s\n", err)
+		}
+
+	}
+}
+
+func (r *reportStatus) dryRunReport() {
+	notCovered := fgHiYellow(r.notCovered)
+	runnable := fgGreen(r.runnable)
+	log.Infoln("")
+	log.Infof("Dry run completed in %s\n", r.elapsed.String())
+	log.Infof("Runnable: %s, Not covered: %s\n", runnable, notCovered)
+	log.Infof("Mutant coverage: %.2f%%\n", r.mCovered)
+}
+
+func (r *reportStatus) fullRunReport() {
+	killed := fgHiGreen(r.killed)
+	lived := fgRed(r.lived)
+	timedOut := fgGreen(r.timedOut)
+	notViable := fgHiBlack(r.notViable)
+	notCovered := fgHiYellow(r.notCovered)
+	log.Infoln("")
+	log.Infof("Mutation testing completed in %s\n", r.elapsed.String())
+	log.Infof("Killed: %s, Lived: %s, Not covered: %s\n", killed, lived, notCovered)
+	log.Infof("Timed out: %s, Not viable: %s\n", timedOut, notViable)
+	log.Infof("Test efficacy: %.2f%%\n", r.tEfficacy)
+	log.Infof("Mutant coverage: %.2f%%\n", r.mCovered)
+}
+
+func (r *reportStatus) assess(tEfficacy, rCoverage float64) error {
+	if r.isDryRun() {
+		return nil
+	}
+
 	et := viper.GetFloat64(configuration.UnleashThresholdEfficacyKey)
 	if et > 0 && tEfficacy <= et {
 		return execution.NewExitErr(execution.EfficacyThreshold)
@@ -110,6 +196,22 @@ func assess(tEfficacy, rCoverage float64) error {
 	}
 
 	return nil
+}
+
+// Do generates the report of the Results received.
+// This function uses the log package in gremlins to write to the
+// chosen io.Writer, so it is necessary to call log.Init before
+// the report generation.
+func Do(results Results) error {
+	rep, ok := newReport(results)
+	if !ok {
+		log.Infoln("\nNo results to report.")
+
+		return nil
+	}
+	rep.reportFindings()
+
+	return rep.assess(rep.tEfficacy, rep.mCovered)
 }
 
 // Mutant logs a mutant.Mutant.

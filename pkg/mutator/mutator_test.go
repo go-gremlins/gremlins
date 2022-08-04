@@ -62,19 +62,20 @@ func viperReset() {
 }
 
 const expectedTimeout = 10 * time.Second
+const expectedModule = "example.com"
 
 func coveredPosition(fixture string) coverage.Result {
 	fn := filenameFromFixture(fixture)
 	p := coverage.Profile{fn: {{StartLine: 6, EndLine: 7, StartCol: 8, EndCol: 9}}}
 
-	return coverage.Result{Profile: p, Elapsed: expectedTimeout}
+	return coverage.Result{Module: expectedModule, Profile: p, Elapsed: expectedTimeout}
 }
 
 func notCoveredPosition(fixture string) coverage.Result {
 	fn := filenameFromFixture(fixture)
 	p := coverage.Profile{fn: {{StartLine: 9, EndLine: 9, StartCol: 8, EndCol: 9}}}
 
-	return coverage.Result{Profile: p, Elapsed: expectedTimeout}
+	return coverage.Result{Module: expectedModule, Profile: p, Elapsed: expectedTimeout}
 }
 
 type dealerStub struct{}
@@ -273,6 +274,10 @@ func TestMutations(t *testing.T) {
 			mut := mutator.New(mapFS, tCase.covResult, dealerStub{})
 			res := mut.Run()
 			got := res.Mutants
+
+			if res.Module != expectedModule {
+				t.Errorf("expected module to be %q, got %q", expectedModule, res.Module)
+			}
 
 			if tCase.token == token.ILLEGAL {
 				if len(got) != 0 {

@@ -37,6 +37,7 @@ import (
 // it took to generate the coverage report.
 type Result struct {
 	Profile Profile
+	Module  string
 	Elapsed time.Duration
 }
 
@@ -120,7 +121,7 @@ func (c *Coverage) Run() (Result, error) {
 		return Result{}, fmt.Errorf("an error occurred while generating coverage profile: %w", err)
 	}
 
-	return Result{profile, elapsed}, nil
+	return Result{Module: c.mod, Profile: profile, Elapsed: elapsed}, nil
 }
 
 func (c *Coverage) getProfile() (Profile, error) {

@@ -53,6 +53,7 @@ type Mutator struct {
 	rollback          func(m mutant.Mutant) error
 	mutantStream      chan mutant.Mutant
 	buildTags         string
+	module            string
 	testExecutionTime time.Duration
 	dryRun            bool
 }
@@ -80,6 +81,7 @@ func New(fs fs.FS, r coverage.Result, manager workdir.Dealer, opts ...Option) Mu
 	dryRun := viper.GetBool(configuration.UnleashDryRunKey)
 
 	mut := Mutator{
+		module:            r.Module,
 		wdManager:         manager,
 		covProfile:        r.Profile,
 		testExecutionTime: r.Elapsed * timeoutCoefficient,
@@ -146,6 +148,7 @@ func (mu *Mutator) Run() report.Results {
 	start := time.Now()
 	res := mu.executeTests()
 	res.Elapsed = time.Since(start)
+	res.Module = mu.module
 
 	return res
 }

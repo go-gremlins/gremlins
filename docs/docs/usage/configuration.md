@@ -43,6 +43,7 @@ Here is a complete configuration file with all the properties set to their defau
 unleash:
   dry-run: false
   tags: ""
+  output: ""
   threshold: #(1)
     efficacy: 0
     mutant-coverage: 0
@@ -64,8 +65,9 @@ mutants:
 1. Thresholds are set by default to `0`, which means they are not enforced. For further information check the specific
    documentation.
 
-You can validate the configuration file using the provided JSON Schema (ex. using it in your editor). The schema
-can be found at [{{ config.site_url }}/schema/configuration.json]({{ config.site_url }}/schema/configuration.json). 
+!!! tip
+    You can validate the configuration file using the provided JSON Schema (ex. using it in your editor). The schema
+    can be found at [{{ config.site_url }}/schema/configuration.json]({{ config.site_url }}/schema/configuration.json). 
 
 ## Environment variables
 
