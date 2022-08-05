@@ -26,8 +26,8 @@ import (
 
 func TestNewTokenNode(t *testing.T) {
 	testCases := []struct {
-		name      string
 		node      ast.Node
+		name      string
 		wantTok   token.Token
 		wantPos   token.Pos
 		supported bool

@@ -123,9 +123,9 @@ func TestReport(t *testing.T) {
 
 func TestAssessment(t *testing.T) {
 	testCases := []struct {
+		value       any
 		name        string
 		confKey     string
-		value       any
 		expectError bool
 	}{
 		// Efficacy-threshold
