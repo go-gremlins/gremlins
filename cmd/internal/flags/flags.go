@@ -34,7 +34,7 @@ type Flag struct {
 
 // Set is a "generic" function used to set flags on cobra.Command and bind
 // them to viper.Viper.
-func Set(cmd *cobra.Command, flag Flag) error {
+func Set(cmd *cobra.Command, flag *Flag) error {
 	flags := cmd.Flags()
 	switch dv := flag.DefaultV.(type) {
 	// TODO: add a case for all the supported types
@@ -53,7 +53,7 @@ func Set(cmd *cobra.Command, flag Flag) error {
 	return nil
 }
 
-func setFloat64(flag Flag, flags *pflag.FlagSet, dv float64) {
+func setFloat64(flag *Flag, flags *pflag.FlagSet, dv float64) {
 	if flag.Shorthand != "" {
 		flags.Float64P(flag.Name, flag.Shorthand, dv, flag.Usage)
 	} else {
@@ -61,7 +61,7 @@ func setFloat64(flag Flag, flags *pflag.FlagSet, dv float64) {
 	}
 }
 
-func setString(flag Flag, flags *pflag.FlagSet, dv string) {
+func setString(flag *Flag, flags *pflag.FlagSet, dv string) {
 	if flag.Shorthand != "" {
 		flags.StringP(flag.Name, flag.Shorthand, dv, flag.Usage)
 	} else {
@@ -69,7 +69,7 @@ func setString(flag Flag, flags *pflag.FlagSet, dv string) {
 	}
 }
 
-func setBool(flag Flag, flags *pflag.FlagSet, dv bool) {
+func setBool(flag *Flag, flags *pflag.FlagSet, dv bool) {
 	if flag.Shorthand != "" {
 		flags.BoolP(flag.Name, flag.Shorthand, dv, flag.Usage)
 	} else {

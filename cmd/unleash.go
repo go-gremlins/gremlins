@@ -157,7 +157,7 @@ func setFlagsOnCmd(cmd *cobra.Command) error {
 		return pflag.NormalizedName(name)
 	})
 
-	fls := []flags.Flag{
+	fls := []*flags.Flag{
 		{Name: paramDryRun, CfgKey: configuration.UnleashDryRunKey, Shorthand: "d", DefaultV: false, Usage: "find mutations but do not executes tests"},
 		{Name: paramBuildTags, CfgKey: configuration.UnleashTagsKey, Shorthand: "t", DefaultV: "", Usage: "a comma-separated list of build tags"},
 		{Name: paramThresholdEfficacy, CfgKey: configuration.UnleashThresholdEfficacyKey, DefaultV: float64(0), Usage: "threshold for code-efficacy percent"},
@@ -182,7 +182,7 @@ func setMutantTypeFlags(cmd *cobra.Command) error {
 		param = strings.ToLower(param)
 		confKey := configuration.MutantTypeEnabledKey(mt)
 
-		err := flags.Set(cmd, flags.Flag{
+		err := flags.Set(cmd, &flags.Flag{
 			Name:     param,
 			CfgKey:   confKey,
 			DefaultV: configuration.IsDefaultEnabled(mt),

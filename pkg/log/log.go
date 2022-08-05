@@ -35,7 +35,7 @@ var instance *log
 //
 // If one of the logging methods is called, and the logger hasn't been
 // initialized yet, a new logger will be initialized with a noOp out.
-func Init(out io.Writer, eOut io.Writer) {
+func Init(out, eOut io.Writer) {
 	if out == nil || eOut == nil {
 		return
 	}
