@@ -53,16 +53,16 @@ type Coverage struct {
 }
 
 // Option for the Coverage initialization.
-type Option func(c Coverage) Coverage
+type Option func(c *Coverage) *Coverage
 
 type execContext = func(name string, args ...string) *exec.Cmd
 
 // New instantiates a Coverage element using exec.Command as execContext,
 // actually running the command on the OS.
-func New(workdir, path string, opts ...Option) (Coverage, error) {
+func New(workdir, path string, opts ...Option) (*Coverage, error) {
 	mod, err := getMod(path)
 	if err != nil {
-		return Coverage{}, err
+		return &Coverage{}, err
 	}
 
 	return NewWithCmdAndPackage(exec.Command, mod, workdir, path, opts...), nil
@@ -87,11 +87,11 @@ func getMod(path string) (string, error) {
 }
 
 // NewWithCmdAndPackage instantiates a Coverage element given a custom execContext.
-func NewWithCmdAndPackage(cmdContext execContext, mod, workdir, path string, opts ...Option) Coverage {
+func NewWithCmdAndPackage(cmdContext execContext, mod, workdir, path string, opts ...Option) *Coverage {
 	buildTags := viper.GetString(configuration.UnleashTagsKey)
 	path = strings.TrimSuffix(path, "/")
 
-	c := Coverage{
+	c := &Coverage{
 		cmdContext: cmdContext,
 		workDir:    workdir,
 		path:       path + "/...",
@@ -108,7 +108,7 @@ func NewWithCmdAndPackage(cmdContext execContext, mod, workdir, path string, opt
 
 // Run executes the coverage command and parses the results, returning a *Profile
 // object.
-func (c Coverage) Run() (Result, error) {
+func (c *Coverage) Run() (Result, error) {
 	log.Infof("Gathering coverage... ")
 	elapsed, err := c.execute()
 	if err != nil {
@@ -123,7 +123,7 @@ func (c Coverage) Run() (Result, error) {
 	return Result{profile, elapsed}, nil
 }
 
-func (c Coverage) getProfile() (Profile, error) {
+func (c *Coverage) getProfile() (Profile, error) {
 	cf, err := os.Open(c.filePath())
 	defer func(cf *os.File) {
 		_ = cf.Close()
@@ -139,11 +139,11 @@ func (c Coverage) getProfile() (Profile, error) {
 	return profile, nil
 }
 
-func (c Coverage) filePath() string {
+func (c *Coverage) filePath() string {
 	return fmt.Sprintf("%v/%v", c.workDir, c.fileName)
 }
 
-func (c Coverage) execute() (time.Duration, error) {
+func (c *Coverage) execute() (time.Duration, error) {
 	args := []string{"test"}
 	if c.buildTags != "" {
 		args = append(args, "-tags", c.buildTags)
@@ -160,7 +160,7 @@ func (c Coverage) execute() (time.Duration, error) {
 	return time.Since(start), nil
 }
 
-func (c Coverage) parse(data io.Reader) (Profile, error) {
+func (c *Coverage) parse(data io.Reader) (Profile, error) {
 	profiles, err := cover.ParseProfilesFromReader(data)
 	if err != nil {
 		return nil, err
@@ -177,7 +177,7 @@ func (c Coverage) parse(data io.Reader) (Profile, error) {
 				EndLine:   b.EndLine,
 				EndCol:    b.EndCol,
 			}
-			fn := removeModuleFromPath(p, c)
+			fn := c.removeModuleFromPath(p)
 			status[fn] = append(status[fn], block)
 		}
 	}
@@ -185,6 +185,6 @@ func (c Coverage) parse(data io.Reader) (Profile, error) {
 	return status, nil
 }
 
-func removeModuleFromPath(p *cover.Profile, c Coverage) string {
+func (c *Coverage) removeModuleFromPath(p *cover.Profile) string {
 	return strings.ReplaceAll(p.FileName, c.mod+"/", "")
 }
