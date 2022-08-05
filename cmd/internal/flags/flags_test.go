@@ -115,7 +115,7 @@ func TestSet(t *testing.T) {
 			}
 
 			tc.flag.Name += "_persistent"
-			err = SetPersistent(cmd, tc.flag)
+			err = SetPersistent(cmd, &tc.flag)
 			if (tc.expectError && err == nil) || (!tc.expectError && err != nil) {
 				t.Fatal("error not expected")
 			}

@@ -81,7 +81,7 @@ and friends.
 	}
 	cmd.AddCommand(uc.cmd)
 
-	flag := flags.Flag{Name: "silent", CfgKey: configuration.GremlinsSilentKey, Shorthand: "s", DefaultV: false, Usage: "suppress output and run in silent mode"}
+	flag := &flags.Flag{Name: "silent", CfgKey: configuration.GremlinsSilentKey, Shorthand: "s", DefaultV: false, Usage: "suppress output and run in silent mode"}
 	if err := flags.SetPersistent(cmd, flag); err != nil {
 		return nil, err
 	}
