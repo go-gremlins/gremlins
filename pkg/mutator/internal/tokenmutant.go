@@ -30,10 +30,10 @@ import (
 type TokenMutant struct {
 	fs          *token.FileSet
 	file        *ast.File
-	status      mutant.Status
-	mutantType  mutant.Type
 	tokenNode   *NodeToken
 	workDir     string
+	status      mutant.Status
+	mutantType  mutant.Type
 	actualToken token.Token
 }
 

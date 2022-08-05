@@ -27,16 +27,14 @@ func TestIsCovered(t *testing.T) {
 	testCases := []struct {
 		name        string
 		proFilename string
+		posFilename string
 		proStartL   int
 		proEndL     int
 		proStartC   int
 		proEndC     int
-
-		posFilename string
 		posL        int
 		posC        int
-
-		expected bool
+		expected    bool
 	}{
 		{
 			name:        "returns true when line and column are covered",

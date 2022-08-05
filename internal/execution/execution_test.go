@@ -25,8 +25,8 @@ import (
 func TestExitErr(t *testing.T) {
 	testCases := []struct {
 		name         string
-		errorType    execution.ErrorType
 		wantExitMsg  string
+		errorType    execution.ErrorType
 		wantExitCode int
 	}{
 		{

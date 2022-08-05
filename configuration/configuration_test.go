@@ -36,10 +36,10 @@ type envEntry struct {
 func TestConfiguration(t *testing.T) {
 
 	testCases := []struct {
+		wantedConfig map[string]interface{}
 		name         string
 		configPaths  []string
 		envEntries   []envEntry
-		wantedConfig map[string]interface{}
 		expectErr    bool
 	}{
 		{
@@ -135,8 +135,7 @@ func TestConfigPaths(t *testing.T) {
 		if runtime.GOOS != "windows" {
 			want = append(want, "/etc/gremlins")
 		}
-		want = append(want, filepath.Join(home, ".config", "gremlins", "gremlins"))
-		want = append(want, filepath.Join(home, ".gremlins"))
+		want = append(want, filepath.Join(home, ".config", "gremlins", "gremlins"), filepath.Join(home, ".gremlins"))
 
 		got := defaultConfigPaths()
 
@@ -153,8 +152,7 @@ func TestConfigPaths(t *testing.T) {
 		if runtime.GOOS != "windows" {
 			want = append(want, "/etc/gremlins")
 		}
-		want = append(want, filepath.Join(customPath, "gremlins", "gremlins"))
-		want = append(want, filepath.Join(home, ".gremlins"))
+		want = append(want, filepath.Join(customPath, "gremlins", "gremlins"), filepath.Join(home, ".gremlins"))
 
 		got := defaultConfigPaths()
 

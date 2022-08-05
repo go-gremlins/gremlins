@@ -45,17 +45,16 @@ import (
 // It traverses the AST of the project, finds which TokenMutant can be applied and
 // performs the actual mutation testing.
 type Mutator struct {
-	covProfile        coverage.Profile
-	testExecutionTime time.Duration
 	fs                fs.FS
-	execContext       execContext
 	wdManager         workdir.Dealer
+	covProfile        coverage.Profile
+	execContext       execContext
 	apply             func(m mutant.Mutant) error
 	rollback          func(m mutant.Mutant) error
 	mutantStream      chan mutant.Mutant
-
-	dryRun    bool
-	buildTags string
+	buildTags         string
+	testExecutionTime time.Duration
+	dryRun            bool
 }
 
 const timeoutCoefficient = 2
@@ -113,7 +112,7 @@ func WithExecContext(c execContext) Option {
 }
 
 // WithApplyAndRollback overrides the apply and rollback functions.
-func WithApplyAndRollback(a func(m mutant.Mutant) error, r func(m mutant.Mutant) error) Option {
+func WithApplyAndRollback(a, r func(m mutant.Mutant) error) Option {
 	return func(m Mutator) Mutator {
 		m.apply = a
 		m.rollback = r
