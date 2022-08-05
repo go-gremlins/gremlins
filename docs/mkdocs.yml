@@ -7,8 +7,13 @@ copyright: Made with ❤️ by Gremlins contributors. <span xmlns:cc="http://cre
 repo_name: go-gremlins/gremlins
 theme:
   name: material
+  logo: assets/images/logo.png
+  favicon: assets/images/favicon.png
   custom_dir: overrides
   language: en
+  palette:
+    primary: cyan
+    accent: amber
   features:
     - search.suggest
     - search.highlight
@@ -53,6 +58,7 @@ nav:
 
 plugins:
   - macros
+  - search
 
 markdown_extensions:
 

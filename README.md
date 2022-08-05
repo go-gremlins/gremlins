@@ -1,4 +1,10 @@
-# Gremlins
+<p align="center">
+  <img alt="Gremlins mascotte" src="docs/docs/assets/images/gremlins_mascotte.png" />
+  <h1 align="center">Gremlins</h1>
+  <p align="center">A mutation testing tool for Go</p>
+</p>
+
+---
 
 [![Tests](https://github.com/go-gremlins/gremlins/actions/workflows/ci.yml/badge.svg)](https://github.com/go-gremlins/gremlins/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/go-gremlins/gremlins)](https://goreportcard.com/report/github.com/go-gremlins/gremlins)

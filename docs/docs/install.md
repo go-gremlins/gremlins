@@ -74,6 +74,16 @@ sudo cp gremlins_{{ release.full_version }}_linux_amd64/gremlins /usr/bin
 
 ## From source
 
+### :fontawesome-brands-golang: Go install
+
+Gremlins can be installed with the Go install command. Only the [Go compiler](https://go.dev) is needed.
+
+```sh
+go install https://github.com/go-gremlins/gremlins/cmd/gremlins@v{{ release.full_version }}
+```
+
+### :material-ninja: Ninja style
+
 To build Gremlins you need the [Go compiler](https://go.dev), `make` and [golangci-lint](https://golangci-lint.run) for
 linting. You can clone download the source tarball from
 the [release page](https://github.com/go-gremlins/gremlins/releases/latest), then:
