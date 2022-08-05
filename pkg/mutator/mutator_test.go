@@ -87,9 +87,9 @@ func TestMutations(t *testing.T) {
 	testCases := []struct {
 		name       string
 		fixture    string
+		covResult  coverage.Result
 		mutantType mutant.Type
 		token      token.Token
-		covResult  coverage.Result
 		mutStatus  mutant.Status
 	}{
 		// CONDITIONAL BOUNDARIES

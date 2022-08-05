@@ -30,6 +30,11 @@ cover: ${COVER_OUT}
 ${COVER_OUT}:
 	${GO_TEST} -race -covermode=atomic -cover -coverprofile ${COVER_OUT} ./...
 
+.PHONY: requirements
+requirements:
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	go install golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment@latest
+
 .PHONY: lint
 lint:
 	${LINT} ./...
@@ -37,6 +42,10 @@ lint:
 .PHONY: goimports
 goimports:
 	goimports --local 'github.com/go-gremlins/gremlins' -v -w .
+
+.PHONY: fieldalignment
+fieldalignment:
+	fieldalignment -fix ./...
 
 .PHONY: snapshot
 snapshot:
