@@ -394,7 +394,7 @@ func TestMutatorRun(t *testing.T) {
 	}
 
 	timeoutDifference := absTimeDiff(holder.timeout, expectedTimeout*2)
-	diffThreshold := 50 * time.Microsecond
+	diffThreshold := 70 * time.Microsecond
 	if timeoutDifference > diffThreshold {
 		t.Errorf("expected timeout to be within %s from the set timeout, got %s", diffThreshold, timeoutDifference)
 	}
