@@ -590,6 +590,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#silent" class="md-nav__link">
+    Silent
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -630,6 +637,17 @@
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span><code>--config</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: empty</p>
 <p>Overrides the configuration file.</p>
 <div class="highlight"><pre><span></span><code>gremlins &lt;command&gt; --config<span class="o">=</span>config.yml
+</code></pre></div>
+<h3 id="silent">Silent<a class="headerlink" href="#silent" title="Permanent link">&para;</a></h3>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span><code>--silent</code>/<code>-s</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: false</p>
+<p>Makes Gremlins work in <em>silent mode</em>, which means only errors will be reported on STDOUT. This is useful in CI runs
+when you don't want to clutter the log, but just read the results from a file or check the exit error code in
+combination with a threshold configuration.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Note that Gremlins will be completely silent if there aren't errors, it doesn't mean it is unresponsive.</p>
+</div>
+<div class="highlight"><pre><span></span><code>gremlins &lt;command&gt; --silent
 </code></pre></div>
 
               
