@@ -18,12 +18,18 @@ package report_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"go/token"
+	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/hectane/go-acl"
 	"github.com/spf13/viper"
 
 	"github.com/go-gremlins/gremlins/configuration"
@@ -31,7 +37,10 @@ import (
 	"github.com/go-gremlins/gremlins/pkg/log"
 	"github.com/go-gremlins/gremlins/pkg/mutant"
 	"github.com/go-gremlins/gremlins/pkg/report"
+	"github.com/go-gremlins/gremlins/pkg/report/internal"
 )
+
+var fakePosition = newPosition("aFolder/aFile.go", 3, 12)
 
 func TestReport(t *testing.T) {
 	t.Run("it reports findings in normal run", func(t *testing.T) {
@@ -40,11 +49,11 @@ func TestReport(t *testing.T) {
 		defer log.Reset()
 
 		mutants := []mutant.Mutant{
-			stubMutant{mutant.Lived, mutant.ConditionalsNegation},
-			stubMutant{mutant.Killed, mutant.ConditionalsNegation},
-			stubMutant{mutant.NotCovered, mutant.ConditionalsNegation},
-			stubMutant{mutant.NotViable, mutant.ConditionalsBoundary},
-			stubMutant{mutant.TimedOut, mutant.ConditionalsBoundary},
+			stubMutant{status: mutant.Lived, mutantType: mutant.ConditionalsNegation, position: fakePosition},
+			stubMutant{status: mutant.Killed, mutantType: mutant.ConditionalsNegation, position: fakePosition},
+			stubMutant{status: mutant.NotCovered, mutantType: mutant.ConditionalsNegation, position: fakePosition},
+			stubMutant{status: mutant.NotViable, mutantType: mutant.ConditionalsBoundary, position: fakePosition},
+			stubMutant{status: mutant.TimedOut, mutantType: mutant.ConditionalsBoundary, position: fakePosition},
 		}
 		data := report.Results{
 			Mutants: mutants,
@@ -69,14 +78,17 @@ func TestReport(t *testing.T) {
 	})
 
 	t.Run("it reports findings in dry-run", func(t *testing.T) {
+		viper.Set(configuration.UnleashDryRunKey, true)
+		defer viper.Reset()
+
 		out := &bytes.Buffer{}
 		log.Init(out, &bytes.Buffer{})
 		defer log.Reset()
 
 		mutants := []mutant.Mutant{
-			stubMutant{mutant.Runnable, mutant.ConditionalsNegation},
-			stubMutant{mutant.Runnable, mutant.ConditionalsNegation},
-			stubMutant{mutant.NotCovered, mutant.ConditionalsNegation},
+			stubMutant{status: mutant.Runnable, mutantType: mutant.ConditionalsNegation, position: fakePosition},
+			stubMutant{status: mutant.Runnable, mutantType: mutant.ConditionalsNegation, position: fakePosition},
+			stubMutant{status: mutant.NotCovered, mutantType: mutant.ConditionalsNegation, position: fakePosition},
 		}
 		data := report.Results{
 			Mutants: mutants,
@@ -119,6 +131,15 @@ func TestReport(t *testing.T) {
 			t.Errorf(cmp.Diff(want, got))
 		}
 	})
+}
+
+func newPosition(filename string, col, line int) token.Position {
+	return token.Position{
+		Filename: filename,
+		Offset:   0,
+		Line:     line,
+		Column:   col,
+	}
 }
 
 func TestAssessment(t *testing.T) {
@@ -179,10 +200,10 @@ func TestAssessment(t *testing.T) {
 
 			// Always 50%
 			mutants := []mutant.Mutant{
-				stubMutant{mutant.Killed, mutant.ConditionalsNegation},
-				stubMutant{mutant.Lived, mutant.ConditionalsNegation},
-				stubMutant{mutant.NotCovered, mutant.ConditionalsNegation},
-				stubMutant{mutant.NotCovered, mutant.ConditionalsNegation},
+				stubMutant{status: mutant.Killed, mutantType: mutant.ConditionalsNegation, position: fakePosition},
+				stubMutant{status: mutant.Lived, mutantType: mutant.ConditionalsNegation, position: fakePosition},
+				stubMutant{status: mutant.NotCovered, mutantType: mutant.ConditionalsNegation, position: fakePosition},
+				stubMutant{status: mutant.NotCovered, mutantType: mutant.ConditionalsNegation, position: fakePosition},
 			}
 			data := report.Results{
 				Mutants: mutants,
@@ -215,17 +236,17 @@ func TestMutantLog(t *testing.T) {
 	log.Init(out, &bytes.Buffer{})
 	defer log.Reset()
 
-	m := stubMutant{mutant.Lived, mutant.ConditionalsBoundary}
+	m := stubMutant{status: mutant.Lived, mutantType: mutant.ConditionalsBoundary, position: fakePosition}
 	report.Mutant(m)
-	m = stubMutant{mutant.Killed, mutant.ConditionalsBoundary}
+	m = stubMutant{status: mutant.Killed, mutantType: mutant.ConditionalsBoundary, position: fakePosition}
 	report.Mutant(m)
-	m = stubMutant{mutant.NotCovered, mutant.ConditionalsBoundary}
+	m = stubMutant{status: mutant.NotCovered, mutantType: mutant.ConditionalsBoundary, position: fakePosition}
 	report.Mutant(m)
-	m = stubMutant{mutant.Runnable, mutant.ConditionalsBoundary}
+	m = stubMutant{status: mutant.Runnable, mutantType: mutant.ConditionalsBoundary, position: fakePosition}
 	report.Mutant(m)
-	m = stubMutant{mutant.NotViable, mutant.ConditionalsBoundary}
+	m = stubMutant{status: mutant.NotViable, mutantType: mutant.ConditionalsBoundary, position: fakePosition}
 	report.Mutant(m)
-	m = stubMutant{mutant.TimedOut, mutant.ConditionalsBoundary}
+	m = stubMutant{status: mutant.TimedOut, mutantType: mutant.ConditionalsBoundary, position: fakePosition}
 	report.Mutant(m)
 
 	got := out.String()
@@ -243,7 +264,114 @@ func TestMutantLog(t *testing.T) {
 	}
 }
 
+func TestReportToFile(t *testing.T) {
+	outFile := "findings.json"
+	mutants := []mutant.Mutant{
+		stubMutant{status: mutant.Killed, mutantType: mutant.ConditionalsNegation, position: newPosition("file1.go", 3, 10)},
+		stubMutant{status: mutant.Lived, mutantType: mutant.ArithmeticBase, position: newPosition("file1.go", 8, 20)},
+		stubMutant{status: mutant.NotCovered, mutantType: mutant.IncrementDecrement, position: newPosition("file2.go", 3, 20)},
+		stubMutant{status: mutant.NotCovered, mutantType: mutant.ConditionalsBoundary, position: newPosition("file2.go", 3, 500)},
+		stubMutant{status: mutant.NotViable, mutantType: mutant.InvertNegatives, position: newPosition("file3.go", 4, 200)},
+	}
+	data := report.Results{
+		Module:  "example.com/go/module",
+		Mutants: mutants,
+		Elapsed: (2 * time.Minute) + (22 * time.Second) + (123 * time.Millisecond),
+	}
+	f, _ := os.ReadFile("testdata/normal_output.json")
+	want := internal.OutputResult{}
+	_ = json.Unmarshal(f, &want)
+
+	t.Run("it writes on file when output is set", func(t *testing.T) {
+		outDir := t.TempDir()
+		output := filepath.Join(outDir, outFile)
+		viper.Set(configuration.UnleashOutputKey, output)
+		defer viper.Reset()
+
+		if err := report.Do(data); err != nil {
+			t.Fatal("error not expected")
+		}
+
+		file, err := os.ReadFile(output)
+		if err != nil {
+			t.Fatal("file not found")
+		}
+
+		var got internal.OutputResult
+		err = json.Unmarshal(file, &got)
+		if err != nil {
+			t.Fatal("impossible to unmarshal results")
+		}
+
+		if !cmp.Equal(got, want, cmpopts.SortSlices(sortOutputFile), cmpopts.SortSlices(sortMutation)) {
+			t.Errorf(cmp.Diff(got, want))
+		}
+	})
+
+	t.Run("it doesn't write on file when output isn't set", func(t *testing.T) {
+		outDir := t.TempDir()
+		output := filepath.Join(outDir, outFile)
+
+		if err := report.Do(data); err != nil {
+			t.Fatal("error not expected")
+		}
+
+		_, err := os.ReadFile(output)
+		if err == nil {
+			t.Errorf("expected file not found")
+		}
+	})
+
+	// In this case we don't want to stop the execution with an error, but we just want to log the fact.
+	t.Run("it doesn't report error when file is not writeable, but doesn't write file", func(t *testing.T) {
+		outDir, cl := notWriteableDir(t)
+		defer cl()
+		output := filepath.Join(outDir, outFile)
+		viper.Set(configuration.UnleashOutputKey, output)
+		defer viper.Reset()
+
+		if err := report.Do(data); err != nil {
+			t.Fatal("error not expected")
+		}
+
+		_, err := os.ReadFile(output)
+		if err == nil {
+			t.Errorf("expected file not found")
+		}
+	})
+}
+
+func notWriteableDir(t *testing.T) (string, func()) {
+	t.Helper()
+	tmp := t.TempDir()
+	outPath, _ := os.MkdirTemp(tmp, "test-")
+	_ = os.Chmod(outPath, 0000)
+	clean := os.Chmod
+	if runtime.GOOS == "windows" {
+		_ = acl.Chmod(outPath, 0000)
+		clean = acl.Chmod
+	}
+
+	return outPath, func() {
+		_ = clean(outPath, 0700)
+	}
+}
+
+func sortOutputFile(x, y internal.OutputFile) bool {
+	return x.Filename < y.Filename
+}
+
+func sortMutation(x, y internal.Mutation) bool {
+	if x.Line == y.Line {
+
+		return x.Column < y.Column
+	}
+
+	return x.Line < y.Line
+}
+
 type stubMutant struct {
+	position   token.Position
 	status     mutant.Status
 	mutantType mutant.Type
 }
@@ -264,13 +392,8 @@ func (stubMutant) SetStatus(_ mutant.Status) {
 	panic("implement me")
 }
 
-func (stubMutant) Position() token.Position {
-	return token.Position{
-		Filename: "aFolder/aFile.go",
-		Offset:   0,
-		Line:     12,
-		Column:   3,
-	}
+func (s stubMutant) Position() token.Position {
+	return s.position
 }
 
 func (stubMutant) Pos() token.Pos {

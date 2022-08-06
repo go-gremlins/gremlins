@@ -1,0 +1,58 @@
+{
+  "go_module": "example.com/go/module",
+  "test_efficacy": 50,
+  "mutations_coverage": 50,
+  "mutants_total": 3,
+  "mutants_killed": 1,
+  "mutants_lived": 1,
+  "mutants_not_viable": 1,
+  "mutants_not_covered": 2,
+  "elapsed_time": 142.123,
+  "files": [
+    {
+      "file_name": "file1.go",
+      "mutations": [
+        {
+          "line": 10,
+          "column": 3,
+          "type": "CONDITIONALS_NEGATION",
+          "status": "KILLED"
+        },
+        {
+          "line": 20,
+          "column": 8,
+          "type": "ARITHMETIC_BASE",
+          "status": "LIVED"
+        }
+      ]
+    },
+    {
+      "file_name": "file2.go",
+      "mutations": [
+        {
+          "line": 20,
+          "column": 3,
+          "type": "INCREMENT_DECREMENT",
+          "status": "NOT COVERED"
+        },
+        {
+          "line": 500,
+          "column": 3,
+          "type": "CONDITIONALS_BOUNDARY",
+          "status": "NOT COVERED"
+        }
+      ]
+    },
+    {
+      "file_name": "file3.go",
+      "mutations": [
+        {
+          "line": 200,
+          "column": 4,
+          "type": "INVERT_NEGATIVES",
+          "status": "NOT VIABLE"
+        }
+      ]
+    }
+  ]
+}

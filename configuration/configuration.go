@@ -33,6 +33,7 @@ import (
 const (
 	GremlinsSilentKey            = "silent"
 	UnleashDryRunKey             = "unleash.dry-run"
+	UnleashOutputKey             = "unleash.output"
 	UnleashTagsKey               = "unleash.tags"
 	UnleashThresholdEfficacyKey  = "unleash.threshold.efficacy"
 	UnleashThresholdMCoverageKey = "unleash.threshold.mutant-coverage"
@@ -86,7 +87,7 @@ func Init(cPaths []string) error {
 // The generated key will have the format 'mutants.mutant-name.enabled",
 // which corresponds to the Yaml:
 //
-//			mutants:
+//		mutants:
 //	 		mutant-name:
 //	 			enabled: [bool]
 func MutantTypeEnabledKey(mt mutant.Type) string {

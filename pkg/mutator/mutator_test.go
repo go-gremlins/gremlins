@@ -62,19 +62,20 @@ func viperReset() {
 }
 
 const expectedTimeout = 10 * time.Second
+const expectedModule = "example.com"
 
 func coveredPosition(fixture string) coverage.Result {
 	fn := filenameFromFixture(fixture)
 	p := coverage.Profile{fn: {{StartLine: 6, EndLine: 7, StartCol: 8, EndCol: 9}}}
 
-	return coverage.Result{Profile: p, Elapsed: expectedTimeout}
+	return coverage.Result{Module: expectedModule, Profile: p, Elapsed: expectedTimeout}
 }
 
 func notCoveredPosition(fixture string) coverage.Result {
 	fn := filenameFromFixture(fixture)
 	p := coverage.Profile{fn: {{StartLine: 9, EndLine: 9, StartCol: 8, EndCol: 9}}}
 
-	return coverage.Result{Profile: p, Elapsed: expectedTimeout}
+	return coverage.Result{Module: expectedModule, Profile: p, Elapsed: expectedTimeout}
 }
 
 type dealerStub struct{}
@@ -274,6 +275,10 @@ func TestMutations(t *testing.T) {
 			res := mut.Run()
 			got := res.Mutants
 
+			if res.Module != expectedModule {
+				t.Errorf("expected module to be %q, got %q", expectedModule, res.Module)
+			}
+
 			if tCase.token == token.ILLEGAL {
 				if len(got) != 0 {
 					t.Errorf("expected no mutator found")
@@ -389,7 +394,7 @@ func TestMutatorRun(t *testing.T) {
 	}
 
 	timeoutDifference := absTimeDiff(holder.timeout, expectedTimeout*2)
-	diffThreshold := 50 * time.Microsecond
+	diffThreshold := 70 * time.Microsecond
 	if timeoutDifference > diffThreshold {
 		t.Errorf("expected timeout to be within %s from the set timeout, got %s", diffThreshold, timeoutDifference)
 	}

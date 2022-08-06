@@ -43,6 +43,7 @@ const (
 
 	paramBuildTags = "tags"
 	paramDryRun    = "dry-run"
+	paramOutput    = "output"
 
 	// Thresholds.
 	paramThresholdEfficacy  = "threshold-efficacy"
@@ -160,6 +161,7 @@ func setFlagsOnCmd(cmd *cobra.Command) error {
 	fls := []*flags.Flag{
 		{Name: paramDryRun, CfgKey: configuration.UnleashDryRunKey, Shorthand: "d", DefaultV: false, Usage: "find mutations but do not executes tests"},
 		{Name: paramBuildTags, CfgKey: configuration.UnleashTagsKey, Shorthand: "t", DefaultV: "", Usage: "a comma-separated list of build tags"},
+		{Name: paramOutput, CfgKey: configuration.UnleashOutputKey, Shorthand: "o", DefaultV: "", Usage: "set the output file for machine readable results"},
 		{Name: paramThresholdEfficacy, CfgKey: configuration.UnleashThresholdEfficacyKey, DefaultV: float64(0), Usage: "threshold for code-efficacy percent"},
 		{Name: paramThresholdMCoverage, CfgKey: configuration.UnleashThresholdMCoverageKey, DefaultV: float64(0), Usage: "threshold for mutant-coverage percent"},
 	}

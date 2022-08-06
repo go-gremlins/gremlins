@@ -41,6 +41,53 @@ Sets the `go` command build tags.
 gremlins unleash --tags "tag1,tag2"
 ```
 
+### Output
+
+:material-flag: `--output`/`-o` · :material-sign-direction: Default: empty
+
+When set, Gremlins will write the give output file with machine readable results.
+
+```shell
+gremlins unleash --output=output.json
+```
+
+The output file in in JSON format and has the following structure:
+
+```json
+{
+  "go_module": "github.com/go-gremlins/gremlins",
+  "test_efficacy": 82.00, //(1)
+  "mutations_coverage": 80.00, //(2)
+  "mutants_total": 100,
+  "mutants_killed": 82,
+  "mutants_lived": 8,
+  "mutants_not_viable": 2, //(3)
+  "mutants_not_covered": 10,
+  "elapsed_time": 123.456, //(4)
+  "files": [
+    {
+      "file_name": "myFile.go",
+      "mutations": [
+        {
+          "line": 10,
+          "column": 8,
+          "type": "CONDITIONALS_NEGATION",
+          "status": "KILLED"
+        }
+      ]
+    }
+  ]
+}
+```
+
+1. This is a percentage expressed as floating point number.
+2. This is a percentage expressed as floating point number.
+3. NOT VIABLE mutants are excluded from all the calculations.
+4. The elapsed time is expressed in seconds, expressed as floating point number.
+
+!!! warning
+    The JSON output file is not _pretty printed_; it is optimised for machine reading.
+
 ### Threshold efficacy
 :material-flag: `--threshold-efficacy` · :material-sign-direction: Default: 0
 
