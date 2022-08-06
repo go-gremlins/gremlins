@@ -755,6 +755,7 @@ command documentation to learn how to use them.</p>
 <span class="nt">unleash</span><span class="p">:</span><span class="w"></span>
 <span class="w">  </span><span class="nt">dry-run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w"></span>
 <span class="w">  </span><span class="nt">tags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="nt">output</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"></span>
 <span class="w">  </span><span class="nt">threshold</span><span class="p">:</span><span class="w"> </span><span class="c1">#(1)</span><span class="w"></span>
 <span class="w">    </span><span class="nt">efficacy</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w"></span>
 <span class="w">    </span><span class="nt">mutant-coverage</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w"></span>
@@ -775,8 +776,11 @@ command documentation to learn how to use them.</p>
 <li>Thresholds are set by default to <code>0</code>, which means they are not enforced. For further information check the specific
    documentation.</li>
 </ol>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
 <p>You can validate the configuration file using the provided JSON Schema (ex. using it in your editor). The schema
 can be found at <a href="https://gremlins.dev/next/schema/configuration.json">https://gremlins.dev/next/schema/configuration.json</a>. </p>
+</div>
 <h2 id="environment-variables">Environment variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h2>
 <p>Gremlins can be configured via environment variables as well. You can construct the variable name referring to the
 configuration file format. They start with <code>GREMLINS_</code>, and each dot and dash becomes an underscore.</p>

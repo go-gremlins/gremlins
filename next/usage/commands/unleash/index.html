@@ -428,6 +428,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#output" class="md-nav__link">
+    Output
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#threshold-efficacy" class="md-nav__link">
     Threshold efficacy
   </a>
@@ -708,6 +715,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#output" class="md-nav__link">
+    Output
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#threshold-efficacy" class="md-nav__link">
     Threshold efficacy
   </a>
@@ -804,6 +818,47 @@ If <code>unleash</code> is too long to type for you, you can use its aliases <co
 <p>Sets the <code>go</code> command build tags.</p>
 <div class="highlight"><pre><span></span><code>gremlins unleash --tags <span class="s2">&quot;tag1,tag2&quot;</span>
 </code></pre></div>
+<h3 id="output">Output<a class="headerlink" href="#output" title="Permanent link">&para;</a></h3>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--output</code>/<code>-o</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: empty</p>
+<p>When set, Gremlins will write the give output file with machine readable results.</p>
+<div class="highlight"><pre><span></span><code>gremlins unleash --output<span class="o">=</span>output.json
+</code></pre></div>
+<p>The output file in in JSON format and has the following structure:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;go_module&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;github.com/go-gremlins/gremlins&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;test_efficacy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">82.00</span><span class="p">,</span><span class="w"> </span><span class="c1">//(1)</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;mutations_coverage&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">80.00</span><span class="p">,</span><span class="w"> </span><span class="c1">//(2)</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;mutants_total&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;mutants_killed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">82</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;mutants_lived&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;mutants_not_viable&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="c1">//(3)</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;mutants_not_covered&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;elapsed_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">123.456</span><span class="p">,</span><span class="w"> </span><span class="c1">//(4)</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;files&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;file_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;myFile.go&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;mutations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;line&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;column&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CONDITIONALS_NEGATION&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;KILLED&quot;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span><span class="p">]</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">]</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div>
+<ol>
+<li>This is a percentage expressed as floating point number.</li>
+<li>This is a percentage expressed as floating point number.</li>
+<li>NOT VIABLE mutants are excluded from all the calculations.</li>
+<li>The elapsed time is expressed in seconds, expressed as floating point number.</li>
+</ol>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The JSON output file is not <em>pretty printed</em>; it is optimised for machine reading.</p>
+</div>
 <h3 id="threshold-efficacy">Threshold efficacy<a class="headerlink" href="#threshold-efficacy" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--threshold-efficacy</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: 0</p>
 <p>When set, it makes Gremlins exit with an error (code 10) if the <em>test efficacy</em> threshold is not met. By default it is

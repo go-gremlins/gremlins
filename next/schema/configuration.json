@@ -28,6 +28,15 @@
             "tag1,tag2,tag4"
           ]
         },
+        "output": {
+          "title": "Output",
+          "description": "The output file for machine readable results",
+          "type": "string",
+          "default": "",
+          "examples": [
+            "output.json"
+          ]
+        },
         "threshold": {
           "title": "Thresholds",
           "description": "The thresholds under which Gremlins exits with an error",
