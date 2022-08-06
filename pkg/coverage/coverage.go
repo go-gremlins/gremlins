@@ -26,7 +26,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/viper"
 	"golang.org/x/tools/cover"
 
 	"github.com/go-gremlins/gremlins/configuration"
@@ -89,7 +88,7 @@ func getMod(path string) (string, error) {
 
 // NewWithCmdAndPackage instantiates a Coverage element given a custom execContext.
 func NewWithCmdAndPackage(cmdContext execContext, mod, workdir, path string, opts ...Option) *Coverage {
-	buildTags := viper.GetString(configuration.UnleashTagsKey)
+	buildTags := configuration.Get[string](configuration.UnleashTagsKey)
 	path = strings.TrimSuffix(path, "/")
 
 	c := &Coverage{

@@ -17,6 +17,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"os"
 
@@ -31,8 +32,8 @@ const paramConfigFile = "config"
 
 // Execute initialises a new Cobra root command (gremlins) with a custom version
 // string used in the `-v` flag results.
-func Execute(version string) error {
-	rootCmd, err := newRootCmd(version)
+func Execute(ctx context.Context, version string) error {
+	rootCmd, err := newRootCmd(ctx, version)
 	if err != nil {
 		return err
 	}
@@ -58,7 +59,7 @@ func (gc gremlinsCmd) execute() error {
 	return gc.cmd.Execute()
 }
 
-func newRootCmd(version string) (*gremlinsCmd, error) {
+func newRootCmd(ctx context.Context, version string) (*gremlinsCmd, error) {
 	if version == "" {
 		return nil, errors.New("expected a version string")
 	}
@@ -74,7 +75,7 @@ and friends.
 		Version: version,
 	}
 
-	uc, err := newUnleashCmd()
+	uc, err := newUnleashCmd(ctx)
 	if err != nil {
 		return nil, err
 

@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
@@ -128,4 +129,31 @@ func defaultConfigPaths() []string {
 	result = append(result, homeLocation)
 
 	return result
+}
+
+var mutex sync.RWMutex
+
+// Set offers synchronised access to Viper.
+func Set[T any](k string, v T) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	viper.Set(k, v)
+}
+
+// Get offers synchronised access to Viper.
+func Get[T any](k string) T {
+	var r T
+	mutex.RLock()
+	defer mutex.RUnlock()
+	r, _ = viper.Get(k).(T)
+
+	return r
+}
+
+// Reset is used mainly for testing purposes, in order to clean up the Viper
+// instance.
+func Reset() {
+	mutex.Lock()
+	defer mutex.Unlock()
+	viper.Reset()
 }

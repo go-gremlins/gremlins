@@ -23,7 +23,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/hako/durafmt"
-	"github.com/spf13/viper"
 
 	"github.com/go-gremlins/gremlins/configuration"
 	"github.com/go-gremlins/gremlins/internal/execution"
@@ -109,7 +108,7 @@ func newReport(results Results) (*reportStatus, bool) {
 }
 
 func (*reportStatus) isDryRun() bool {
-	return viper.GetBool(configuration.UnleashDryRunKey)
+	return configuration.Get[bool](configuration.UnleashDryRunKey)
 }
 
 func (r *reportStatus) reportFindings() {
@@ -122,7 +121,7 @@ func (r *reportStatus) reportFindings() {
 }
 
 func (r *reportStatus) fileReport() {
-	if output := viper.GetString(configuration.UnleashOutputKey); output != "" {
+	if output := configuration.Get[string](configuration.UnleashOutputKey); output != "" {
 		files := make([]internal.OutputFile, 0, len(r.files))
 		for fName, mutations := range r.files {
 			of := internal.OutputFile{Filename: fName}
@@ -186,11 +185,11 @@ func (r *reportStatus) assess(tEfficacy, rCoverage float64) error {
 		return nil
 	}
 
-	et := viper.GetFloat64(configuration.UnleashThresholdEfficacyKey)
+	et := configuration.Get[float64](configuration.UnleashThresholdEfficacyKey)
 	if et > 0 && tEfficacy <= et {
 		return execution.NewExitErr(execution.EfficacyThreshold)
 	}
-	ct := viper.GetFloat64(configuration.UnleashThresholdMCoverageKey)
+	ct := configuration.Get[float64](configuration.UnleashThresholdMCoverageKey)
 	if ct > 0 && rCoverage <= ct {
 		return execution.NewExitErr(execution.MutantCoverageThreshold)
 	}

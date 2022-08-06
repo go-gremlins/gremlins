@@ -17,9 +17,9 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 
@@ -28,7 +28,7 @@ import (
 )
 
 func TestUnleash(t *testing.T) {
-	c, err := newUnleashCmd()
+	c, err := newUnleashCmd(context.TODO())
 	if err != nil {
 		t.Fatal("newUnleashCmd should no fail")
 	}
@@ -162,17 +162,6 @@ func TestChangePath(t *testing.T) {
 		_, _, err := changePath(args, chdir, getwd)
 		if err == nil {
 			t.Errorf("expected an error")
-		}
-	})
-}
-
-func TestRunUnleashCmd(t *testing.T) {
-	t.Run("should fail without go.mod", func(t *testing.T) {
-		pwd, _ := os.Getwd()
-		args := []string{pwd}
-		err := runUnleash(nil, args)
-		if err == nil {
-			t.Fatal("runUnleashCmd should fail")
 		}
 	})
 }

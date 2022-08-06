@@ -31,7 +31,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/spf13/viper"
 
 	"github.com/go-gremlins/gremlins/configuration"
 	"github.com/go-gremlins/gremlins/pkg/coverage"
@@ -44,19 +43,21 @@ func init() {
 	viperReset()
 }
 
+const defaultFixture = "testdata/fixtures/gtr_go"
+
 var viperMutex = sync.Mutex{}
 
 func viperSet(set map[string]any) {
 	viperMutex.Lock()
 	for k, v := range set {
-		viper.Set(k, v)
+		configuration.Set(k, v)
 	}
 }
 
 func viperReset() {
-	viper.Reset()
+	configuration.Reset()
 	for _, mt := range mutant.MutantTypes {
-		viper.Set(configuration.MutantTypeEnabledKey(mt), true)
+		configuration.Set(configuration.MutantTypeEnabledKey(mt), true)
 	}
 	viperMutex.Unlock()
 }
@@ -263,16 +264,13 @@ func TestMutations(t *testing.T) {
 		tCase := tc
 		t.Run(tCase.name, func(t *testing.T) {
 			t.Parallel()
-			f, _ := os.Open(tCase.fixture)
-			src, _ := io.ReadAll(f)
-			filename := filenameFromFixture(tCase.fixture)
-			mapFS := fstest.MapFS{
-				filename: {Data: src},
-			}
+			mapFS, c := loadFixture(tCase.fixture)
+			defer c()
+
 			viperSet(map[string]any{configuration.UnleashDryRunKey: true})
 			defer viperReset()
 			mut := mutator.New(mapFS, tCase.covResult, dealerStub{})
-			res := mut.Run()
+			res := mut.Run(context.Background())
 			got := res.Mutants
 
 			if res.Module != expectedModule {
@@ -304,13 +302,8 @@ func TestMutantSkipDisabled(t *testing.T) {
 	for _, mt := range mutant.MutantTypes {
 		t.Run(mt.String(), func(t *testing.T) {
 			t.Parallel()
-			fixture := "testdata/fixtures/0_all_go"
-			f, _ := os.Open(fixture)
-			src, _ := io.ReadAll(f)
-			filename := filenameFromFixture(fixture)
-			mapFS := fstest.MapFS{
-				filename: {Data: src},
-			}
+			mapFS, c := loadFixture(defaultFixture)
+			defer c()
 
 			viperSet(map[string]any{
 				configuration.UnleashDryRunKey:         true,
@@ -318,9 +311,9 @@ func TestMutantSkipDisabled(t *testing.T) {
 			)
 			defer viperReset()
 
-			mut := mutator.New(mapFS, coveredPosition(fixture), dealerStub{},
+			mut := mutator.New(mapFS, coveredPosition(defaultFixture), dealerStub{},
 				mutator.WithExecContext(fakeExecCommandSuccess))
-			res := mut.Run()
+			res := mut.Run(context.Background())
 			got := res.Mutants
 
 			for _, m := range got {
@@ -344,7 +337,7 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 	viperSet(map[string]any{configuration.UnleashDryRunKey: true})
 	defer viperReset()
 	mut := mutator.New(sys, coverage.Result{}, dealerStub{})
-	res := mut.Run()
+	res := mut.Run(context.Background())
 
 	if got := res.Mutants; len(got) != 0 {
 		t.Errorf("should not receive results")
@@ -361,20 +354,13 @@ type execContext = func(ctx context.Context, name string, args ...string) *exec.
 
 func TestMutatorRun(t *testing.T) {
 	t.Parallel()
-	f, _ := os.Open("testdata/fixtures/gtr_go")
-	defer func(f *os.File) {
-		_ = f.Close()
-	}(f)
-	src, _ := io.ReadAll(f)
-	filename := filenameFromFixture("testdata/fixtures/gtr_go")
-	mapFS := fstest.MapFS{
-		filename: {Data: src},
-	}
+	mapFS, c := loadFixture(defaultFixture)
+	defer c()
 
 	viperSet(map[string]any{configuration.UnleashTagsKey: "tag1 tag2"})
 	defer viperReset()
 	holder := &commandHolder{}
-	mut := mutator.New(mapFS, coveredPosition("testdata/fixtures/gtr_go"), dealerStub{},
+	mut := mutator.New(mapFS, coveredPosition(defaultFixture), dealerStub{},
 		mutator.WithExecContext(fakeExecCommandSuccessWithHolder(holder)),
 		mutator.WithApplyAndRollback(
 			func(m mutant.Mutant) error {
@@ -384,7 +370,7 @@ func TestMutatorRun(t *testing.T) {
 				return nil
 			}))
 
-	_ = mut.Run()
+	_ = mut.Run(context.Background())
 
 	want := "go test -tags tag1 tag2 ./..."
 	got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
@@ -449,15 +435,8 @@ func TestMutatorTestExecution(t *testing.T) {
 		tCase := tc
 		t.Run(tCase.name, func(t *testing.T) {
 			t.Parallel()
-			f, _ := os.Open(tCase.fixture)
-			defer func(f *os.File) {
-				_ = f.Close()
-			}(f)
-			src, _ := io.ReadAll(f)
-			filename := filenameFromFixture(tCase.fixture)
-			mapFS := fstest.MapFS{
-				filename: {Data: src},
-			}
+			mapFS, c := loadFixture(tCase.fixture)
+			defer c()
 
 			mut := mutator.New(mapFS, tCase.covResult, dealerStub{},
 				mutator.WithExecContext(tCase.testResult),
@@ -468,7 +447,7 @@ func TestMutatorTestExecution(t *testing.T) {
 					func(m mutant.Mutant) error {
 						return nil
 					}))
-			res := mut.Run()
+			res := mut.Run(context.Background())
 			got := res.Mutants
 
 			if len(got) < 1 {
@@ -487,17 +466,10 @@ func TestMutatorTestExecution(t *testing.T) {
 func TestApplyAndRollbackError(t *testing.T) {
 	t.Run("apply fails", func(t *testing.T) {
 		t.Parallel()
-		f, _ := os.Open("testdata/fixtures/gtr_go")
-		defer func(f *os.File) {
-			_ = f.Close()
-		}(f)
-		src, _ := io.ReadAll(f)
-		filename := filenameFromFixture("testdata/fixtures/gtr_go")
-		mapFS := fstest.MapFS{
-			filename: {Data: src},
-		}
+		mapFS, c := loadFixture(defaultFixture)
+		defer c()
 
-		mut := mutator.New(mapFS, coveredPosition("testdata/fixtures/gtr_go"), dealerStub{},
+		mut := mutator.New(mapFS, coveredPosition(defaultFixture), dealerStub{},
 			mutator.WithExecContext(fakeExecCommandSuccess),
 			mutator.WithApplyAndRollback(
 				func(m mutant.Mutant) error {
@@ -506,7 +478,7 @@ func TestApplyAndRollbackError(t *testing.T) {
 				func(m mutant.Mutant) error {
 					return nil
 				}))
-		res := mut.Run()
+		res := mut.Run(context.Background())
 		got := res.Mutants
 
 		if len(got) != 0 {
@@ -516,17 +488,10 @@ func TestApplyAndRollbackError(t *testing.T) {
 
 	t.Run("rollback fails", func(t *testing.T) {
 		t.Parallel()
-		f, _ := os.Open("testdata/fixtures/gtr_go")
-		defer func(f *os.File) {
-			_ = f.Close()
-		}(f)
-		src, _ := io.ReadAll(f)
-		filename := filenameFromFixture("testdata/fixtures/gtr_go")
-		mapFS := fstest.MapFS{
-			filename: {Data: src},
-		}
+		mapFS, c := loadFixture(defaultFixture)
+		defer c()
 
-		mut := mutator.New(mapFS, coveredPosition("testdata/fixtures/gtr_go"), dealerStub{},
+		mut := mutator.New(mapFS, coveredPosition(defaultFixture), dealerStub{},
 			mutator.WithExecContext(fakeExecCommandSuccess),
 			mutator.WithApplyAndRollback(
 				func(m mutant.Mutant) error {
@@ -535,13 +500,50 @@ func TestApplyAndRollbackError(t *testing.T) {
 				func(m mutant.Mutant) error {
 					return errors.New("test error")
 				}))
-		res := mut.Run()
+		res := mut.Run(context.Background())
 		got := res.Mutants
 
 		if len(got) < 1 { // For now, in case of rollback failure, we expect the mutations still to be reported.
 			t.Fatal("expected no mutants")
 		}
 	})
+}
+
+func TestStopsOnCancel(t *testing.T) {
+	t.Parallel()
+	mapFS, c := loadFixture(defaultFixture)
+	defer c()
+
+	mut := mutator.New(mapFS, coveredPosition(defaultFixture), dealerStub{},
+		mutator.WithExecContext(fakeExecCommandSuccess),
+		mutator.WithApplyAndRollback(
+			func(m mutant.Mutant) error {
+				return nil
+			},
+			func(m mutant.Mutant) error {
+				return nil
+			}))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	res := mut.Run(ctx)
+
+	if len(res.Mutants) > 0 {
+		t.Errorf("expected to receive no mutants, got %d", len(res.Mutants))
+	}
+}
+
+func loadFixture(fixture string) (fstest.MapFS, func()) {
+	f, _ := os.Open(fixture)
+	src, _ := io.ReadAll(f)
+	filename := filenameFromFixture(fixture)
+	mapFS := fstest.MapFS{
+		filename: {Data: src},
+	}
+
+	return mapFS, func() {
+		_ = f.Close()
+	}
 }
 
 func TestCoverageProcessSuccess(_ *testing.T) {
