@@ -21,6 +21,8 @@ import (
 )
 
 func TestGremlins(t *testing.T) {
+	const boolType = "bool"
+
 	c, err := newRootCmd("1.2.3")
 	if err != nil {
 		t.Fatal("newRootCmd should not fail")
@@ -41,6 +43,17 @@ func TestGremlins(t *testing.T) {
 	}
 	if cfgFile.DefValue != "" {
 		t.Errorf("expected default value to be empty, got %v", cfgFile.DefValue)
+	}
+
+	silentFlag := cmd.Flag("silent")
+	if silentFlag == nil {
+		t.Fatal("expected to have a config flag")
+	}
+	if silentFlag.Value.Type() != boolType {
+		t.Errorf("expected value type to be 'bool', got %v", silentFlag.Value.Type())
+	}
+	if silentFlag.DefValue != "false" {
+		t.Errorf("expected default value to be false, got %v", silentFlag.DefValue)
 	}
 }
 

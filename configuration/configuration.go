@@ -31,6 +31,7 @@ import (
 
 // This is the list of the keys available in config files and ad flags.
 const (
+	GremlinsSilentKey            = "silent"
 	UnleashDryRunKey             = "unleash.dry-run"
 	UnleashTagsKey               = "unleash.tags"
 	UnleashThresholdEfficacyKey  = "unleash.threshold.efficacy"

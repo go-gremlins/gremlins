@@ -108,6 +108,23 @@ func TestSet(t *testing.T) {
 			if (tc.expectError && err == nil) || (!tc.expectError && err != nil) {
 				t.Fatal("error not expected")
 			}
+			if !tc.expectError {
+				if cmd.Flags().Lookup(tc.flag.Name) == nil {
+					t.Errorf("expected flag to be present")
+				}
+			}
+
+			tc.flag.Name += "_persistent"
+			err = SetPersistent(cmd, &tc.flag)
+			if (tc.expectError && err == nil) || (!tc.expectError && err != nil) {
+				t.Fatal("error not expected")
+			}
+			if !tc.expectError {
+				if cmd.Flag(tc.flag.Name) == nil {
+					t.Errorf("expected flag to be present")
+				}
+			}
+
 		})
 	}
 }

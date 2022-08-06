@@ -22,6 +22,7 @@ import (
 	"sync"
 
 	"github.com/fatih/color"
+	"github.com/spf13/viper"
 )
 
 var fgRed = color.New(color.FgRed).SprintFunc()
@@ -93,10 +94,16 @@ type log struct {
 }
 
 func (l *log) writef(f string, args ...any) {
+	if viper.GetBool("silent") {
+		return
+	}
 	_, _ = fmt.Fprintf(l.out, f, args...)
 }
 
 func (l *log) writeln(a any) {
+	if viper.GetBool("silent") {
+		return
+	}
 	_, _ = fmt.Fprintln(l.out, a)
 }
 

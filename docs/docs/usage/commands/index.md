@@ -37,3 +37,18 @@ Overrides the configuration file.
 ```shell
 gremlins <command> --config=config.yml
 ```
+
+### Silent
+
+:material-flag:`--silent`/`-s` · :material-sign-direction: Default: false
+
+Makes Gremlins work in _silent mode_, which means only errors will be reported on STDOUT. This is useful in CI runs
+when you don't want to clutter the log, but just read the results from a file or check the exit error code in
+combination with a threshold configuration.
+
+!!! warning
+    Note that Gremlins will be completely silent if there aren't errors, it doesn't mean it is unresponsive.
+
+```shell
+gremlins <command> --silent
+```
