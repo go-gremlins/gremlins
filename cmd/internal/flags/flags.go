@@ -35,17 +35,30 @@ type Flag struct {
 // Set is a "generic" function used to set flags on cobra.Command and bind
 // them to viper.Viper.
 func Set(cmd *cobra.Command, flag *Flag) error {
-	flags := cmd.Flags()
+	flagSet := cmd.Flags()
+
+	return setFlags(flag, flagSet)
+}
+
+// SetPersistent is a "generic" function used to set persistent flags
+// on cobra.Command and bind them to viper.Viper.
+func SetPersistent(cmd *cobra.Command, flag *Flag) error {
+	flagSet := cmd.PersistentFlags()
+
+	return setFlags(flag, flagSet)
+}
+
+func setFlags(flag *Flag, fs *pflag.FlagSet) error {
 	switch dv := flag.DefaultV.(type) {
 	// TODO: add a case for all the supported types
 	case bool:
-		setBool(flag, flags, dv)
+		setBool(flag, fs, dv)
 	case string:
-		setString(flag, flags, dv)
+		setString(flag, fs, dv)
 	case float64:
-		setFloat64(flag, flags, dv)
+		setFloat64(flag, fs, dv)
 	}
-	err := viper.BindPFlag(flag.CfgKey, flags.Lookup(flag.Name))
+	err := viper.BindPFlag(flag.CfgKey, fs.Lookup(flag.Name))
 	if err != nil {
 		return err
 	}

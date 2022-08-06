@@ -40,6 +40,7 @@ gremlins unleash --config=myConfig.yaml
 Here is a complete configuration file with all the properties set to their defaults:
 
 ```yaml
+silent: false
 unleash:
   dry-run: false
   tags: ""
