@@ -153,13 +153,13 @@ func TestAssessment(t *testing.T) {
 		{
 			name:        "efficacy < efficacy-threshold",
 			confKey:     configuration.UnleashThresholdEfficacyKey,
-			value:       51,
+			value:       float64(51),
 			expectError: true,
 		},
 		{
 			name:        "efficacy >= efficacy-threshold",
 			confKey:     configuration.UnleashThresholdEfficacyKey,
-			value:       50,
+			value:       float64(50),
 			expectError: false,
 		},
 		{
@@ -172,13 +172,13 @@ func TestAssessment(t *testing.T) {
 		{
 			name:        "coverage < coverage-threshold",
 			confKey:     configuration.UnleashThresholdMCoverageKey,
-			value:       51,
+			value:       float64(51),
 			expectError: true,
 		},
 		{
 			name:        "coverage >= coverage-threshold",
 			confKey:     configuration.UnleashThresholdMCoverageKey,
-			value:       50,
+			value:       float64(50),
 			expectError: false,
 		},
 		{

@@ -17,10 +17,13 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
+	"os/signal"
 	"runtime"
+	"syscall"
 
 	"github.com/fatih/color"
 
@@ -29,11 +32,7 @@ import (
 	"github.com/go-gremlins/gremlins/pkg/log"
 )
 
-var (
-	version = "dev"
-	date    = ""
-	builtBy = ""
-)
+var version = "dev"
 
 func main() {
 	var exitErr *execution.ExitError
@@ -42,7 +41,8 @@ func main() {
 		os.Exit(exitCode)
 	}()
 	log.Init(color.Output, color.Error)
-	err := cmd.Execute(buildVersion(version, date, builtBy))
+	ctx := ctxDoneOnSignal()
+	err := cmd.Execute(ctx, buildVersion(version))
 	if err != nil {
 		log.Errorln(err)
 		exitCode = 1
@@ -52,15 +52,19 @@ func main() {
 	}
 }
 
-func buildVersion(version, date, builtBy string) string {
-	result := version
-	if date != "" {
-		result = fmt.Sprintf("%s\n\tbuilt at %s", result, date)
-	}
-	if builtBy != "" {
-		result = fmt.Sprintf("%s by %s", result, builtBy)
-	}
-	result = fmt.Sprintf("%s\n\tGOOS: %s\n\tGOARCH: %s", result, runtime.GOOS, runtime.GOARCH)
+func ctxDoneOnSignal() context.Context {
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		<-done
+		cancel()
+		close(done)
+	}()
 
-	return result
+	return ctx
+}
+
+func buildVersion(version string) string {
+	return fmt.Sprintf("%s %s/%s", version, runtime.GOOS, runtime.GOARCH)
 }

@@ -29,8 +29,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/viper"
-
 	"github.com/go-gremlins/gremlins/configuration"
 	"github.com/go-gremlins/gremlins/pkg/coverage"
 	"github.com/go-gremlins/gremlins/pkg/log"
@@ -77,8 +75,8 @@ type Option func(m Mutator) Mutator
 // rollback. These can be overridden with nop functions in tests. Not an
 // ideal setup. In the future we can think of a better way to handle this.
 func New(fs fs.FS, r coverage.Result, manager workdir.Dealer, opts ...Option) Mutator {
-	buildTags := viper.GetString(configuration.UnleashTagsKey)
-	dryRun := viper.GetBool(configuration.UnleashDryRunKey)
+	buildTags := configuration.Get[string](configuration.UnleashTagsKey)
+	dryRun := configuration.Get[bool](configuration.UnleashDryRunKey)
 
 	mut := Mutator{
 		module:            r.Module,
@@ -132,9 +130,10 @@ func WithApplyAndRollback(a, r func(m mutant.Mutant) error) Option {
 // KILLED or LIVED depending on the result. If the tests pass, it means the
 // TokenMutant survived, so it will be LIVED, if the tests fail, the TokenMutant will
 // be KILLED.
-func (mu *Mutator) Run() report.Results {
+func (mu *Mutator) Run(ctx context.Context) report.Results {
 	mu.mutantStream = make(chan mutant.Mutant)
 	go func() {
+		defer close(mu.mutantStream)
 		_ = fs.WalkDir(mu.fs, ".", func(path string, d fs.DirEntry, err error) error {
 			if filepath.Ext(path) == ".go" && !strings.HasSuffix(path, "_test.go") {
 				mu.runOnFile(path)
@@ -142,11 +141,10 @@ func (mu *Mutator) Run() report.Results {
 
 			return nil
 		})
-		close(mu.mutantStream)
 	}()
 
 	start := time.Now()
-	res := mu.executeTests()
+	res := mu.executeTests(ctx)
 	res.Elapsed = time.Since(start)
 	res.Module = mu.module
 
@@ -176,7 +174,7 @@ func (mu *Mutator) findMutations(set *token.FileSet, file *ast.File, node *inter
 		return
 	}
 	for _, mt := range mutantTypes {
-		if !viper.GetBool(configuration.MutantTypeEnabledKey(mt)) {
+		if !configuration.Get[bool](configuration.MutantTypeEnabledKey(mt)) {
 			return
 		}
 		mutantType := mt
@@ -197,7 +195,8 @@ func (mu *Mutator) mutationStatus(pos token.Position) mutant.Status {
 	return status
 }
 
-func (mu *Mutator) executeTests() report.Results {
+func (mu *Mutator) executeTests(ctx context.Context) report.Results {
+	var mutants []mutant.Mutant
 	if mu.dryRun {
 		log.Infoln("Running in 'dry-run' mode...")
 	} else {
@@ -215,8 +214,11 @@ func (mu *Mutator) executeTests() report.Results {
 
 	_ = os.Chdir(wDir)
 
-	var mutants []mutant.Mutant
 	for mut := range mu.mutantStream {
+		ok := checkDone(ctx)
+		if !ok {
+			return results(mutants)
+		}
 		mut.SetWorkdir(wDir)
 		if mut.Status() == mutant.NotCovered || mu.dryRun {
 			mutants = append(mutants, mut)
@@ -242,11 +244,20 @@ func (mu *Mutator) executeTests() report.Results {
 		mutants = append(mutants, mut)
 	}
 
-	results := report.Results{
-		Mutants: mutants,
-	}
+	return results(mutants)
+}
 
-	return results
+func checkDone(ctx context.Context) bool {
+	select {
+	case <-ctx.Done():
+		return false
+	default:
+		return true
+	}
+}
+
+func results(m []mutant.Mutant) report.Results {
+	return report.Results{Mutants: m}
 }
 
 func (mu *Mutator) runTests() mutant.Status {

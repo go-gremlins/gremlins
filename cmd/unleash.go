@@ -17,9 +17,11 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -50,7 +52,7 @@ const (
 	paramThresholdMCoverage = "threshold-mcover"
 )
 
-func newUnleashCmd() (*unleashCmd, error) {
+func newUnleashCmd(ctx context.Context) (*unleashCmd, error) {
 	cmd := &cobra.Command{
 		Use:     fmt.Sprintf("%s [path]", commandName),
 		Aliases: []string{"run", "r"},
@@ -70,7 +72,7 @@ Thresholds are configurable quality gates that make gremlins exit with an error
 if those values are not met. Efficacy is the percent of KILLED mutants over
 the total KILLED and LIVED mutants. Mutant coverage is the percent of total
 KILLED + LIVED mutants, over the total mutants.`,
-		RunE: runUnleash,
+		RunE: runUnleash(ctx),
 	}
 
 	if err := setFlagsOnCmd(cmd); err != nil {
@@ -80,34 +82,63 @@ KILLED + LIVED mutants, over the total mutants.`,
 	return &unleashCmd{cmd: cmd}, nil
 }
 
-func runUnleash(_ *cobra.Command, args []string) error {
-	log.Infoln("Starting...")
-	currPath, runDir, err := changePath(args, os.Chdir, os.Getwd)
-	if err != nil {
-		return err
-	}
-
-	workDir, err := os.MkdirTemp(os.TempDir(), "gremlins-")
-	if err != nil {
-		return fmt.Errorf("impossible to create the workdir: %w", err)
-	}
-	defer func(wd string, rd string) {
-		_ = os.Chdir(rd)
-		e := os.RemoveAll(wd)
-		if e != nil {
-			log.Errorf("impossible to remove temporary folder: %s\n\t%s", err, wd)
+func runUnleash(ctx context.Context) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		log.Infoln("Starting...")
+		currPath, runDir, err := changePath(args, os.Chdir, os.Getwd)
+		if err != nil {
+			return err
 		}
-	}(workDir, runDir)
 
-	results, err := run(workDir, currPath)
-	if err != nil {
-		return err
+		workDir, err := os.MkdirTemp(os.TempDir(), "gremlins-")
+		if err != nil {
+			return fmt.Errorf("impossible to create the workdir: %w", err)
+		}
+		defer cleanUp(workDir, runDir)
+
+		wg := &sync.WaitGroup{}
+		wg.Add(1)
+		cancelled := false
+		var results report.Results
+		go runWithCancel(ctx, wg, func(c context.Context) {
+			results, err = run(c, workDir, currPath)
+		}, func() {
+			cancelled = true
+		})
+		wg.Wait()
+		if err != nil {
+			return err
+		}
+		if cancelled {
+			return nil
+		}
+
+		return report.Do(results)
 	}
-
-	return report.Do(results)
 }
 
-func run(workDir, currPath string) (report.Results, error) {
+func runWithCancel(ctx context.Context, wg *sync.WaitGroup, runner func(c context.Context), onCancel func()) {
+	c, cancel := context.WithCancel(ctx)
+	go func() {
+		<-ctx.Done()
+		log.Infof("\nShutting down gracefully...\n")
+		cancel()
+		onCancel()
+	}()
+	runner(c)
+	wg.Done()
+}
+
+func cleanUp(wd, rd string) {
+	if err := os.Chdir(rd); err != nil {
+		log.Errorf("impossible to move back to original folder: %s\n\t%s", err, wd)
+	}
+	if err := os.RemoveAll(wd); err != nil {
+		log.Errorf("impossible to remove temporary folder: %s\n\t%s", err, wd)
+	}
+}
+
+func run(ctx context.Context, workDir, currPath string) (report.Results, error) {
 	c, err := coverage.New(workDir, currPath)
 	if err != nil {
 		return report.Results{}, fmt.Errorf("failed to gather coverage in %q: %w", currPath, err)
@@ -121,7 +152,7 @@ func run(workDir, currPath string) (report.Results, error) {
 	d := workdir.NewDealer(workDir, currPath)
 
 	mut := mutator.New(os.DirFS(currPath), p, d)
-	results := mut.Run()
+	results := mut.Run(ctx)
 
 	return results, nil
 }

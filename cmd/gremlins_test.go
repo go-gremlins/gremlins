@@ -17,13 +17,14 @@
 package cmd
 
 import (
+	"context"
 	"testing"
 )
 
 func TestGremlins(t *testing.T) {
 	const boolType = "bool"
 
-	c, err := newRootCmd("1.2.3")
+	c, err := newRootCmd(context.TODO(), "1.2.3")
 	if err != nil {
 		t.Fatal("newRootCmd should not fail")
 	}
@@ -59,14 +60,14 @@ func TestGremlins(t *testing.T) {
 
 func TestExecute(t *testing.T) {
 	t.Run("should not fail", func(t *testing.T) {
-		err := Execute("1.2.3")
+		err := Execute(context.TODO(), "1.2.3")
 		if err != nil {
 			t.Errorf("execute should not fail")
 		}
 	})
 
 	t.Run("should fail if version is not set", func(t *testing.T) {
-		err := Execute("")
+		err := Execute(context.TODO(), "")
 		if err == nil {
 			t.Errorf("expected failure")
 		}

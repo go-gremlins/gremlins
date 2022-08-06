@@ -116,7 +116,7 @@ func TestConfiguration(t *testing.T) {
 			}
 
 			for key, wanted := range tc.wantedConfig {
-				got := viper.Get(key)
+				got := Get[any](key)
 				if got != wanted {
 					t.Errorf(cmp.Diff(got, wanted))
 				}
@@ -170,5 +170,55 @@ func TestGeneratesMutantTypeEnabledKey(t *testing.T) {
 
 	if got != want {
 		t.Errorf("expected %q, got %q", mt, want)
+	}
+}
+
+func TestViperSynchronisedAccess(t *testing.T) {
+	testCases := []struct {
+		value any
+		name  string
+		key   string
+	}{
+		{
+			name:  "bool",
+			key:   "bool.key",
+			value: true,
+		},
+		{
+			name:  "int",
+			key:   "int.key",
+			value: 10,
+		},
+		{
+			name:  "float64",
+			key:   "float64.key",
+			value: float64(10),
+		},
+		{
+			name:  "string",
+			key:   "string.key",
+			value: "test string",
+		},
+		{
+			name:  "char",
+			key:   "char.key",
+			value: 'a',
+		},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			defer Reset()
+
+			Set(tc.key, tc.value)
+
+			got := Get[any](tc.key)
+
+			if !cmp.Equal(got, tc.value) {
+				t.Errorf("expected %v, got %v", tc.value, got)
+			}
+
+		})
 	}
 }
