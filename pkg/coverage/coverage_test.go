@@ -31,8 +31,10 @@ import (
 )
 
 type commandHolder struct {
-	command string
-	args    []string
+	events []struct {
+		command string
+		args    []string
+	}
 }
 
 func TestCoverageRun(t *testing.T) {
@@ -51,20 +53,37 @@ func TestCoverageRun(t *testing.T) {
 
 	_, _ = cov.Run()
 
-	want := fmt.Sprintf("go test -tags tag1 tag2 -cover -coverprofile %v ./...", wantFilePath)
-	got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
+	firstWant := "go mod download"
+	secondWant := fmt.Sprintf("go test -tags tag1 tag2 -cover -coverprofile %v ./...", wantFilePath)
 
-	if !cmp.Equal(got, want) {
-		t.Errorf(cmp.Diff(got, want))
+	if len(holder.events) != 2 {
+		t.Fatal("expected two commands to be executed")
+	}
+	firstGot := fmt.Sprintf("go %v", strings.Join(holder.events[0].args, " "))
+	secondGot := fmt.Sprintf("go %v", strings.Join(holder.events[1].args, " "))
+
+	if !cmp.Equal(firstGot, firstWant) {
+		t.Errorf(cmp.Diff(firstGot, firstWant))
+	}
+	if !cmp.Equal(secondGot, secondWant) {
+		t.Errorf(cmp.Diff(secondGot, secondWant))
 	}
 }
 
 func TestCoverageRunFails(t *testing.T) {
-	t.Parallel()
-	cov := coverage.NewWithCmdAndPackage(fakeExecCommandFailure, "example.com", "workdir", "./...")
-	if _, err := cov.Run(); err == nil {
-		t.Error("expected run to report an error")
-	}
+	t.Run("failure of: go mod download", func(t *testing.T) {
+		cov := coverage.NewWithCmdAndPackage(fakeExecCommandFailure(0), "example.com", "workdir", "./...")
+		if _, err := cov.Run(); err == nil {
+			t.Error("expected run to report an error")
+		}
+	})
+
+	t.Run("failure of: go test", func(t *testing.T) {
+		cov := coverage.NewWithCmdAndPackage(fakeExecCommandFailure(1), "example.com", "workdir", "./...")
+		if _, err := cov.Run(); err == nil {
+			t.Error("expected run to report an error")
+		}
+	})
 }
 
 func TestCoverageParsesOutput(t *testing.T) {
@@ -173,8 +192,10 @@ type execContext = func(name string, args ...string) *exec.Cmd
 func fakeExecCommandSuccess(got *commandHolder) execContext {
 	return func(command string, args ...string) *exec.Cmd {
 		if got != nil {
-			got.command = command
-			got.args = args
+			got.events = append(got.events, struct {
+				command string
+				args    []string
+			}{command: command, args: args})
 		}
 		cs := []string{"-test.run=TestCoverageProcessSuccess", "--", command}
 		cs = append(cs, args...)
@@ -186,12 +207,20 @@ func fakeExecCommandSuccess(got *commandHolder) execContext {
 	}
 }
 
-func fakeExecCommandFailure(command string, args ...string) *exec.Cmd {
-	cs := []string{"-test.run=TestCoverageProcessFailure", "--", command}
-	cs = append(cs, args...)
-	// #nosec G204 - We are in tests, we don't care
-	cmd := exec.Command(os.Args[0], cs...)
-	cmd.Env = []string{"GO_TEST_PROCESS=1"}
+func fakeExecCommandFailure(run int) execContext {
+	var executed int
 
-	return cmd
+	return func(command string, args ...string) *exec.Cmd {
+		cs := []string{"-test.run=TestCoverageProcessSuccess", "--", command}
+		if executed == run {
+			cs = []string{"-test.run=TestCoverageProcessFailure", "--", command}
+		}
+		cs = append(cs, args...)
+		// #nosec G204 - We are in tests, we don't care
+		cmd := exec.Command(os.Args[0], cs...)
+		cmd.Env = []string{"GO_TEST_PROCESS=1"}
+		executed++
+
+		return cmd
+	}
 }

@@ -108,11 +108,17 @@ func NewWithCmdAndPackage(cmdContext execContext, mod, workdir, path string, opt
 
 // Run executes the coverage command and parses the results, returning a *Profile
 // object.
+// Before executing the coverage, it downloads the go modules in a separate step.
+// This is done to avoid that the download phase impacts the execution time which
+// is later used as timeout for the mutant testing execution.
 func (c *Coverage) Run() (Result, error) {
 	log.Infof("Gathering coverage... ")
-	elapsed, err := c.execute()
+	if err := c.downloadModules(); err != nil {
+		return Result{}, fmt.Errorf("impossible to download modules: %w", err)
+	}
+	elapsed, err := c.executeCoverage()
 	if err != nil {
-		return Result{}, fmt.Errorf("impossible to execute coverage: %w", err)
+		return Result{}, fmt.Errorf("impossible to executeCoverage coverage: %w", err)
 	}
 	log.Infof("done in %s\n", elapsed)
 	profile, err := c.getProfile()
@@ -143,7 +149,15 @@ func (c *Coverage) filePath() string {
 	return fmt.Sprintf("%v/%v", c.workDir, c.fileName)
 }
 
-func (c *Coverage) execute() (time.Duration, error) {
+func (c *Coverage) downloadModules() error {
+	cmd := c.cmdContext("go", "mod", "download")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+
+func (c *Coverage) executeCoverage() (time.Duration, error) {
 	args := []string{"test"}
 	if c.buildTags != "" {
 		args = append(args, "-tags", c.buildTags)
