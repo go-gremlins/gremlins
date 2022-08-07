@@ -17,9 +17,11 @@
 package workdir
 
 import (
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-gremlins/gremlins/pkg/log"
 )
@@ -36,13 +38,43 @@ type Dealer interface {
 // Gremlins not to work in the actual source directory messing up
 // with the source code files.
 type CDealer struct {
-	workDir string
-	srcDir  string
+	workDir          string
+	srcDir           string
+	dockerRootFolder string
+	withinDocker     bool
 }
 
-// NewDealer instantiates a new CDealer.
-func NewDealer(workDir, srcDir string) CDealer {
-	return CDealer{workDir: workDir, srcDir: srcDir}
+// Option for the CDealer initialization.
+type Option func(d CDealer) CDealer
+
+// NewDealer instantiates a new CDealer evaluating whether it operates within a docker container.
+func NewDealer(workDir, srcDir string, opts ...Option) CDealer {
+	dealer := CDealer{
+		workDir:          workDir,
+		srcDir:           srcDir,
+		dockerRootFolder: "/",
+	}
+
+	for _, opt := range opts {
+		dealer = opt(dealer)
+	}
+
+	if isRunningInDockerContainer(dealer.dockerRootFolder) {
+		dealer.withinDocker = true
+
+		return dealer
+	}
+
+	return dealer
+}
+
+// WithDockerRootFolder overrides the default root folder where to look for .dockerenv file.
+func WithDockerRootFolder(rootFolder string) Option {
+	return func(d CDealer) CDealer {
+		d.dockerRootFolder = rootFolder
+
+		return d
+	}
 }
 
 // Get provides a working directory where all the files are hard links
@@ -56,7 +88,21 @@ func (fm CDealer) Get() (string, func(), error) {
 	if err != nil {
 		return "", nil, err
 	}
-	err = filepath.Walk(fm.srcDir, func(srcPath string, info fs.FileInfo, err error) error {
+	err = filepath.Walk(fm.srcDir, fm.copyTo(dstDir))
+	if err != nil {
+		return "", nil, err
+	}
+
+	return dstDir, func() {
+		err := os.RemoveAll(dstDir)
+		if err != nil {
+			log.Errorln("impossible to remove temporary folder")
+		}
+	}, nil
+}
+
+func (fm CDealer) copyTo(dstDir string) func(srcPath string, info fs.FileInfo, err error) error {
+	return func(srcPath string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -69,27 +115,55 @@ func (fm CDealer) Get() (string, func(), error) {
 		}
 		dstPath := filepath.Join(dstDir, relPath)
 
-		switch mode := info.Mode(); {
-		case mode.IsDir():
-			if err := os.Mkdir(dstPath, info.Mode()); err != nil && !os.IsExist(err) {
+		return fm.copyPath(srcPath, dstPath, info)
+	}
+}
+
+func (fm CDealer) copyPath(srcPath, dstPath string, info fs.FileInfo) error {
+	switch mode := info.Mode(); {
+	case mode.IsDir():
+		if err := os.Mkdir(dstPath, mode); err != nil && !os.IsExist(err) {
+			return err
+		}
+	case mode.IsRegular():
+		if fm.withinDocker {
+			// When gremlins is running within a docker container, hard link doesn't work, so we do a copy of the file
+			if err := doCopy(srcPath, dstPath, mode); err != nil {
 				return err
 			}
-		case mode.IsRegular():
+		} else {
 			if err := os.Link(srcPath, dstPath); err != nil {
 				return err
 			}
 		}
-
-		return nil
-	})
-	if err != nil {
-		return "", nil, err
 	}
 
-	return dstDir, func() {
-		err := os.RemoveAll(dstDir)
-		if err != nil {
-			log.Errorln("impossible to remove temporary folder")
-		}
-	}, nil
+	return nil
+}
+
+func doCopy(srcPath, dstPath string, fileMode fs.FileMode) error {
+	s, err := os.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	//nolint:nosnakecase
+	d, err := os.OpenFile(dstPath, os.O_CREATE|os.O_RDWR, fileMode)
+	if err != nil {
+		return err
+	}
+
+	if _, err = io.Copy(d, s); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func isRunningInDockerContainer(dockerRootFolder string) bool {
+	f := strings.TrimSuffix(dockerRootFolder, "/") + "/" + ".dockerenv"
+	if _, err := os.Stat(f); err == nil {
+		return true
+	}
+
+	return false
 }

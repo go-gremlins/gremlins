@@ -24,9 +24,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/hectane/go-acl"
-
 	"github.com/google/go-cmp/cmp"
+	"github.com/hectane/go-acl"
 
 	"github.com/go-gremlins/gremlins/pkg/mutator/workdir"
 )
@@ -37,7 +36,7 @@ func TestLinkFolder(t *testing.T) {
 	populateSrcDir(t, srcDir, 3)
 	dstDir := t.TempDir()
 
-	mngr := workdir.NewDealer(dstDir, srcDir)
+	mngr := workdir.NewDealer(dstDir, srcDir, workdir.WithDockerRootFolder(dstDir))
 
 	dstDir, cl, err := mngr.Get()
 	if err != nil {
@@ -45,7 +44,7 @@ func TestLinkFolder(t *testing.T) {
 	}
 	defer cl()
 
-	err = filepath.Walk(srcDir, func(path string, info fs.FileInfo, err error) error {
+	err = filepath.Walk(srcDir, func(path string, srcFileInfo fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -61,10 +60,70 @@ func TestLinkFolder(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		srcFileInfo, err := os.Lstat(path)
+
+		if srcFileInfo.Mode().IsRegular() {
+			sameFile := os.SameFile(dstFileInfo, srcFileInfo)
+			if !sameFile {
+				t.Error("expected file to be the same, got different file")
+			}
+		}
+		if !cmp.Equal(dstFileInfo.Name(), srcFileInfo.Name()) {
+			t.Errorf("expected Name to be %v, got %v", srcFileInfo.Name(), dstFileInfo.Name())
+		}
+		if !cmp.Equal(dstFileInfo.Mode(), srcFileInfo.Mode()) {
+			t.Errorf(cmp.Diff(srcFileInfo.Mode(), dstFileInfo.Mode()))
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCopyFolder(t *testing.T) {
+	t.Parallel()
+	srcDir := t.TempDir()
+	populateSrcDir(t, srcDir, 3)
+	dstDir := t.TempDir()
+
+	dockerRootDir := t.TempDir()
+	dockerEnv := filepath.Join(dockerRootDir, ".dockerenv")
+	err := os.WriteFile(dockerEnv, []byte{}, 0400)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mngr := workdir.NewDealer(dstDir, srcDir, workdir.WithDockerRootFolder(dockerRootDir))
+
+	dstDir, cl, err := mngr.Get()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cl()
+
+	err = filepath.Walk(srcDir, func(path string, srcFileInfo fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		relPath, err := filepath.Rel(srcDir, path)
 		if err != nil {
 			t.Fatal(err)
 		}
+		if relPath == "." {
+			return nil
+		}
+		dstPath := filepath.Join(dstDir, relPath)
+		dstFileInfo, err := os.Lstat(dstPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		sameFile := os.SameFile(dstFileInfo, srcFileInfo)
+		if sameFile {
+			t.Error("expected file to be different, got the same file")
+		}
+
 		if !cmp.Equal(dstFileInfo.Name(), srcFileInfo.Name()) {
 			t.Errorf("expected Name to be %v, got %v", srcFileInfo.Name(), dstFileInfo.Name())
 		}
