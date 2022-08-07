@@ -256,9 +256,60 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Home
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="." class="md-nav__link md-nav__link--active">
         Home
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-mutation-testing" class="md-nav__link">
+    What is Mutation Testing
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    Features
+  </a>
+  
+    <nav class="md-nav" aria-label="Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#current-limitations" class="md-nav__link">
+    Current limitations
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -575,6 +626,41 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-mutation-testing" class="md-nav__link">
+    What is Mutation Testing
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    Features
+  </a>
+  
+    <nav class="md-nav" aria-label="Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#current-limitations" class="md-nav__link">
+    Current limitations
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -596,7 +682,6 @@
 <p>Gremlins is a mutation testing tool for Go. It has been made to work well on <em>smallish</em> Go modules, for example
 <em>microservices</em>, on which it helps validate the test suite, aids the TDD process and can be used as a CI quality gate.</p>
 <p>As of now, Gremlins doesn't work very well on very big Go modules, mainly because a run can take hours to complete.</p>
-<h1 id="formatteroff">(@formatter:off)<a class="headerlink" href="#formatteroff" title="Permanent link">&para;</a></h1>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Gremlins is still in its 0.x.x release, which, as per SemVer, doesn't guarantee backward compatibility. What this 
@@ -607,7 +692,6 @@ releases will be provided for the v0.1.0 line.
 Once Gremlins will reach it's 1.x.x release, it will start to be backward compatible, and we'll decide how many
 releases to maintain at the same time (ex. up to two minors before, as Go itself does).</p>
 </div>
-<h1 id="formatteron">(@formatter:on)<a class="headerlink" href="#formatteron" title="Permanent link">&para;</a></h1>
 <h2 id="what-is-mutation-testing">What is Mutation Testing<a class="headerlink" href="#what-is-mutation-testing" title="Permanent link">&para;</a></h2>
 <p>Code coverage is unreliable as a measure of test quality. It is too easy to have tests that exercise a piece of code but
 don't test anything at all. Mutation testing works by mutating the code exercised by the tests and verifying if the
