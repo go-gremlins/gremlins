@@ -186,10 +186,16 @@ func (r *reportStatus) assess(tEfficacy, rCoverage float64) error {
 	}
 
 	et := configuration.Get[float64](configuration.UnleashThresholdEfficacyKey)
+	if et == 0 {
+		et = float64(configuration.Get[int](configuration.UnleashThresholdEfficacyKey))
+	}
 	if et > 0 && tEfficacy <= et {
 		return execution.NewExitErr(execution.EfficacyThreshold)
 	}
 	ct := configuration.Get[float64](configuration.UnleashThresholdMCoverageKey)
+	if ct == 0 {
+		ct = float64(configuration.Get[int](configuration.UnleashThresholdMCoverageKey))
+	}
 	if ct > 0 && rCoverage <= ct {
 		return execution.NewExitErr(execution.MutantCoverageThreshold)
 	}
