@@ -71,7 +71,7 @@ brews:
       owner: go-gremlins
       name: homebrew-tap
       branch: main
-      token: "{{ secrets.WORKFLOW_PAT }}"
+      token: "{{ .Env.GITHUB_TOKEN }}"
     folder: Formula
     homepage: https://github.com/go-gremlins/gremlins
     description: A mutation testing tool for Go.
