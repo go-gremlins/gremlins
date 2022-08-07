@@ -26,7 +26,7 @@ jobs:
         with:
           registry: docker.io
           username: gogremlins
-          password: ${{ secret.DOCKER_HUB_TOKEN }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
@@ -40,6 +40,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
   documentation:
+    runs-on: ubuntu-latest
     if: ${{ github.event_name != 'pull_request' }}
     needs: [ goreleaser ]
     steps:
@@ -54,7 +55,7 @@ jobs:
           echo "GR_PATCH_VERSION=$(echo $GITHUB_REF | cut -d '.' -f 3)" >> $GITHUB_ENV
       - name: Build latest documentation
         # If patch is 0, it is a new release; set as new default
-        if: ${{ env.GR_PATCH_VERSION == "0" }}
+        if: ${{ env.GR_PATCH_VERSION == '0' }}
         uses: ./.github/workflows/docs.yml
         with:
           short_version: ${{ env.GR_SHORT_VERSION }}
@@ -63,7 +64,7 @@ jobs:
           default: true
       - name: Build patch documentation
         # If patch is not 0, it is a patch release; don't set as default
-        if: ${{ env.GR_PATCH_VERSION != "0" }}
+        if: ${{ env.GR_PATCH_VERSION != '0' }}
         uses: ./.github/workflows/docs.yml
         with:
           short_version: ${{ env.GR_SHORT_VERSION }}
