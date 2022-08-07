@@ -7,7 +7,7 @@ _microservices_, on which it helps validate the test suite, aids the TDD process
 
 As of now, Gremlins doesn't work very well on very big Go modules, mainly because a run can take hours to complete.
 
-# (@formatter:off)
+[//]: # (@formatter:off)
 !!! warning
     Gremlins is still in its 0.x.x release, which, as per SemVer, doesn't guarantee backward compatibility. What this 
     means for Gremlins is that configuration flags and/or configuration files can change among minor releases. This may
@@ -17,7 +17,8 @@ As of now, Gremlins doesn't work very well on very big Go modules, mainly becaus
     releases will be provided for the v0.1.0 line.
     Once Gremlins will reach it's 1.x.x release, it will start to be backward compatible, and we'll decide how many
     releases to maintain at the same time (ex. up to two minors before, as Go itself does).
-# (@formatter:on)
+
+[//]: # (@formatter:on)
 
 ## What is Mutation Testing
 
