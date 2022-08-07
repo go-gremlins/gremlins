@@ -35,7 +35,7 @@ extra:
   version:
     provider: mike
   release:
-    full_version: !ENV [GR_VERSION, 'X.Y.Z']
+    full_version: !ENV [GR_FULL_VERSION, 'X.Y.Z']
     short_version: !ENV [GR_SHORT_VERSION, 'X.Y']
 
 nav:

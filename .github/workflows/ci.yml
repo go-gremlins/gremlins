@@ -70,6 +70,5 @@ jobs:
     needs: test
     uses: ./.github/workflows/docs.yml
     with:
-      short_version: next
-      full_version: x.y.z
-      default: false
+      version: "next"
+
