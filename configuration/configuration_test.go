@@ -220,27 +220,27 @@ func TestViperSynchronisedAccess(t *testing.T) {
 	}{
 		{
 			name:  "bool",
-			key:   "bool.key",
+			key:   "tvsa.bool.key",
 			value: true,
 		},
 		{
 			name:  "int",
-			key:   "int.key",
+			key:   "tvsa.int.key",
 			value: 10,
 		},
 		{
 			name:  "float64",
-			key:   "float64.key",
+			key:   "tvsa.float64.key",
 			value: float64(10),
 		},
 		{
 			name:  "string",
-			key:   "string.key",
+			key:   "tvsa.string.key",
 			value: "test string",
 		},
 		{
 			name:  "char",
-			key:   "char.key",
+			key:   "tvsa.char.key",
 			value: 'a',
 		},
 	}
@@ -248,7 +248,6 @@ func TestViperSynchronisedAccess(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			defer Reset()
 
 			Set(tc.key, tc.value)
 
@@ -257,7 +256,6 @@ func TestViperSynchronisedAccess(t *testing.T) {
 			if !cmp.Equal(got, tc.value) {
 				t.Errorf("expected %v, got %v", tc.value, got)
 			}
-
 		})
 	}
 }
