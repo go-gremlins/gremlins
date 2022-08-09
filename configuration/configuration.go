@@ -135,7 +135,7 @@ func defaultConfigPaths() []string {
 		result = append(result, root)
 	}
 
-	// Finally the current folder
+	// Finally the current directory
 	result = append(result, ".")
 
 	return result
