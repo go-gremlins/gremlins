@@ -110,11 +110,12 @@ func arePathsNotSet(cPaths []string) bool {
 func defaultConfigPaths() []string {
 	result := make([]string, 0, 4)
 
-	result = append(result, ".")
+	// First global config
 	if runtime.GOOS != windowsOs {
 		result = append(result, "/etc/gremlins")
 	}
 
+	// Then $XDG_CONFIG_HOME
 	xchLocation, _ := homedir.Expand("~/.config")
 	if x := os.Getenv(xdgConfigHomeKey); x != "" {
 		xchLocation = x
@@ -122,11 +123,15 @@ func defaultConfigPaths() []string {
 	xchLocation = filepath.Join(xchLocation, "gremlins", "gremlins")
 	result = append(result, xchLocation)
 
+	// Then $HOME
 	homeLocation, err := homedir.Expand("~/.gremlins")
 	if err != nil {
 		return result
 	}
 	result = append(result, homeLocation)
+
+	// Finally the current directory
+	result = append(result, ".")
 
 	return result
 }
