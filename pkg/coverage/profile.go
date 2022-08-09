@@ -20,6 +20,27 @@ import (
 	"go/token"
 )
 
+// Profile is implemented as a map holding a slice of Block per each filename.
+type Profile map[string][]Block
+
+// IsCovered checks if the given token.Position is covered by the coverage Profile.
+func (p Profile) IsCovered(pos token.Position) bool {
+	blocks, ok := p[pos.Filename]
+	if !ok {
+		return false
+	}
+	for _, b := range blocks {
+		if b.isBetweenLines(pos) {
+			return true
+		}
+		if covered := b.isPositionCovered(pos); covered {
+			return true
+		}
+	}
+
+	return false
+}
+
 // Block holds the start and end coordinates of a section of a source file
 // covered by tests.
 type Block struct {
@@ -29,33 +50,47 @@ type Block struct {
 	EndCol    int
 }
 
-// Profile is implemented as a map holding a slice of Block per each filename.
-type Profile map[string][]Block
-
-// IsCovered checks if the given token.Position is covered by the coverage Profile.
-func (p Profile) IsCovered(pos token.Position) bool {
-	block, ok := p[pos.Filename]
-	if !ok {
-		return false
+func (b Block) isPositionCovered(pos token.Position) bool {
+	if b.isSingleLine() && b.isOnFirstLine(pos) && b.isSingleLineColCovered(pos) {
+		return true
 	}
-	for _, b := range block {
-		if b.StartLine == b.EndLine {
-			if pos.Line == b.StartLine && pos.Column >= b.StartCol && pos.Column <= b.EndCol {
-				return true
-			}
-		}
-		if b.StartLine < b.EndLine {
-			if pos.Line == b.StartLine && pos.Column >= b.StartCol {
-				return true
-			}
-			if pos.Line == b.EndLine && pos.Column <= b.EndCol {
-				return true
-			}
-			if pos.Line > b.StartLine && pos.Line < b.EndLine {
-				return true
-			}
-		}
+	if b.isMultiLine() && b.isOnFirstLine(pos) && b.isCoveredToEndOfLine(pos) {
+		return true
+	}
+	if b.isMultiLine() && b.isOnLastLine(pos) && b.isCoveredFromStartOfLine(pos) {
+		return true
 	}
 
 	return false
+}
+
+func (b Block) isSingleLine() bool {
+	return b.StartLine == b.EndLine
+}
+
+func (b Block) isMultiLine() bool {
+	return b.StartLine < b.EndLine
+}
+
+func (b Block) isOnFirstLine(pos token.Position) bool {
+	return pos.Line == b.StartLine
+}
+
+func (b Block) isOnLastLine(pos token.Position) bool {
+	return pos.Line == b.EndLine
+}
+
+func (b Block) isBetweenLines(pos token.Position) bool {
+	return pos.Line > b.StartLine && pos.Line < b.EndLine
+}
+
+func (b Block) isSingleLineColCovered(pos token.Position) bool {
+	return pos.Column >= b.StartCol && pos.Column <= b.EndCol
+}
+
+func (b Block) isCoveredToEndOfLine(pos token.Position) bool {
+	return pos.Column >= b.StartCol
+}
+func (b Block) isCoveredFromStartOfLine(pos token.Position) bool {
+	return pos.Column <= b.EndCol
 }

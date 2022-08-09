@@ -1,5 +1,11 @@
 linters:
   enable:
+    - asasalint
+    - asciicheck
+    - containedctx
+    - decorder
+    - dupl
+    - dogsled
     - durationcheck
     - errname
     - errorlint
@@ -12,13 +18,29 @@ linters:
     - goimports
     - gosec
     - gocritic
-    - ifshort
+    - gocyclo
+    - gosec
+    - importas
+    - maintidx
     - makezero
+    - nilerr
     - nlreturn
     - nolintlint
     - nonamedreturns
     - nosnakecase
+    - predeclared
     - revive
+    - stylecheck
+    - tagliatelle
     - tenv
     - thelper
     - unconvert
+    - usestdlibvars
+
+linters-settings:
+  cyclop:
+    skip-tests: true
+  tagliatelle:
+    case:
+      rules:
+        json: snake
