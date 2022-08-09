@@ -366,7 +366,6 @@ type commandHolder struct {
 type execContext = func(ctx context.Context, name string, args ...string) *exec.Cmd
 
 func TestMutatorRun(t *testing.T) {
-	t.Parallel()
 	mapFS, mod, c := loadFixture(defaultFixture)
 	defer c()
 
