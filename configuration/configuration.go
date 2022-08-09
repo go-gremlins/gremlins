@@ -110,11 +110,12 @@ func arePathsNotSet(cPaths []string) bool {
 func defaultConfigPaths() []string {
 	result := make([]string, 0, 4)
 
-	result = append(result, ".")
+	// First global config
 	if runtime.GOOS != windowsOs {
 		result = append(result, "/etc/gremlins")
 	}
 
+	// Then $XDG_CONFIG_HOME
 	xchLocation, _ := homedir.Expand("~/.config")
 	if x := os.Getenv(xdgConfigHomeKey); x != "" {
 		xchLocation = x
@@ -122,13 +123,41 @@ func defaultConfigPaths() []string {
 	xchLocation = filepath.Join(xchLocation, "gremlins", "gremlins")
 	result = append(result, xchLocation)
 
+	// Then $HOME
 	homeLocation, err := homedir.Expand("~/.gremlins")
 	if err != nil {
 		return result
 	}
 	result = append(result, homeLocation)
 
+	// Then the Go module root
+	if root := findModuleRoot(); root != "" {
+		result = append(result, root)
+	}
+
+	// Finally the current folder
+	result = append(result, ".")
+
 	return result
+}
+
+func findModuleRoot() string {
+	// This function is duplicated from internal/gomodule. We should find a way
+	// to use here gomodule. The problem is the point of initialization, because
+	// configuration is initialised before gomodule.
+	path, _ := os.Getwd()
+	for {
+		if fi, err := os.Stat(filepath.Join(path, "go.mod")); err == nil && !fi.IsDir() {
+			return path
+		}
+		d := filepath.Dir(path)
+		if d == path {
+			break
+		}
+		path = d
+	}
+
+	return ""
 }
 
 var mutex sync.RWMutex

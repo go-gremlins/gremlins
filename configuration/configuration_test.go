@@ -17,6 +17,7 @@
 package configuration
 
 import (
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -34,7 +35,6 @@ type envEntry struct {
 }
 
 func TestConfiguration(t *testing.T) {
-
 	testCases := []struct {
 		wantedConfig map[string]interface{}
 		name         string
@@ -130,12 +130,31 @@ func TestConfigPaths(t *testing.T) {
 	home, _ := homedir.Dir()
 
 	t.Run("it lookups in default locations", func(t *testing.T) {
+		oldDir, _ := os.Getwd()
+		_ = os.Chdir("testdata/config1")
+		defer func(dir string) {
+			_ = os.Chdir(dir)
+		}(oldDir)
+
 		var want []string
-		want = append(want, ".")
+
+		// First global
 		if runtime.GOOS != "windows" {
 			want = append(want, "/etc/gremlins")
 		}
-		want = append(want, filepath.Join(home, ".config", "gremlins", "gremlins"), filepath.Join(home, ".gremlins"))
+
+		// Then $XDG_CONFIG_HOME and $HOME
+		want = append(want,
+			filepath.Join(home, ".config", "gremlins", "gremlins"),
+			filepath.Join(home, ".gremlins"),
+		)
+
+		// Then module root
+		moduleRoot, _ := os.Getwd()
+		want = append(want, moduleRoot)
+
+		// Last current folder
+		want = append(want, ".")
 
 		got := defaultConfigPaths()
 
@@ -145,14 +164,33 @@ func TestConfigPaths(t *testing.T) {
 	})
 
 	t.Run("when XDG_CONFIG_HOME is set, it lookups in that locations", func(t *testing.T) {
+		oldDir, _ := os.Getwd()
+		_ = os.Chdir("testdata/config1")
+		defer func(dir string) {
+			_ = os.Chdir(dir)
+		}(oldDir)
+
 		customPath := filepath.Join("my", "custom", "path")
 		t.Setenv("XDG_CONFIG_HOME", customPath)
+
 		var want []string
-		want = append(want, ".")
+
+		// First global
 		if runtime.GOOS != "windows" {
 			want = append(want, "/etc/gremlins")
 		}
-		want = append(want, filepath.Join(customPath, "gremlins", "gremlins"), filepath.Join(home, ".gremlins"))
+
+		// Then $XDG_CONFIG_HOME and $HOME
+		want = append(want,
+			filepath.Join(customPath, "gremlins", "gremlins"),
+			filepath.Join(home, ".gremlins"))
+
+		// Then Go module root
+		moduleRoot, _ := os.Getwd()
+		want = append(want, moduleRoot)
+
+		// Last the current directory
+		want = append(want, ".")
 
 		got := defaultConfigPaths()
 
