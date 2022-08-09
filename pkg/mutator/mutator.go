@@ -30,6 +30,7 @@ import (
 	"time"
 
 	"github.com/go-gremlins/gremlins/configuration"
+	"github.com/go-gremlins/gremlins/internal/gomodule"
 	"github.com/go-gremlins/gremlins/pkg/coverage"
 	"github.com/go-gremlins/gremlins/pkg/log"
 	"github.com/go-gremlins/gremlins/pkg/mutant"
@@ -43,6 +44,7 @@ import (
 // It traverses the AST of the project, finds which TokenMutant can be applied and
 // performs the actual mutation testing.
 type Mutator struct {
+	module            gomodule.GoModule
 	fs                fs.FS
 	wdManager         workdir.Dealer
 	covProfile        coverage.Profile
@@ -51,7 +53,6 @@ type Mutator struct {
 	rollback          func(m mutant.Mutant) error
 	mutantStream      chan mutant.Mutant
 	buildTags         string
-	module            string
 	testExecutionTime time.Duration
 	dryRun            bool
 }
@@ -74,16 +75,17 @@ type Option func(m Mutator) Mutator
 // The apply and rollback functions are wrappers around the TokenMutant apply and
 // rollback. These can be overridden with nop functions in tests. Not an
 // ideal setup. In the future we can think of a better way to handle this.
-func New(fs fs.FS, r coverage.Result, manager workdir.Dealer, opts ...Option) Mutator {
+func New(mod gomodule.GoModule, r coverage.Result, manager workdir.Dealer, opts ...Option) Mutator {
+	dirFS := os.DirFS(filepath.Join(mod.Root, mod.PkgDir))
 	buildTags := configuration.Get[string](configuration.UnleashTagsKey)
 	dryRun := configuration.Get[bool](configuration.UnleashDryRunKey)
 
 	mut := Mutator{
-		module:            r.Module,
+		module:            mod,
 		wdManager:         manager,
 		covProfile:        r.Profile,
 		testExecutionTime: r.Elapsed * timeoutCoefficient,
-		fs:                fs,
+		fs:                dirFS,
 		execContext:       exec.CommandContext,
 		apply: func(m mutant.Mutant) error {
 			return m.Apply()
@@ -121,6 +123,15 @@ func WithApplyAndRollback(a, r func(m mutant.Mutant) error) Option {
 	}
 }
 
+// WithDirFs overrides the fs.FS of the module (mainly used for testing purposes).
+func WithDirFs(dirFS fs.FS) Option {
+	return func(m Mutator) Mutator {
+		m.fs = dirFS
+
+		return m
+	}
+}
+
 // Run executes the mutation testing.
 //
 // It walks the fs.FS provided and checks every .go file which is not a test.
@@ -146,7 +157,7 @@ func (mu *Mutator) Run(ctx context.Context) report.Results {
 	start := time.Now()
 	res := mu.executeTests(ctx)
 	res.Elapsed = time.Since(start)
-	res.Module = mu.module
+	res.Module = mu.module.Name
 
 	return res
 }
@@ -203,7 +214,7 @@ func (mu *Mutator) executeTests(ctx context.Context) report.Results {
 		log.Infoln("Executing mutation testing on covered mutants...")
 	}
 	currDir, _ := os.Getwd()
-	wDir, cl, err := mu.wdManager.Get()
+	rootWd, cl, err := mu.wdManager.Get()
 	if err != nil {
 		panic("error, this is temporary")
 	}
@@ -212,14 +223,15 @@ func (mu *Mutator) executeTests(ctx context.Context) report.Results {
 		cl()
 	}(currDir)
 
-	_ = os.Chdir(wDir)
+	workingDir := filepath.Join(rootWd, mu.module.PkgDir)
+	_ = os.Chdir(workingDir)
 
 	for mut := range mu.mutantStream {
 		ok := checkDone(ctx)
 		if !ok {
 			return results(mutants)
 		}
-		mut.SetWorkdir(wDir)
+		mut.SetWorkdir(workingDir)
 		if mut.Status() == mutant.NotCovered || mu.dryRun {
 			mutants = append(mutants, mut)
 			report.Mutant(mut)

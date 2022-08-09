@@ -39,10 +39,8 @@ catch their damage?
 
 There are some limitations on how Gremlins works right now, but rest assured we'll try to make things better.
 
-- Gremlins can be run only from the root of a Go module and will run all the test suite; this is a problem if the tests
-  are especially slow.
-- For each mutation, Gremlins will run all the test suite; it would be better to only run the test cases that actually
-  cover the mutation.
+- For each mutation, Gremlins will run all the test suite in the package; it would be better to only run the test cases 
+  that actually cover the mutation.
 - Gremlins doesn't support custom test commands; if you have to do anything different from `go test [-tags t1 t2] ./...`
   to run your test suite, most probably it will not work with Gremlins.
 - There is no way to implement custom mutations.

@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -28,7 +29,7 @@ import (
 )
 
 func TestUnleash(t *testing.T) {
-	c, err := newUnleashCmd(context.TODO())
+	c, err := newUnleashCmd(context.Background())
 	if err != nil {
 		t.Fatal("newUnleashCmd should no fail")
 	}
@@ -132,11 +133,12 @@ func TestChangePath(t *testing.T) {
 
 		p, wd, _ := changePath(args, chdir, getwd)
 
-		if calledDir != wantCalledDir {
+		wantAbs, _ := filepath.Abs(wantCalledDir)
+		if calledDir != wantAbs {
 			t.Errorf("expected %q, got %q", wantCalledDir, calledDir)
 		}
-		if p != "." {
-			t.Errorf("expected '.', got %q", p)
+		if p != wantAbs {
+			t.Errorf("expected %q, got %q", wantAbs, p)
 		}
 		if wd != "test/dir" {
 			t.Errorf("expected 'test/dir', got %s", wd)

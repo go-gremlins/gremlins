@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/go-gremlins/gremlins/configuration"
+	"github.com/go-gremlins/gremlins/internal/gomodule"
 	"github.com/go-gremlins/gremlins/pkg/coverage"
 )
 
@@ -45,11 +46,11 @@ func TestCoverageRun(t *testing.T) {
 	wantFilename := "coverage"
 	wantFilePath := wantWorkdir + "/" + wantFilename
 	holder := &commandHolder{}
-	cov := coverage.NewWithCmdAndPackage(
-		fakeExecCommandSuccess(holder),
-		"example.com",
-		wantWorkdir,
-		".")
+	mod := gomodule.GoModule{
+		Name:   "example.com",
+		PkgDir: ".",
+	}
+	cov := coverage.NewWithCmd(fakeExecCommandSuccess(holder), wantWorkdir, mod)
 
 	_, _ = cov.Run()
 
@@ -71,15 +72,20 @@ func TestCoverageRun(t *testing.T) {
 }
 
 func TestCoverageRunFails(t *testing.T) {
+	mod := gomodule.GoModule{
+		Name:   "example.com",
+		PkgDir: "./...",
+	}
+
 	t.Run("failure of: go mod download", func(t *testing.T) {
-		cov := coverage.NewWithCmdAndPackage(fakeExecCommandFailure(0), "example.com", "workdir", "./...")
+		cov := coverage.NewWithCmd(fakeExecCommandFailure(0), "workdir", mod)
 		if _, err := cov.Run(); err == nil {
 			t.Error("expected run to report an error")
 		}
 	})
 
 	t.Run("failure of: go test", func(t *testing.T) {
-		cov := coverage.NewWithCmdAndPackage(fakeExecCommandFailure(1), "example.com", "workdir", "./...")
+		cov := coverage.NewWithCmd(fakeExecCommandFailure(1), "workdir", mod)
 		if _, err := cov.Run(); err == nil {
 			t.Error("expected run to report an error")
 		}
@@ -87,11 +93,14 @@ func TestCoverageRunFails(t *testing.T) {
 }
 
 func TestCoverageParsesOutput(t *testing.T) {
-	t.Parallel()
 	module := "example.com"
-	cov := coverage.NewWithCmdAndPackage(fakeExecCommandSuccess(nil), module, "testdata/valid", "./...")
+	mod := gomodule.GoModule{
+		Name:   module,
+		PkgDir: "path",
+	}
+	cov := coverage.NewWithCmd(fakeExecCommandSuccess(nil), "testdata/valid", mod)
 	profile := coverage.Profile{
-		"path/file1.go": {
+		"file1.go": {
 			{
 				StartLine: 47,
 				StartCol:  2,
@@ -99,7 +108,7 @@ func TestCoverageParsesOutput(t *testing.T) {
 				EndCol:    16,
 			},
 		},
-		"path2/file2.go": {
+		"file2.go": {
 			{
 				StartLine: 52,
 				StartCol:  2,
@@ -109,7 +118,6 @@ func TestCoverageParsesOutput(t *testing.T) {
 		},
 	}
 	want := coverage.Result{
-		Module:  module,
 		Profile: profile,
 	}
 
@@ -121,57 +129,17 @@ func TestCoverageParsesOutput(t *testing.T) {
 	if !cmp.Equal(got.Profile, want.Profile) {
 		t.Error(cmp.Diff(got, want))
 	}
-	if !cmp.Equal(got.Module, want.Module) {
-		t.Error(cmp.Diff(got, want))
-	}
 	if got.Elapsed == 0 {
 		t.Errorf("expected elapsed time to be greater than 0")
 	}
 }
 
-func TestCoverageNew(t *testing.T) {
-	t.Run("does not return error if it can retrieve module", func(t *testing.T) {
-		t.Parallel()
-		path := t.TempDir()
-		goMod := path + "/go.mod"
-		err := os.WriteFile(goMod, []byte("module example.com"), 0600)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		_, err = coverage.New(t.TempDir(), path)
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
-
-	t.Run("returns error if go.mod is invalid", func(t *testing.T) {
-		t.Parallel()
-		path := t.TempDir()
-		goMod := path + "/go.mod"
-		err := os.WriteFile(goMod, []byte(""), 0600)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		_, err = coverage.New(t.TempDir(), path)
-		if err == nil {
-			t.Errorf("expected an error")
-		}
-	})
-
-	t.Run("returns error if it cannot find module", func(t *testing.T) {
-		t.Parallel()
-		_, err := coverage.New(t.TempDir(), t.TempDir())
-		if err == nil {
-			t.Errorf("expected an error")
-		}
-	})
-}
-
 func TestParseOutputFail(t *testing.T) {
-	t.Parallel()
-	cov := coverage.NewWithCmdAndPackage(fakeExecCommandSuccess(nil), "example.com", "testdata/invalid", "./...")
+	mod := gomodule.GoModule{
+		Name:   "example.com",
+		PkgDir: "./...",
+	}
+	cov := coverage.NewWithCmd(fakeExecCommandSuccess(nil), "testdata/invalid", mod)
 
 	if _, err := cov.Run(); err == nil {
 		t.Errorf("espected an error")

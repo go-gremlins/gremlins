@@ -24,6 +24,7 @@ import (
 )
 
 func TestMutantDefaultStatus(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		mutantType mutant.Type
 		expected   bool

@@ -17,18 +17,18 @@
 package coverage
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"golang.org/x/tools/cover"
 
 	"github.com/go-gremlins/gremlins/configuration"
+	"github.com/go-gremlins/gremlins/internal/gomodule"
 	"github.com/go-gremlins/gremlins/pkg/log"
 )
 
@@ -36,7 +36,6 @@ import (
 // it took to generate the coverage report.
 type Result struct {
 	Profile Profile
-	Module  string
 	Elapsed time.Duration
 }
 
@@ -47,7 +46,7 @@ type Coverage struct {
 	workDir    string
 	path       string
 	fileName   string
-	mod        string
+	mod        gomodule.GoModule
 
 	buildTags string
 }
@@ -59,42 +58,18 @@ type execContext = func(name string, args ...string) *exec.Cmd
 
 // New instantiates a Coverage element using exec.Command as execContext,
 // actually running the command on the OS.
-func New(workdir, path string, opts ...Option) (*Coverage, error) {
-	mod, err := getMod(path)
-	if err != nil {
-		return &Coverage{}, err
-	}
-
-	return NewWithCmdAndPackage(exec.Command, mod, workdir, path, opts...), nil
+func New(workdir string, mod gomodule.GoModule, opts ...Option) *Coverage {
+	return NewWithCmd(exec.Command, workdir, mod, opts...)
 }
 
-func getMod(path string) (string, error) {
-	file, err := os.Open(path + "/go.mod")
-	defer func(file *os.File) {
-		_ = file.Close()
-	}(file)
-	if err != nil {
-		return "", err
-	}
-	r := bufio.NewReader(file)
-	line, _, err := r.ReadLine()
-	if err != nil {
-		return "", err
-	}
-	packageName := bytes.TrimPrefix(line, []byte("module "))
-
-	return string(packageName), nil
-}
-
-// NewWithCmdAndPackage instantiates a Coverage element given a custom execContext.
-func NewWithCmdAndPackage(cmdContext execContext, mod, workdir, path string, opts ...Option) *Coverage {
+// NewWithCmd instantiates a Coverage element given a custom execContext.
+func NewWithCmd(cmdContext execContext, workdir string, mod gomodule.GoModule, opts ...Option) *Coverage {
 	buildTags := configuration.Get[string](configuration.UnleashTagsKey)
-	path = strings.TrimSuffix(path, "/")
 
 	c := &Coverage{
 		cmdContext: cmdContext,
 		workDir:    workdir,
-		path:       path + "/...",
+		path:       "./...",
 		fileName:   "coverage",
 		mod:        mod,
 		buildTags:  buildTags,
@@ -126,7 +101,7 @@ func (c *Coverage) Run() (Result, error) {
 		return Result{}, fmt.Errorf("an error occurred while generating coverage profile: %w", err)
 	}
 
-	return Result{Module: c.mod, Profile: profile, Elapsed: elapsed}, nil
+	return Result{Profile: profile, Elapsed: elapsed}, nil
 }
 
 func (c *Coverage) getProfile() (Profile, error) {
@@ -200,5 +175,8 @@ func (c *Coverage) parse(data io.Reader) (Profile, error) {
 }
 
 func (c *Coverage) removeModuleFromPath(p *cover.Profile) string {
-	return strings.ReplaceAll(p.FileName, c.mod+"/", "")
+	path := strings.ReplaceAll(p.FileName, c.mod.Name+"/", "")
+	path, _ = filepath.Rel(c.mod.PkgDir, path)
+
+	return path
 }

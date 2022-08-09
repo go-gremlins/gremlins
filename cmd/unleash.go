@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -28,6 +29,7 @@ import (
 
 	"github.com/go-gremlins/gremlins/cmd/internal/flags"
 	"github.com/go-gremlins/gremlins/configuration"
+	"github.com/go-gremlins/gremlins/internal/gomodule"
 	"github.com/go-gremlins/gremlins/pkg/coverage"
 	"github.com/go-gremlins/gremlins/pkg/log"
 	"github.com/go-gremlins/gremlins/pkg/mutant"
@@ -139,19 +141,20 @@ func cleanUp(wd, rd string) {
 }
 
 func run(ctx context.Context, workDir, currPath string) (report.Results, error) {
-	c, err := coverage.New(workDir, currPath)
+	mod, err := gomodule.Init(currPath)
 	if err != nil {
-		return report.Results{}, fmt.Errorf("failed to gather coverage in %q: %w", currPath, err)
+		return report.Results{}, fmt.Errorf("%q is not in a Go module: %w", currPath, err)
 	}
+	c := coverage.New(workDir, mod)
 
 	p, err := c.Run()
 	if err != nil {
 		return report.Results{}, fmt.Errorf("failed to gather coverage: %w", err)
 	}
 
-	d := workdir.NewDealer(workDir, currPath)
+	d := workdir.NewDealer(workDir, mod.Root)
 
-	mut := mutator.New(os.DirFS(currPath), p, d)
+	mut := mutator.New(mod, p, d)
 	results := mut.Run(ctx)
 
 	return results, nil
@@ -162,16 +165,15 @@ func changePath(args []string, chdir func(dir string) error, getwd func() (strin
 	if err != nil {
 		return "", "", err
 	}
-	cp := "."
+	cp, _ := os.Getwd()
 	if len(args) > 0 {
-		cp = args[0]
+		cp, _ = filepath.Abs(args[0])
 	}
 	if cp != "." {
 		err = chdir(cp)
 		if err != nil {
 			return "", "", err
 		}
-		cp = "."
 	}
 
 	return cp, rd, nil

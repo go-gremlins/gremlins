@@ -174,6 +174,7 @@ func TestGeneratesMutantTypeEnabledKey(t *testing.T) {
 }
 
 func TestViperSynchronisedAccess(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		value any
 		name  string
