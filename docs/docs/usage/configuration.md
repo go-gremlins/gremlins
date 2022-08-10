@@ -20,9 +20,10 @@ Gremlins can be configured with a configuration file.
 The configuration file can be placed in (in order of precedence)
 
 1. `./.gremlins.yaml` (the current directory)
-2. `/etc/gremlins/gremlins.yaml`
-3. `$XDG_CONFIG_HOME/gremlins/gremlins.yaml`
-4. `$HOME/.gremlins.yaml`
+2. The module root
+3. `/etc/gremlins/.gremlins.yaml`
+4. `$XDG_CONFIG_HOME/gremlins/.gremlins.yaml`
+5. `$HOME/.gremlins.yaml`
 
 !!! hint
     `XDG_CONFIG_HOME` is usually `~/.config`.

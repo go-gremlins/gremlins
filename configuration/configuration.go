@@ -130,10 +130,34 @@ func defaultConfigPaths() []string {
 	}
 	result = append(result, homeLocation)
 
+	// Then the Go module root
+	if root := findModuleRoot(); root != "" {
+		result = append(result, root)
+	}
+
 	// Finally the current directory
 	result = append(result, ".")
 
 	return result
+}
+
+func findModuleRoot() string {
+	// This function is duplicated from internal/gomodule. We should find a way
+	// to use here gomodule. The problem is the point of initialization, because
+	// configuration is initialised before gomodule.
+	path, _ := os.Getwd()
+	for {
+		if fi, err := os.Stat(filepath.Join(path, "go.mod")); err == nil && !fi.IsDir() {
+			return path
+		}
+		d := filepath.Dir(path)
+		if d == path {
+			break
+		}
+		path = d
+	}
+
+	return ""
 }
 
 var mutex sync.RWMutex

@@ -30,7 +30,6 @@ import (
 )
 
 func TestMutantApplyAndRollback(t *testing.T) {
-	t.Parallel()
 	want := []string{
 		"package main\n\nfunc main() {\n\ta := 1 - 2\n\tb := 1 - 2\n}\n",
 		"package main\n\nfunc main() {\n\ta := 1 + 2\n\tb := 1 + 2\n}\n",

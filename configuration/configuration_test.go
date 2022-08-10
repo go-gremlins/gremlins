@@ -35,7 +35,6 @@ type envEntry struct {
 }
 
 func TestConfiguration(t *testing.T) {
-
 	testCases := []struct {
 		wantedConfig map[string]interface{}
 		name         string
@@ -140,7 +139,41 @@ func TestConfigPaths(t *testing.T) {
 		var want []string
 
 		// First global
-		if runtime.GOOS != "windows" {
+		if runtime.GOOS != windowsOs {
+			want = append(want, "/etc/gremlins")
+		}
+
+		// Then $XDG_CONFIG_HOME and $HOME
+		want = append(want,
+			filepath.Join(home, ".config", "gremlins", "gremlins"),
+			filepath.Join(home, ".gremlins"),
+		)
+
+		// Then module root
+		moduleRoot, _ := os.Getwd()
+		want = append(want, moduleRoot)
+
+		// Last current folder
+		want = append(want, ".")
+
+		got := defaultConfigPaths()
+
+		if !cmp.Equal(got, want) {
+			t.Errorf(cmp.Diff(got, want))
+		}
+	})
+
+	t.Run("no module root if not in go module", func(t *testing.T) {
+		oldDir, _ := os.Getwd()
+		_ = os.Chdir(t.TempDir())
+		defer func(dir string) {
+			_ = os.Chdir(dir)
+		}(oldDir)
+
+		var want []string
+
+		// First global
+		if runtime.GOOS != windowsOs {
 			want = append(want, "/etc/gremlins")
 		}
 
@@ -173,7 +206,7 @@ func TestConfigPaths(t *testing.T) {
 		var want []string
 
 		// First global
-		if runtime.GOOS != "windows" {
+		if runtime.GOOS != windowsOs {
 			want = append(want, "/etc/gremlins")
 		}
 
@@ -181,6 +214,10 @@ func TestConfigPaths(t *testing.T) {
 		want = append(want,
 			filepath.Join(customPath, "gremlins", "gremlins"),
 			filepath.Join(home, ".gremlins"))
+
+		// Then Go module root
+		moduleRoot, _ := os.Getwd()
+		want = append(want, moduleRoot)
 
 		// Last the current directory
 		want = append(want, ".")
@@ -205,6 +242,7 @@ func TestGeneratesMutantTypeEnabledKey(t *testing.T) {
 }
 
 func TestViperSynchronisedAccess(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		value any
 		name  string
@@ -212,27 +250,27 @@ func TestViperSynchronisedAccess(t *testing.T) {
 	}{
 		{
 			name:  "bool",
-			key:   "bool.key",
+			key:   "tvsa.bool.key",
 			value: true,
 		},
 		{
 			name:  "int",
-			key:   "int.key",
+			key:   "tvsa.int.key",
 			value: 10,
 		},
 		{
 			name:  "float64",
-			key:   "float64.key",
+			key:   "tvsa.float64.key",
 			value: float64(10),
 		},
 		{
 			name:  "string",
-			key:   "string.key",
+			key:   "tvsa.string.key",
 			value: "test string",
 		},
 		{
 			name:  "char",
-			key:   "char.key",
+			key:   "tvsa.char.key",
 			value: 'a',
 		},
 	}
@@ -240,7 +278,6 @@ func TestViperSynchronisedAccess(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			defer Reset()
 
 			Set(tc.key, tc.value)
 
@@ -249,7 +286,18 @@ func TestViperSynchronisedAccess(t *testing.T) {
 			if !cmp.Equal(got, tc.value) {
 				t.Errorf("expected %v, got %v", tc.value, got)
 			}
-
 		})
+	}
+}
+
+func TestReset(t *testing.T) {
+	Set("test.key", true)
+
+	Reset()
+
+	got := Get[bool]("test.key")
+
+	if got != false {
+		t.Errorf("expected config to be reset")
 	}
 }

@@ -31,7 +31,6 @@ import (
 )
 
 func TestLinkFolder(t *testing.T) {
-	t.Parallel()
 	srcDir := t.TempDir()
 	populateSrcDir(t, srcDir, 3)
 	dstDir := t.TempDir()
@@ -82,7 +81,6 @@ func TestLinkFolder(t *testing.T) {
 }
 
 func TestCopyFolder(t *testing.T) {
-	t.Parallel()
 	srcDir := t.TempDir()
 	populateSrcDir(t, srcDir, 3)
 	dstDir := t.TempDir()
@@ -140,7 +138,6 @@ func TestCopyFolder(t *testing.T) {
 
 func TestCDealerErrors(t *testing.T) {
 	t.Run("dstDir is not a path", func(t *testing.T) {
-		t.Parallel()
 		srcDir := "not a dir"
 		dstDir := t.TempDir()
 
@@ -153,7 +150,6 @@ func TestCDealerErrors(t *testing.T) {
 	})
 
 	t.Run("srcDir is not readable", func(t *testing.T) {
-		t.Parallel()
 		srcDir := t.TempDir()
 		err := os.Chmod(srcDir, 0000)
 		clean := os.Chmod
@@ -179,7 +175,6 @@ func TestCDealerErrors(t *testing.T) {
 	})
 
 	t.Run("dstDir is not writeable", func(t *testing.T) {
-		t.Parallel()
 		srcDir := t.TempDir()
 		dstDir := t.TempDir()
 		err := os.Chmod(dstDir, 0000)

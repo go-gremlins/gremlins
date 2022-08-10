@@ -19,6 +19,6 @@ jobs:
           cache-dependency-path: go.sum
         # While we wait for a Gremlins Action to be made, let's install Gremlins directly.
       - name: Install Gremlins
-        run: go install github.com/go-gremlins/gremlins/cmd/gremlins@v0.2.0
+        run: go install github.com/go-gremlins/gremlins/cmd/gremlins@v0.2.1
       - name: Run Gremlins
         run: gremlins unleash --silent
