@@ -708,10 +708,8 @@ catch their damage?</p>
 <h3 id="current-limitations">Current limitations<a class="headerlink" href="#current-limitations" title="Permanent link">&para;</a></h3>
 <p>There are some limitations on how Gremlins works right now, but rest assured we'll try to make things better.</p>
 <ul>
-<li>Gremlins can be run only from the root of a Go module and will run all the test suite; this is a problem if the tests
-  are especially slow.</li>
-<li>For each mutation, Gremlins will run all the test suite; it would be better to only run the test cases that actually
-  cover the mutation.</li>
+<li>For each mutation, Gremlins will run all the test suite in the package; it would be better to only run the test cases 
+  that actually cover the mutation.</li>
 <li>Gremlins doesn't support custom test commands; if you have to do anything different from <code>go test [-tags t1 t2] ./...</code>
   to run your test suite, most probably it will not work with Gremlins.</li>
 <li>There is no way to implement custom mutations.</li>
