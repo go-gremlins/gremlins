@@ -23,17 +23,29 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/go-gremlins/gremlins/pkg/mutant"
 )
 
 // TokenMutant is a mutant.Mutant of a token.Token.
+//
+// Since the AST is shared among mutants, it is important to avoid that more
+// than one mutation is applied to the same file before writing it. For this
+// reason, TokenMutant contains a cache of locks, one for each file.
+// Every time a mutation is about to being applied, a lock is acquired for
+// the file it is operating on. Once the file is written and the token is
+// rolled back, the lock is released.
+// Keeping a lock per file instead of a lock per TokenMutant allows to apply
+// mutations on different files in parallel.
 type TokenMutant struct {
-	origFile    []byte
+	mutex       *sync.RWMutex
+	locks       map[string]*sync.Mutex
 	fs          *token.FileSet
 	file        *ast.File
 	tokenNode   *NodeToken
 	workDir     string
+	origFile    []byte
 	status      mutant.Status
 	mutantType  mutant.Type
 	actualToken token.Token
@@ -42,6 +54,8 @@ type TokenMutant struct {
 // NewTokenMutant initialises a TokenMutant.
 func NewTokenMutant(set *token.FileSet, file *ast.File, node *NodeToken) *TokenMutant {
 	return &TokenMutant{
+		mutex:     &sync.RWMutex{},
+		locks:     make(map[string]*sync.Mutex),
 		fs:        set,
 		file:      file,
 		tokenNode: node,
@@ -94,6 +108,9 @@ func (m *TokenMutant) Pos() token.Pos {
 // This is done in order to facilitate the atomicity of the operation,
 // avoiding locking in a method and unlocking in another.
 func (m *TokenMutant) Apply() error {
+	m.fileLock(m.Position().Filename).Lock()
+	defer m.fileLock(m.Position().Filename).Unlock()
+
 	filename := filepath.Join(m.workDir, m.Position().Filename)
 	var err error
 	m.origFile, err = os.ReadFile(filename)
@@ -126,6 +143,35 @@ func (m *TokenMutant) Apply() error {
 	m.tokenNode.SetTok(m.actualToken)
 
 	return nil
+}
+
+func (m *TokenMutant) fileLock(filename string) *sync.Mutex {
+	lock, ok := m.cachedLock(filename)
+	if ok {
+		return lock
+	}
+
+	return m.newFileLock(filename)
+}
+
+func (m *TokenMutant) cachedLock(filename string) (*sync.Mutex, bool) {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+	lock, ok := m.locks[filename]
+	if !ok {
+		return nil, false
+	}
+
+	return lock, true
+}
+
+func (m *TokenMutant) newFileLock(filename string) *sync.Mutex {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	lock := &sync.Mutex{}
+	m.locks[filename] = lock
+
+	return lock
 }
 
 // Rollback puts back the original file after the test and cleans up the
