@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -35,13 +36,13 @@ func TestLinkFolder(t *testing.T) {
 	populateSrcDir(t, srcDir, 3)
 	dstDir := t.TempDir()
 
-	mngr := workdir.NewDealer(dstDir, srcDir, workdir.WithDockerRootFolder(dstDir))
+	dealer := workdir.NewCachedDealer(dstDir, srcDir, workdir.WithDockerRootFolder(dstDir))
 
-	dstDir, cl, err := mngr.Get()
+	dstDir, err := dealer.Get("test")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cl()
+	defer dealer.Clean()
 
 	err = filepath.Walk(srcDir, func(path string, srcFileInfo fs.FileInfo, err error) error {
 		if err != nil {
@@ -83,7 +84,7 @@ func TestLinkFolder(t *testing.T) {
 func TestCopyFolder(t *testing.T) {
 	srcDir := t.TempDir()
 	populateSrcDir(t, srcDir, 3)
-	dstDir := t.TempDir()
+	wdDir := t.TempDir()
 
 	dockerRootDir := t.TempDir()
 	dockerEnv := filepath.Join(dockerRootDir, ".dockerenv")
@@ -92,13 +93,13 @@ func TestCopyFolder(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mngr := workdir.NewDealer(dstDir, srcDir, workdir.WithDockerRootFolder(dockerRootDir))
+	dealer := workdir.NewCachedDealer(wdDir, srcDir, workdir.WithDockerRootFolder(dockerRootDir))
+	defer dealer.Clean()
 
-	dstDir, cl, err := mngr.Get()
+	dstDir, err := dealer.Get("test")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cl()
 
 	err = filepath.Walk(srcDir, func(path string, srcFileInfo fs.FileInfo, err error) error {
 		if err != nil {
@@ -136,14 +137,109 @@ func TestCopyFolder(t *testing.T) {
 	}
 }
 
-func TestCDealerErrors(t *testing.T) {
+func TestCachesFolder(t *testing.T) {
+	t.Run("caches copy folders", func(t *testing.T) {
+		srcDir := t.TempDir()
+		populateSrcDir(t, srcDir, 0)
+		dstDir := t.TempDir()
+
+		mngr := workdir.NewCachedDealer(dstDir, srcDir, workdir.WithDockerRootFolder(dstDir))
+		defer mngr.Clean()
+
+		firstDir, err := mngr.Get("worker-1")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		secondDir, err := mngr.Get("worker-1")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		thirdDir, err := mngr.Get("worker-2")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if firstDir != secondDir {
+			t.Errorf("expected dirs to be cached, got %s", cmp.Diff(firstDir, secondDir))
+		}
+		if firstDir == thirdDir {
+			t.Errorf("expected a new dir to be instanciated")
+		}
+	})
+
+	t.Run("cleans up all the folders", func(t *testing.T) {
+		srcDir := t.TempDir()
+		populateSrcDir(t, srcDir, 0)
+		dstDir := t.TempDir()
+
+		dealer := workdir.NewCachedDealer(dstDir, srcDir, workdir.WithDockerRootFolder(dstDir))
+
+		firstDir, err := dealer.Get("worker-1")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		dealer.Clean()
+
+		secondDir, err := dealer.Get("worker-1")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if firstDir == secondDir {
+			t.Errorf("expected manager to be cleaned up")
+		}
+	})
+
+	t.Run("it works in parallel", func(t *testing.T) {
+		srcDir := t.TempDir()
+		populateSrcDir(t, srcDir, 0)
+		dstDir := t.TempDir()
+
+		dealer := workdir.NewCachedDealer(dstDir, srcDir, workdir.WithDockerRootFolder(dstDir))
+		defer dealer.Clean()
+
+		foldersLock := sync.Mutex{}
+		var folders []string
+
+		wg := sync.WaitGroup{}
+		wg.Add(10)
+		for i := 0; i < 10; i++ {
+			i := i
+			go func() {
+				defer wg.Done()
+				f, err := dealer.Get(fmt.Sprintf("test-%d", i))
+				if err != nil {
+					t.Errorf("unexpected error: %s", err)
+				}
+				foldersLock.Lock()
+				defer foldersLock.Unlock()
+				folders = append(folders, f)
+			}()
+		}
+
+		wg.Wait()
+
+		occurred := make(map[string]bool)
+		for _, v := range folders {
+			if occurred[v] == true {
+				t.Fatal("expected values to be unique")
+			}
+			occurred[v] = true
+		}
+	})
+}
+
+func TestErrors(t *testing.T) {
 	t.Run("dstDir is not a path", func(t *testing.T) {
 		srcDir := "not a dir"
 		dstDir := t.TempDir()
 
-		mngr := workdir.NewDealer(dstDir, srcDir)
+		dealer := workdir.NewCachedDealer(dstDir, srcDir)
 
-		_, _, err := mngr.Get()
+		_, err := dealer.Get("test")
 		if err == nil {
 			t.Errorf("expected an error")
 		}
@@ -166,9 +262,9 @@ func TestCDealerErrors(t *testing.T) {
 
 		dstDir := t.TempDir()
 
-		mngr := workdir.NewDealer(dstDir, srcDir)
+		mngr := workdir.NewCachedDealer(dstDir, srcDir)
 
-		_, _, err = mngr.Get()
+		_, err = mngr.Get("test")
 		if err == nil {
 			t.Errorf("expected an error")
 		}
@@ -190,9 +286,9 @@ func TestCDealerErrors(t *testing.T) {
 			_ = clean(d, 0700)
 		}(dstDir)
 
-		mngr := workdir.NewDealer(dstDir, srcDir)
+		dealer := workdir.NewCachedDealer(dstDir, srcDir)
 
-		_, _, err = mngr.Get()
+		_, err = dealer.Get("test")
 		if err == nil {
 			t.Errorf("expected an error")
 		}

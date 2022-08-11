@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/go-gremlins/gremlins/pkg/log"
 )
@@ -29,27 +30,41 @@ import (
 // Dealer is the responsible for creating and returning the reference
 // to a workdir to use during mutation testing instead of the actual
 // source code.
+//
+// It has two methods:
+//
+//		Get that returns a folder name that will be used by Gremlins as workdir.
+//	    Clean that must be called to remove all the created folders.
 type Dealer interface {
-	Get() (string, func(), error)
+	Get(idf string) (string, error)
+	Clean()
 }
 
-// CDealer is the implementation of the Dealer interface, responsible
+// CachedDealer is the implementation of the Dealer interface, responsible
 // for creating a working directory of a source directory. It allows
 // Gremlins not to work in the actual source directory messing up
 // with the source code files.
-type CDealer struct {
+type CachedDealer struct {
+	mutex            *sync.RWMutex
+	cache            map[string]string
 	workDir          string
 	srcDir           string
 	dockerRootFolder string
 	withinDocker     bool
 }
 
-// Option for the CDealer initialization.
-type Option func(d CDealer) CDealer
+// Option for the CachedDealer initialization.
+type Option func(d *CachedDealer) *CachedDealer
 
-// NewDealer instantiates a new CDealer evaluating whether it operates within a docker container.
-func NewDealer(workDir, srcDir string, opts ...Option) CDealer {
-	dealer := CDealer{
+// NewCachedDealer instantiates a new Dealer that keeps a cache of the
+// instantiated folders. Every time a new working directory is requested
+// with the same identifier, the same folder reference is returned.
+// It also verifies whether it is running inside a Docker container or not,
+// and makes copies instead of hard links if it is.
+func NewCachedDealer(workDir, srcDir string, opts ...Option) *CachedDealer {
+	dealer := &CachedDealer{
+		mutex:            &sync.RWMutex{},
+		cache:            make(map[string]string),
 		workDir:          workDir,
 		srcDir:           srcDir,
 		dockerRootFolder: "/",
@@ -70,7 +85,7 @@ func NewDealer(workDir, srcDir string, opts ...Option) CDealer {
 
 // WithDockerRootFolder overrides the default root folder where to look for .dockerenv file.
 func WithDockerRootFolder(rootFolder string) Option {
-	return func(d CDealer) CDealer {
+	return func(d *CachedDealer) *CachedDealer {
 		d.dockerRootFolder = rootFolder
 
 		return d
@@ -78,35 +93,62 @@ func WithDockerRootFolder(rootFolder string) Option {
 }
 
 // Get provides a working directory where all the files are hard links
-// to the original files in the source directory. It also returns a
-// closer function that cleans up the directory.
-//
-// The idea is to make this a sort of workdir pool when Gremlins will
-// support parallel execution.
-func (fm CDealer) Get() (string, func(), error) {
-	dstDir, err := os.MkdirTemp(fm.workDir, "wd-*")
-	if err != nil {
-		return "", nil, err
-	}
-	err = filepath.Walk(fm.srcDir, fm.copyTo(dstDir))
-	if err != nil {
-		return "", nil, err
+// to the original files in the source directory. It makes full copies
+// in case Gremlins is running inside a Docker container.
+func (cd *CachedDealer) Get(idf string) (string, error) {
+	dstDir, ok := cd.getFromCache(idf)
+	if ok {
+		return dstDir, nil
 	}
 
-	return dstDir, func() {
-		err := os.RemoveAll(dstDir)
-		if err != nil {
-			log.Errorln("impossible to remove temporary folder")
-		}
-	}, nil
+	dstDir, err := os.MkdirTemp(cd.workDir, "wd-*")
+	if err != nil {
+		return "", err
+	}
+	err = filepath.Walk(cd.srcDir, cd.copyTo(dstDir))
+	if err != nil {
+		return "", err
+	}
+
+	cd.setCache(idf, dstDir)
+
+	return dstDir, nil
 }
 
-func (fm CDealer) copyTo(dstDir string) func(srcPath string, info fs.FileInfo, err error) error {
+// Clean frees all the cached folders and removes all of them from disk.
+func (cd *CachedDealer) Clean() {
+	for _, v := range cd.cache {
+		err := os.RemoveAll(v)
+		if err != nil {
+			log.Errorf("impossible to remove temporary folder %s: %s\n", v, err)
+		}
+	}
+	cd.cache = make(map[string]string)
+}
+
+func (cd *CachedDealer) getFromCache(idf string) (string, bool) {
+	cd.mutex.RLock()
+	defer cd.mutex.RUnlock()
+	dstDir, ok := cd.cache[idf]
+	if ok {
+		return dstDir, true
+	}
+
+	return "", false
+}
+
+func (cd *CachedDealer) setCache(idf, folder string) {
+	cd.mutex.Lock()
+	defer cd.mutex.Unlock()
+	cd.cache[idf] = folder
+}
+
+func (cd *CachedDealer) copyTo(dstDir string) func(srcPath string, info fs.FileInfo, err error) error {
 	return func(srcPath string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		relPath, err := filepath.Rel(fm.srcDir, srcPath)
+		relPath, err := filepath.Rel(cd.srcDir, srcPath)
 		if err != nil {
 			return err
 		}
@@ -115,18 +157,18 @@ func (fm CDealer) copyTo(dstDir string) func(srcPath string, info fs.FileInfo, e
 		}
 		dstPath := filepath.Join(dstDir, relPath)
 
-		return fm.copyPath(srcPath, dstPath, info)
+		return cd.copyPath(srcPath, dstPath, info)
 	}
 }
 
-func (fm CDealer) copyPath(srcPath, dstPath string, info fs.FileInfo) error {
+func (cd *CachedDealer) copyPath(srcPath, dstPath string, info fs.FileInfo) error {
 	switch mode := info.Mode(); {
 	case mode.IsDir():
 		if err := os.Mkdir(dstPath, mode); err != nil && !os.IsExist(err) {
 			return err
 		}
 	case mode.IsRegular():
-		if fm.withinDocker {
+		if cd.withinDocker {
 			// When gremlins is running within a docker container, hard link doesn't work, so we do a copy of the file
 			if err := doCopy(srcPath, dstPath, mode); err != nil {
 				return err

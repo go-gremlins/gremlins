@@ -24,6 +24,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -84,9 +85,11 @@ type dealerStub struct {
 	t *testing.T
 }
 
-func (d dealerStub) Get() (string, func(), error) {
-	return d.t.TempDir(), func() {}, nil
+func (d dealerStub) Get(_ string) (string, error) {
+	return d.t.TempDir(), nil
 }
+
+func (d dealerStub) Clean() {}
 
 func TestMutations(t *testing.T) {
 	t.Parallel()
@@ -272,7 +275,7 @@ func TestMutations(t *testing.T) {
 			viperSet(map[string]any{configuration.UnleashDryRunKey: true})
 			defer viperReset()
 
-			mapFS, mod, c := loadFixture(tc.fixture, ".")
+			mapFS, mod, c := loadFixture(tc.fixture)
 			defer c()
 
 			mut := mutator.New(mod, tc.covResult, dealerStub{t: t}, mutator.WithDirFs(mapFS))
@@ -309,7 +312,7 @@ func TestMutantSkipDisabled(t *testing.T) {
 	for _, mt := range mutant.MutantTypes {
 		t.Run(mt.String(), func(t *testing.T) {
 			t.Parallel()
-			mapFS, mod, c := loadFixture(defaultFixture, ".")
+			mapFS, mod, c := loadFixture(defaultFixture)
 			defer c()
 
 			viperSet(map[string]any{
@@ -342,9 +345,9 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 		"folder1/file": {Data: file},
 	}
 	mod := gomodule.GoModule{
-		Name:       "example.com",
-		Root:       ".",
-		CallingDir: ".",
+		Name:   "example.com",
+		Root:   ".",
+		PkgDir: ".",
 	}
 	viperSet(map[string]any{configuration.UnleashDryRunKey: true})
 	defer viperReset()
@@ -365,75 +368,36 @@ type commandHolder struct {
 type execContext = func(ctx context.Context, name string, args ...string) *exec.Cmd
 
 func TestMutatorRun(t *testing.T) {
-	testCases := []struct {
-		name     string
-		fromPkg  string
-		wantPath string
-		intMode  bool
-	}{
-		{
-			name:     "from root, normal mode",
-			fromPkg:  ".",
-			intMode:  false,
-			wantPath: "example.com",
-		},
-		{
-			name:     "from subpackage, normal mode",
-			fromPkg:  "testdata/main/fixture",
-			intMode:  false,
-			wantPath: "example.com/testdata/main",
-		},
-		{
-			name:     "from root, integration mode",
-			fromPkg:  ".",
-			intMode:  true,
-			wantPath: "./...",
-		},
-		{
-			name:     "from subpackage, integration mode",
-			fromPkg:  "testdata/fixture",
-			intMode:  true,
-			wantPath: "./testdata/fixture/...",
-		},
+	mapFS, mod, c := loadFixture(defaultFixture)
+	defer c()
+
+	viperSet(map[string]any{configuration.UnleashTagsKey: "tag1 tag2"})
+	defer viperReset()
+	holder := &commandHolder{}
+	mut := mutator.New(mod, coveredPosition(defaultFixture), dealerStub{t: t},
+		mutator.WithDirFs(mapFS),
+		mutator.WithExecContext(fakeExecCommandSuccessWithHolder(holder)),
+		mutator.WithApplyAndRollback(
+			func(m mutant.Mutant) error {
+				return nil
+			},
+			func(m mutant.Mutant) error {
+				return nil
+			}))
+
+	_ = mut.Run(context.Background())
+
+	want := "go test -tags tag1 tag2 -timeout 21s ./..."
+	got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
+
+	if !cmp.Equal(got, want) {
+		t.Errorf(cmp.Diff(got, want))
 	}
-	for _, tc := range testCases {
 
-		t.Run(tc.name, func(t *testing.T) {
-			viperSet(map[string]any{
-				configuration.UnleashIntegrationMode: tc.intMode,
-				configuration.UnleashTagsKey:         "tag1 tag2",
-			})
-			defer viperReset()
-			mapFS, mod, c := loadFixture(defaultFixture, tc.fromPkg)
-			defer c()
-
-			holder := &commandHolder{}
-			mut := mutator.New(mod, coveredPosition(defaultFixture), dealerStub{t: t},
-				mutator.WithDirFs(mapFS),
-				mutator.WithExecContext(fakeExecCommandSuccessWithHolder(holder)),
-				mutator.WithApplyAndRollback(
-					func(m mutant.Mutant) error {
-						return nil
-					},
-					func(m mutant.Mutant) error {
-						return nil
-					}))
-
-			_ = mut.Run(context.Background())
-
-			want := "go test -tags tag1 tag2 -timeout 21s -failfast " + tc.wantPath
-			got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
-
-			if !cmp.Equal(got, want) {
-				t.Errorf(cmp.Diff(got, want))
-			}
-
-			timeoutDifference := absTimeDiff(holder.timeout, expectedTimeout*2)
-			diffThreshold := 70 * time.Microsecond
-			if timeoutDifference > diffThreshold {
-				t.Errorf("expected timeout to be within %s from the set timeout, got %s", diffThreshold, timeoutDifference)
-			}
-		})
+	timeoutDifference := absTimeDiff(holder.timeout, expectedTimeout*2)
+	diffThreshold := 100 * time.Microsecond
+	if timeoutDifference > diffThreshold {
+		t.Errorf("expected timeout to be within %s from the set timeout, got %s", diffThreshold, timeoutDifference)
 	}
 }
 
@@ -487,7 +451,7 @@ func TestMutatorTestExecution(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			viperSet(map[string]any{configuration.UnleashDryRunKey: false})
 			defer viperReset()
-			mapFS, mod, c := loadFixture(tc.fixture, ".")
+			mapFS, mod, c := loadFixture(tc.fixture)
 			defer c()
 
 			mut := mutator.New(mod, tc.covResult, dealerStub{t: t},
@@ -518,7 +482,7 @@ func TestMutatorTestExecution(t *testing.T) {
 
 func TestApplyAndRollbackError(t *testing.T) {
 	t.Run("apply fails", func(t *testing.T) {
-		mapFS, mod, c := loadFixture(defaultFixture, ".")
+		mapFS, mod, c := loadFixture(defaultFixture)
 		defer c()
 
 		mut := mutator.New(mod, coveredPosition(defaultFixture), dealerStub{t: t},
@@ -540,7 +504,7 @@ func TestApplyAndRollbackError(t *testing.T) {
 	})
 
 	t.Run("rollback fails", func(t *testing.T) {
-		mapFS, mod, c := loadFixture(defaultFixture, ".")
+		mapFS, mod, c := loadFixture(defaultFixture)
 		defer c()
 
 		mut := mutator.New(mod, coveredPosition(defaultFixture), dealerStub{t: t},
@@ -563,7 +527,7 @@ func TestApplyAndRollbackError(t *testing.T) {
 }
 
 func TestStopsOnCancel(t *testing.T) {
-	mapFS, mod, c := loadFixture(defaultFixture, ".")
+	mapFS, mod, c := loadFixture(defaultFixture)
 	defer c()
 
 	mut := mutator.New(mod, coveredPosition(defaultFixture), dealerStub{t: t},
@@ -586,10 +550,7 @@ func TestStopsOnCancel(t *testing.T) {
 	}
 }
 
-// loadFixture loads a fixture into a mapFS and returns also the GoModule.
-//
-//	fromPackage parameters can be path/pkgName.
-func loadFixture(fixture, fromPackage string) (fstest.MapFS, gomodule.GoModule, func()) {
+func loadFixture(fixture string) (fstest.MapFS, gomodule.GoModule, func()) {
 	f, _ := os.Open(fixture)
 	src, _ := io.ReadAll(f)
 	filename := filenameFromFixture(fixture)
@@ -598,9 +559,9 @@ func loadFixture(fixture, fromPackage string) (fstest.MapFS, gomodule.GoModule, 
 	}
 
 	return mapFS, gomodule.GoModule{
-			Name:       "example.com",
-			Root:       ".",
-			CallingDir: fromPackage,
+			Name:   "example.com",
+			Root:   filepath.Dir(filename),
+			PkgDir: filepath.Dir(filename),
 		}, func() {
 			_ = f.Close()
 		}

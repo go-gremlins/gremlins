@@ -150,7 +150,7 @@ func run(ctx context.Context, mod gomodule.GoModule, workDir string) (report.Res
 		return report.Results{}, fmt.Errorf("failed to gather coverage: %w", err)
 	}
 
-	d := workdir.NewDealer(workDir, mod.Root)
+	d := workdir.NewCachedDealer(workDir, mod.Root)
 
 	mut := mutator.New(mod, p, d)
 	results := mut.Run(ctx)
