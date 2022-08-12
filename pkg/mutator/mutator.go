@@ -298,6 +298,7 @@ func (mu *Mutator) getTestArgs() []string {
 	if mu.buildTags != "" {
 		args = append(args, "-tags", mu.buildTags)
 	}
+	args = append(args, "-timeout", (1*time.Second + mu.testExecutionTime).String())
 	args = append(args, "./...")
 
 	return args
