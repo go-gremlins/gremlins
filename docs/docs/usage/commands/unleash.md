@@ -3,9 +3,6 @@
 The main command used in Gremlins is `unleash`, that _unleashes_ the _gremlins_ and starts a mutation test of your code.
 If `unleash` is too long to type for you, you can use its aliases `run` and `r`.
 
-!!! warning
-    At this time, this only works in the root of a Go module (where the `go.mod` file resides).
-
 To execute a mutation testing run just type
 
 ```shell
@@ -22,9 +19,30 @@ gremlins unleash --tags "tag1,tag2"
 
 `unleash` supports several flags to fine tune its behaviour.
 
+### Integration mode
+
+:material-flag:`--integration`/`-i` · :material-sign-direction: Default: false
+
+In _normal mode_, Gremlins executes only the tests of the packages where the mutant is found.
+This is done to optimize the performance, running less test cases for each mutation.
+
+The drawback of this approach lies in the fact that if a mutation in a package influences the tests
+of another package, this is not caught by Gremlins. In general, this is an acceptable drawback
+because packages should rely on their own tests, not on the tests of other packages.
+
+Nonetheless, there may be cases where you may want to run all the test suite for each mutation, for
+example if you are analysing integration or E2E tests. In this scenario, you can enable _integration mode_.
+However, you should be aware that integration mode is generally much slower, and you can also get
+slightly different results depending on your test suite.
+
+```shell
+gremlins unleash --integration
+```
+
 ### Dry run
-:material-flag:`--dry-run` · :material-sign-direction: Default: false
-  
+
+:material-flag:`--dry-run`/`-d` · :material-sign-direction: Default: false
+
 Just performs the analysis but not the mutation testing.
 
 ```shell
@@ -32,8 +50,8 @@ gremlins unleash --dry-run
 ```
 
 ### Tags
-:material-flag: `--tags`/`-t` · :material-sign-direction: Default: empty
 
+:material-flag: `--tags`/`-t` · :material-sign-direction: Default: empty
 
 Sets the `go` command build tags.
 
@@ -53,6 +71,7 @@ gremlins unleash --output=output.json
 
 The output file in in JSON format and has the following structure:
 
+[//]: # (@formatter:off)
 ```json
 {
   "go_module": "github.com/go-gremlins/gremlins",
@@ -79,16 +98,21 @@ The output file in in JSON format and has the following structure:
   ]
 }
 ```
+[//]: # (@formatter:on)
 
 1. This is a percentage expressed as floating point number.
 2. This is a percentage expressed as floating point number.
 3. NOT VIABLE mutants are excluded from all the calculations.
 4. The elapsed time is expressed in seconds, expressed as floating point number.
 
+[//]: # (@formatter:off)
 !!! warning
     The JSON output file is not _pretty printed_; it is optimised for machine reading.
 
+[//]: # (@formatter:on)
+
 ### Threshold efficacy
+
 :material-flag: `--threshold-efficacy` · :material-sign-direction: Default: 0
 
 When set, it makes Gremlins exit with an error (code 10) if the _test efficacy_ threshold is not met. By default it is
@@ -102,6 +126,7 @@ gremlins unleash --threshold-efficacy 80
 ```
 
 ### Threshold mutant coverage
+
 :material-flag: `--threshold-mcover` · :material-sign-direction: Default: 0
 
 When set, it makes Gremlins exit with an error (code 11) if the _mutant coverage_ threshold is not met. By default
@@ -115,6 +140,7 @@ gremlins unleash --threshold-mcover 80
 ```
 
 ### Arithmetic base
+
 :material-flag: `--arithmetic-base` · :material-sign-direction: Default: `true`
 
 Enables/disables the [ARITHMETIC BASE](../mutations/arithmetic_base.md) mutant type.
@@ -124,6 +150,7 @@ gremlins unleash --arithmetic-base=false
 ```
 
 ### Conditionals-boundary
+
 :material-flag: `--conditionals-boundary` · :material-sign-direction: Default: `true`
 
 Enables/disables the [CONDITIONALS BOUNDARY](../mutations/conditionals_boundary.md) mutant type.
@@ -133,6 +160,7 @@ gremlins unleash --conditionals_boundary=false
 ```
 
 ### Conditionals negation
+
 :material-flag: `--conditionals-negation` · :material-sign-direction: Default: `true`
 
 Enables/disables the [CONDITIONALS NEGATION](../mutations/conditionals_negation.md) mutant type.
@@ -142,6 +170,7 @@ gremlins unleash --conditionals_negation=false
 ```
 
 ### Increment decrement
+
 :material-flag: `--increment-decrement` · :material-sign-direction: Default: `true`
 
 Enables/disables the [INCREMENT DECREMENT](../mutations/increment_decrement.md) mutant type.
@@ -151,6 +180,7 @@ gremlins unleash --increment-decrement=false
 ```
 
 ### Invert negatives
+
 :material-flag: `--invert-negatives` · :material-sign-direction: Default: `true`
 
 Enables/disables the [INVERT NEGATIVES](../mutations/invert_negatives.md) mutant type.

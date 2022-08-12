@@ -18,9 +18,7 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -75,6 +73,12 @@ func TestUnleash(t *testing.T) {
 			flagType:  "string",
 			defValue:  "",
 		},
+		{
+			name:      "integration",
+			shorthand: "i",
+			flagType:  "bool",
+			defValue:  "false",
+		},
 	}
 
 	for _, tc := range testCases {
@@ -114,56 +118,4 @@ func TestUnleash(t *testing.T) {
 			t.Errorf("expected %q have default %q, got %q", s, wantDef, mtf.DefValue)
 		}
 	}
-}
-
-func TestChangePath(t *testing.T) {
-	const wantCalledDir = "aDir"
-
-	t.Run("when passed a dir, it changes to it and returns '.'", func(t *testing.T) {
-		var calledDir string
-		chdir := func(dir string) error {
-			calledDir = dir
-
-			return nil
-		}
-		getwd := func() (string, error) {
-			return "test/dir", nil
-		}
-		args := []string{wantCalledDir}
-
-		p, wd, _ := changePath(args, chdir, getwd)
-
-		wantAbs, _ := filepath.Abs(wantCalledDir)
-		if calledDir != wantAbs {
-			t.Errorf("expected %q, got %q", wantCalledDir, calledDir)
-		}
-		if p != wantAbs {
-			t.Errorf("expected %q, got %q", wantAbs, p)
-		}
-		if wd != "test/dir" {
-			t.Errorf("expected 'test/dir', got %s", wd)
-		}
-	})
-
-	t.Run("when Chdir returns error, it returns error", func(t *testing.T) {
-		chdir := func(dir string) error { return errors.New("test error") }
-		getwd := func() (string, error) { return "", nil }
-		args := []string{wantCalledDir}
-
-		_, _, err := changePath(args, chdir, getwd)
-		if err == nil {
-			t.Errorf("expected an error")
-		}
-	})
-
-	t.Run("when Getwd returns error, it returns error", func(t *testing.T) {
-		chdir := func(dir string) error { return nil }
-		getwd := func() (string, error) { return "", errors.New("test error") }
-		args := []string{wantCalledDir}
-
-		_, _, err := changePath(args, chdir, getwd)
-		if err == nil {
-			t.Errorf("expected an error")
-		}
-	})
 }

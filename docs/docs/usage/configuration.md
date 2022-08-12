@@ -25,8 +25,11 @@ The configuration file can be placed in (in order of precedence)
 4. `$XDG_CONFIG_HOME/gremlins/.gremlins.yaml`
 5. `$HOME/.gremlins.yaml`
 
+[//]: # (@formatter:off)
 !!! hint
     `XDG_CONFIG_HOME` is usually `~/.config`.
+
+[//]: # (@formatter:on)
 
 ### Override
 
@@ -43,6 +46,7 @@ Here is a complete configuration file with all the properties set to their defau
 ```yaml
 silent: false
 unleash:
+  integration: false
   dry-run: false
   tags: ""
   output: ""
@@ -67,9 +71,12 @@ mutants:
 1. Thresholds are set by default to `0`, which means they are not enforced. For further information check the specific
    documentation.
 
+[//]: # (@formatter:off)
 !!! tip
     You can validate the configuration file using the provided JSON Schema (ex. using it in your editor). The schema
     can be found at [{{ config.site_url }}/schema/configuration.json]({{ config.site_url }}/schema/configuration.json). 
+
+[//]: # (@formatter:on)
 
 ## Environment variables
 

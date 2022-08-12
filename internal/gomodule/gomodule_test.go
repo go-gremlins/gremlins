@@ -48,8 +48,8 @@ func TestDetectsModule(t *testing.T) {
 		if mod.Root != rootDir {
 			t.Errorf("expected Go root to be %q, got %q", rootDir, mod.Root)
 		}
-		if mod.PkgDir != pkgDir {
-			t.Errorf("expected Go package dir to be %q, got %q", pkgDir, mod.PkgDir)
+		if mod.CallingDir != pkgDir {
+			t.Errorf("expected Go package dir to be %q, got %q", pkgDir, mod.CallingDir)
 		}
 	})
 

@@ -47,8 +47,8 @@ func TestCoverageRun(t *testing.T) {
 	wantFilePath := wantWorkdir + "/" + wantFilename
 	holder := &commandHolder{}
 	mod := gomodule.GoModule{
-		Name:   "example.com",
-		PkgDir: ".",
+		Name:       "example.com",
+		CallingDir: ".",
 	}
 	cov := coverage.NewWithCmd(fakeExecCommandSuccess(holder), wantWorkdir, mod)
 
@@ -73,8 +73,8 @@ func TestCoverageRun(t *testing.T) {
 
 func TestCoverageRunFails(t *testing.T) {
 	mod := gomodule.GoModule{
-		Name:   "example.com",
-		PkgDir: "./...",
+		Name:       "example.com",
+		CallingDir: "./...",
 	}
 
 	t.Run("failure of: go mod download", func(t *testing.T) {
@@ -95,8 +95,8 @@ func TestCoverageRunFails(t *testing.T) {
 func TestCoverageParsesOutput(t *testing.T) {
 	module := "example.com"
 	mod := gomodule.GoModule{
-		Name:   module,
-		PkgDir: "path",
+		Name:       module,
+		CallingDir: "path",
 	}
 	cov := coverage.NewWithCmd(fakeExecCommandSuccess(nil), "testdata/valid", mod)
 	profile := coverage.Profile{
@@ -136,8 +136,8 @@ func TestCoverageParsesOutput(t *testing.T) {
 
 func TestParseOutputFail(t *testing.T) {
 	mod := gomodule.GoModule{
-		Name:   "example.com",
-		PkgDir: "./...",
+		Name:       "example.com",
+		CallingDir: "./...",
 	}
 	cov := coverage.NewWithCmd(fakeExecCommandSuccess(nil), "testdata/invalid", mod)
 

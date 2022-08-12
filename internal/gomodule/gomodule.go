@@ -28,11 +28,11 @@ import (
 //
 //	Name is the module name of the Go module being tested by Gremlins.
 //	Root is the root folder of the Go module.
-//	PkgDir is the folder in which Gremlins is running.
+//	CallingDir is the folder in which Gremlins is running.
 type GoModule struct {
-	Name   string
-	Root   string
-	PkgDir string
+	Name       string
+	Root       string
+	CallingDir string
 }
 
 // Init initializes the current module. It finds the module name and the root
@@ -48,9 +48,9 @@ func Init(path string) (GoModule, error) {
 	path, _ = filepath.Rel(root, path)
 
 	return GoModule{
-		Name:   mod,
-		Root:   root,
-		PkgDir: path,
+		Name:       mod,
+		Root:       root,
+		CallingDir: path,
 	}, nil
 }
 

@@ -28,6 +28,7 @@ import (
 
 // TokenMutant is a mutant.Mutant of a token.Token.
 type TokenMutant struct {
+	pkg         string
 	fs          *token.FileSet
 	file        *ast.File
 	tokenNode   *NodeToken
@@ -38,8 +39,9 @@ type TokenMutant struct {
 }
 
 // NewTokenMutant initialises a TokenMutant.
-func NewTokenMutant(set *token.FileSet, file *ast.File, node *NodeToken) *TokenMutant {
+func NewTokenMutant(pkg string, set *token.FileSet, file *ast.File, node *NodeToken) *TokenMutant {
 	return &TokenMutant{
+		pkg:       pkg,
 		fs:        set,
 		file:      file,
 		tokenNode: node,
@@ -74,6 +76,11 @@ func (m *TokenMutant) Position() token.Position {
 // Pos returns the token.Pos where the TokenMutant resides.
 func (m *TokenMutant) Pos() token.Pos {
 	return m.tokenNode.TokPos
+}
+
+// Pkg returns the package name to which the mutant belongs.
+func (m *TokenMutant) Pkg() string {
+	return m.pkg
 }
 
 // Apply saves the original token.Token of the mutant.Mutant and sets the

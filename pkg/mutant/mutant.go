@@ -124,6 +124,9 @@ type Mutant interface {
 	// Pos returns the token.Pos of the Mutant.
 	Pos() token.Pos
 
+	// Pkg returns the package where the Mutant is fount.
+	Pkg() string
+
 	// SetWorkdir sets the working directory which contains the source code on
 	// which the Mutant will apply its mutations.
 	SetWorkdir(p string)
