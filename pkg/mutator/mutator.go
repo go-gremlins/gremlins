@@ -19,6 +19,7 @@ package mutator
 import (
 	"context"
 	"errors"
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -27,6 +28,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-gremlins/gremlins/configuration"
@@ -35,6 +37,7 @@ import (
 	"github.com/go-gremlins/gremlins/pkg/log"
 	"github.com/go-gremlins/gremlins/pkg/mutant"
 	"github.com/go-gremlins/gremlins/pkg/mutator/internal"
+	"github.com/go-gremlins/gremlins/pkg/mutator/internal/workerpool"
 	"github.com/go-gremlins/gremlins/pkg/mutator/workdir"
 	"github.com/go-gremlins/gremlins/pkg/report"
 )
@@ -55,9 +58,10 @@ type Mutator struct {
 	buildTags         string
 	testExecutionTime time.Duration
 	dryRun            bool
+	integrationMode   bool
 }
 
-const timeoutCoefficient = 2
+const timeoutCoefficient = 3
 
 type execContext = func(ctx context.Context, name string, args ...string) *exec.Cmd
 
@@ -76,9 +80,10 @@ type Option func(m Mutator) Mutator
 // rollback. These can be overridden with nop functions in tests. Not an
 // ideal setup. In the future we can think of a better way to handle this.
 func New(mod gomodule.GoModule, r coverage.Result, manager workdir.Dealer, opts ...Option) Mutator {
-	dirFS := os.DirFS(filepath.Join(mod.Root, mod.PkgDir))
+	dirFS := os.DirFS(filepath.Join(mod.Root, mod.CallingDir))
 	buildTags := configuration.Get[string](configuration.UnleashTagsKey)
 	dryRun := configuration.Get[bool](configuration.UnleashDryRunKey)
+	integrationMode := configuration.Get[bool](configuration.UnleashIntegrationMode)
 
 	mut := Mutator{
 		module:            mod,
@@ -94,8 +99,9 @@ func New(mod gomodule.GoModule, r coverage.Result, manager workdir.Dealer, opts 
 			return m.Rollback()
 		},
 
-		buildTags: buildTags,
-		dryRun:    dryRun,
+		buildTags:       buildTags,
+		dryRun:          dryRun,
+		integrationMode: integrationMode,
 	}
 	for _, opt := range opts {
 		mut = opt(mut)
@@ -173,28 +179,58 @@ func (mu *Mutator) runOnFile(fileName string) {
 		if !ok {
 			return true
 		}
-		mu.findMutations(set, file, n)
+		mu.findMutations(fileName, set, file, n)
 
 		return true
 	})
 }
 
-func (mu *Mutator) findMutations(set *token.FileSet, file *ast.File, node *internal.NodeToken) {
+func (mu *Mutator) findMutations(fileName string, set *token.FileSet, file *ast.File, node *internal.NodeToken) {
 	mutantTypes, ok := internal.TokenMutantType[node.Tok()]
 	if !ok {
 		return
 	}
+
+	pkg := mu.pkgName(fileName, file.Name.Name)
 	for _, mt := range mutantTypes {
 		if !configuration.Get[bool](configuration.MutantTypeEnabledKey(mt)) {
 			return
 		}
 		mutantType := mt
-		tm := internal.NewTokenMutant(set, file, node)
+		tm := internal.NewTokenMutant(pkg, set, file, node)
 		tm.SetType(mutantType)
 		tm.SetStatus(mu.mutationStatus(set.Position(node.TokPos)))
 
 		mu.mutantStream <- tm
 	}
+}
+
+func (mu *Mutator) pkgName(fileName, fPkg string) string {
+	var pkg string
+	fn := fmt.Sprintf("%s/%s", mu.module.CallingDir, fileName)
+	p := filepath.Dir(fn)
+	for {
+		if strings.HasSuffix(p, fPkg) {
+			pkg = fmt.Sprintf("%s/%s", mu.module.Name, p)
+
+			break
+		}
+		d := filepath.Dir(p)
+		if d == p {
+			pkg = mu.module.Name
+
+			break
+		}
+		p = d
+	}
+
+	return normalisePkgPath(pkg)
+}
+
+func normalisePkgPath(pkg string) string {
+	sep := fmt.Sprintf("%c", os.PathSeparator)
+
+	return strings.ReplaceAll(pkg, sep, "/")
 }
 
 func (mu *Mutator) mutationStatus(pos token.Position) mutant.Status {
@@ -207,56 +243,98 @@ func (mu *Mutator) mutationStatus(pos token.Position) mutant.Status {
 }
 
 func (mu *Mutator) executeTests(ctx context.Context) report.Results {
-	var mutants []mutant.Mutant
+	defer mu.wdManager.Clean()
 	if mu.dryRun {
 		log.Infoln("Running in 'dry-run' mode...")
 	} else {
 		log.Infoln("Executing mutation testing on covered mutants...")
 	}
+
+	// TODO: add config for CPU
+	// - if integration mode, use half cpu
+	// - if cpu not set, use numCPU
+	// - make timeout coefficient configurable
+	// - make test cpu configurable
+	// - make pool implementation better
+	// - set sensible defaults
+	pool := workerpool.Initialise("mutator", 4)
+	pool.Start()
+
+	var mutants []mutant.Mutant
+	outCh := make(chan mutant.Mutant)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for mut := range mu.mutantStream {
+			ok := checkDone(ctx)
+			if !ok {
+				pool.Stop()
+
+				break
+			}
+			wg.Add(1)
+
+			mutantJob := &MutantJob{
+				mutant: mut,
+				outCh:  outCh,
+				apply:  mu.start,
+				wg:     wg,
+			}
+			pool.AppendJob(mutantJob)
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(outCh)
+	}()
+
+	for m := range outCh {
+		mutants = append(mutants, m)
+	}
+
+	return results(mutants)
+}
+
+func (mu *Mutator) start(w *workerpool.Worker, mut mutant.Mutant, outCh chan<- mutant.Mutant, wg *sync.WaitGroup) {
+	defer wg.Done()
+	workerName := fmt.Sprintf("%s-%d", w.Name, w.Id)
 	currDir, _ := os.Getwd()
-	rootWd, err := mu.wdManager.Get("tmp")
+	rootDir, err := mu.wdManager.Get(workerName)
 	if err != nil {
 		panic("error, this is temporary")
 	}
 	defer func(d string) {
 		_ = os.Chdir(d)
-		mu.wdManager.Clean()
 	}(currDir)
+	_ = os.Chdir(rootDir)
 
-	workingDir := filepath.Join(rootWd, mu.module.PkgDir)
-	_ = os.Chdir(workingDir)
+	workingDir := filepath.Join(rootDir, mu.module.CallingDir)
+	mut.SetWorkdir(workingDir)
 
-	for mut := range mu.mutantStream {
-		ok := checkDone(ctx)
-		if !ok {
-			return results(mutants)
-		}
-		mut.SetWorkdir(workingDir)
-		if mut.Status() == mutant.NotCovered || mu.dryRun {
-			mutants = append(mutants, mut)
-			report.Mutant(mut)
-
-			continue
-		}
-
-		if err := mu.apply(mut); err != nil {
-			log.Errorf("failed to apply mutation at %s - %s\n\t%v", mut.Position(), mut.Status(), err)
-
-			continue
-		}
-
-		mut.SetStatus(mu.runTests())
-
-		if err := mu.rollback(mut); err != nil {
-			// What should we do now?
-			log.Errorf("failed to restore mutation at %s - %s\n\t%v", mut.Position(), mut.Status(), err)
-		}
-
+	if mut.Status() == mutant.NotCovered || mu.dryRun {
+		outCh <- mut
 		report.Mutant(mut)
-		mutants = append(mutants, mut)
+
+		return
 	}
 
-	return results(mutants)
+	if err := mu.apply(mut); err != nil {
+		log.Errorf("failed to apply mutation at %s - %s\n\t%v", mut.Position(), mut.Status(), err)
+
+		return
+	}
+
+	mut.SetStatus(mu.runTests(mut.Pkg()))
+
+	if err := mu.rollback(mut); err != nil {
+		// What should we do now?
+		log.Errorf("failed to restore mutation at %s - %s\n\t%v", mut.Position(), mut.Status(), err)
+	}
+
+	outCh <- mut
+	report.Mutant(mut)
 }
 
 func checkDone(ctx context.Context) bool {
@@ -272,10 +350,10 @@ func results(m []mutant.Mutant) report.Results {
 	return report.Results{Mutants: m}
 }
 
-func (mu *Mutator) runTests() mutant.Status {
+func (mu *Mutator) runTests(pkg string) mutant.Status {
 	ctx, cancel := context.WithTimeout(context.Background(), mu.testExecutionTime)
 	defer cancel()
-	cmd := mu.execContext(ctx, "go", mu.getTestArgs()...)
+	cmd := mu.execContext(ctx, "go", mu.getTestArgs(pkg)...)
 
 	rel, err := run(cmd)
 	defer rel()
@@ -305,13 +383,25 @@ func run(cmd *exec.Cmd) (func(), error) {
 	}, nil
 }
 
-func (mu *Mutator) getTestArgs() []string {
+func (mu *Mutator) getTestArgs(pkg string) []string {
 	args := []string{"test"}
 	if mu.buildTags != "" {
 		args = append(args, "-tags", mu.buildTags)
 	}
-	args = append(args, "-timeout", (1*time.Second + mu.testExecutionTime).String())
-	args = append(args, "./...")
+	// Here we add some seconds to the timeout to be sure it's gremlins that catches the test
+	// timeout and not the test itself. The timeout on the test prevents the test.* processes
+	// from hanging forever.
+	args = append(args, "-timeout", (2*time.Second + mu.testExecutionTime).String())
+	args = append(args, "-failfast")
+
+	path := pkg
+	if mu.integrationMode {
+		path = "./..."
+		if mu.module.CallingDir != "." {
+			path = fmt.Sprintf("./%s/...", mu.module.CallingDir)
+		}
+	}
+	args = append(args, path)
 
 	return args
 }
