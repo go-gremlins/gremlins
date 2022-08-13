@@ -39,35 +39,73 @@ type commandHolder struct {
 }
 
 func TestCoverageRun(t *testing.T) {
-	viper.Set(configuration.UnleashTagsKey, "tag1 tag2")
-	defer viper.Reset()
-
-	wantWorkdir := "workdir"
-	wantFilename := "coverage"
-	wantFilePath := wantWorkdir + "/" + wantFilename
-	holder := &commandHolder{}
-	mod := gomodule.GoModule{
-		Name:       "example.com",
-		CallingDir: ".",
+	testCases := []struct {
+		name     string
+		callPath string
+		wantPath string
+		intMode  bool
+	}{
+		{
+			name:     "from root, normal mode",
+			callPath: ".",
+			wantPath: "./...",
+			intMode:  false,
+		},
+		{
+			name:     "from folder, normal mode",
+			callPath: "test/pkg",
+			wantPath: "./test/pkg/...",
+			intMode:  false,
+		},
+		{
+			name:     "from root, integration mode",
+			callPath: ".",
+			wantPath: "./...",
+			intMode:  true,
+		},
+		{
+			name:     "from root, integration mode",
+			callPath: "test/dir",
+			wantPath: "./...",
+			intMode:  true,
+		},
 	}
-	cov := coverage.NewWithCmd(fakeExecCommandSuccess(holder), wantWorkdir, mod)
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			viper.Set(configuration.UnleashTagsKey, "tag1 tag2")
+			viper.Set(configuration.UnleashIntegrationMode, tc.intMode)
+			defer viper.Reset()
 
-	_, _ = cov.Run()
+			wantWorkdir := "workdir"
+			wantFilename := "coverage"
+			wantFilePath := wantWorkdir + "/" + wantFilename
+			holder := &commandHolder{}
+			mod := gomodule.GoModule{
+				Name:       "example.com",
+				Root:       ".",
+				CallingDir: tc.callPath,
+			}
+			cov := coverage.NewWithCmd(fakeExecCommandSuccess(holder), wantWorkdir, mod)
 
-	firstWant := "go mod download"
-	secondWant := fmt.Sprintf("go test -tags tag1 tag2 -cover -coverprofile %v ./...", wantFilePath)
+			_, _ = cov.Run()
 
-	if len(holder.events) != 2 {
-		t.Fatal("expected two commands to be executed")
-	}
-	firstGot := fmt.Sprintf("go %v", strings.Join(holder.events[0].args, " "))
-	secondGot := fmt.Sprintf("go %v", strings.Join(holder.events[1].args, " "))
+			firstWant := "go mod download"
+			secondWant := fmt.Sprintf("go test -tags tag1 tag2 -cover -coverprofile %v %s", wantFilePath, tc.wantPath)
 
-	if !cmp.Equal(firstGot, firstWant) {
-		t.Errorf(cmp.Diff(firstGot, firstWant))
-	}
-	if !cmp.Equal(secondGot, secondWant) {
-		t.Errorf(cmp.Diff(secondGot, secondWant))
+			if len(holder.events) != 2 {
+				t.Fatal("expected two commands to be executed")
+			}
+			firstGot := fmt.Sprintf("go %v", strings.Join(holder.events[0].args, " "))
+			secondGot := fmt.Sprintf("go %v", strings.Join(holder.events[1].args, " "))
+
+			if !cmp.Equal(firstGot, firstWant) {
+				t.Errorf(cmp.Diff(firstGot, firstWant))
+			}
+			if !cmp.Equal(secondGot, secondWant) {
+				t.Errorf(cmp.Diff(secondGot, secondWant))
+			}
+		})
 	}
 }
 
