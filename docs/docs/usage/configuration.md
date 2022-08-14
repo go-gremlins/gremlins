@@ -50,7 +50,10 @@ unleash:
   dry-run: false
   tags: ""
   output: ""
-  threshold: #(1)
+  workers: 0 #(1)
+  test-cpu: 0 #(2)
+  timeout-coefficient: 0 #(3)
+  threshold: #(4)
     efficacy: 0
     mutant-coverage: 0
 
@@ -68,8 +71,12 @@ mutants:
 
 ```
 
-1. Thresholds are set by default to `0`, which means they are not enforced. For further information check the specific
-   documentation.
+1. By default `0`, which means that Gremlins will use the system CPUs number.
+2. By default `0`, which means that no test process CPU will be enforced.
+3. By default `0`, which means a default coefficient will be enforced.
+4. Thresholds are set by default to `0`, which means they are not enforced.
+
+For further information check the specific command documentation.
 
 [//]: # (@formatter:off)
 !!! tip

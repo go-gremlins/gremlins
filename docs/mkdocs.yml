@@ -45,7 +45,9 @@ nav:
   - Usage:
       - Commands:
           - usage/commands/index.md
-          - usage/commands/unleash.md
+          - Unleash:
+            - usage/commands/unleash/index.md
+            - usage/commands/unleash/workers.md
       - usage/configuration.md
       - Mutations:
           - usage/mutations/index.md
