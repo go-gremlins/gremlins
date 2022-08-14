@@ -213,8 +213,8 @@ func TestMutatorRun(t *testing.T) {
 		pkg                string
 		callDir            string
 		tags               string
-		timeoutCoefficient int
 		wantPath           string
+		timeoutCoefficient int
 		intMode            bool
 	}{
 		{
@@ -307,9 +307,9 @@ func TestMutatorRun(t *testing.T) {
 func TestCPU(t *testing.T) {
 	testCases := []struct {
 		name        string
+		testCPU     int
+		wantTestCPU int
 		intMode     bool
-		testCpu     int
-		wantTestCpu int
 		cpuPresent  bool
 	}{
 		{
@@ -323,15 +323,15 @@ func TestCPU(t *testing.T) {
 		},
 		{
 			name:        "normal mode can override CPU",
-			testCpu:     1,
-			wantTestCpu: 1,
+			testCPU:     1,
+			wantTestCPU: 1,
 			cpuPresent:  true,
 		},
 		{
 			name:        "integration mode overrides CPU to half",
 			intMode:     true,
-			testCpu:     2,
-			wantTestCpu: 1,
+			testCPU:     2,
+			wantTestCPU: 1,
 			cpuPresent:  true,
 		},
 	}
@@ -340,7 +340,7 @@ func TestCPU(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			viperSet(map[string]any{
 				configuration.UnleashIntegrationMode: tc.intMode,
-				configuration.UnleashTestCpuKey:      tc.testCpu,
+				configuration.UnleashTestCPUKey:      tc.testCPU,
 			})
 			defer viperReset()
 
@@ -381,7 +381,7 @@ func TestCPU(t *testing.T) {
 					return
 				}
 				got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
-				cpuFlag := fmt.Sprintf("-cpu %d", tc.wantTestCpu)
+				cpuFlag := fmt.Sprintf("-cpu %d", tc.wantTestCPU)
 				if strings.Contains(got, cpuFlag) {
 					// PASS
 					return

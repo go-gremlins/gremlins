@@ -126,8 +126,19 @@ func (m *TokenMutant) Apply() error {
 	m.actualToken = m.tokenNode.Tok()
 	m.tokenNode.SetTok(tokenMutations[m.Type()][m.tokenNode.Tok()])
 
+	if err = m.writeMutatedFile(filename); err != nil {
+		return err
+	}
+
+	// Rollback here to facilitate the atomicity of the operation.
+	m.tokenNode.SetTok(m.actualToken)
+
+	return nil
+}
+
+func (m *TokenMutant) writeMutatedFile(filename string) error {
 	w := &bytes.Buffer{}
-	err = printer.Fprint(w, m.fs, m.file)
+	err := printer.Fprint(w, m.fs, m.file)
 	if err != nil {
 		return err
 	}
@@ -143,9 +154,6 @@ func (m *TokenMutant) Apply() error {
 	if err != nil {
 		return err
 	}
-
-	// Rollback here to facilitate the atomicity of the operation.
-	m.tokenNode.SetTok(m.actualToken)
 
 	return nil
 }

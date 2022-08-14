@@ -37,7 +37,7 @@ const (
 	UnleashOutputKey             = "unleash.output"
 	UnleashTagsKey               = "unleash.tags"
 	UnleashWorkersKey            = "unleash.workers"
-	UnleashTestCpuKey            = "unleash.test-cpu"
+	UnleashTestCPUKey            = "unleash.test-cpu"
 	UnleashTimeoutCoefficientKey = "unleash.timeout-coefficient"
 	UnleashIntegrationMode       = "unleash.integration"
 	UnleashThresholdEfficacyKey  = "unleash.threshold.efficacy"

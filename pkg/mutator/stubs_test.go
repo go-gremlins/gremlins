@@ -89,7 +89,7 @@ func (d dealerStub) Get(_ string) (string, error) {
 	return d.t.TempDir(), nil
 }
 
-func (d dealerStub) Clean() {}
+func (dealerStub) Clean() {}
 
 type executorDealerStub struct {
 	gotMutants []mutant.Mutant
@@ -154,7 +154,7 @@ func (m *mutantStub) Position() token.Position {
 	return m.position
 }
 
-func (m *mutantStub) Pos() token.Pos {
+func (*mutantStub) Pos() token.Pos {
 	panic("not used in test")
 }
 

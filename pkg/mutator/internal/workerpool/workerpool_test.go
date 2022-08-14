@@ -160,42 +160,42 @@ type fakeMutant struct {
 	id   int
 }
 
-func (f fakeMutant) Type() mutant.Type {
+func (fakeMutant) Type() mutant.Type {
 	panic("not used in test")
 }
 
-func (f fakeMutant) SetType(_ mutant.Type) {
+func (fakeMutant) SetType(_ mutant.Type) {
 	panic("not used in test")
 }
 
-func (f fakeMutant) Status() mutant.Status {
+func (fakeMutant) Status() mutant.Status {
 	panic("not used in test")
 }
 
-func (f fakeMutant) SetStatus(_ mutant.Status) {
+func (fakeMutant) SetStatus(_ mutant.Status) {
 	panic("not used in test")
 }
 
-func (f fakeMutant) Position() token.Position {
+func (fakeMutant) Position() token.Position {
 	panic("not used in test")
 }
 
-func (f fakeMutant) Pos() token.Pos {
+func (fakeMutant) Pos() token.Pos {
 	panic("not used in test")
 }
 
-func (f fakeMutant) Pkg() string {
+func (fakeMutant) Pkg() string {
 	panic("not used in test")
 }
 
-func (f fakeMutant) SetWorkdir(_ string) {
+func (fakeMutant) SetWorkdir(_ string) {
 	panic("not used in test")
 }
 
-func (f fakeMutant) Apply() error {
+func (fakeMutant) Apply() error {
 	panic("not used in test")
 }
 
-func (f fakeMutant) Rollback() error {
+func (fakeMutant) Rollback() error {
 	panic("not used in test")
 }

@@ -55,14 +55,12 @@ type ExecutorDealer interface {
 type MutantExecutorDealer struct {
 	wdDealer          workdir.Dealer
 	execContext       execContext
-	apply             func(m mutant.Mutant) error
-	rollback          func(m mutant.Mutant) error
 	mod               gomodule.GoModule
 	buildTags         string
 	testExecutionTime time.Duration
 	dryRun            bool
 	integrationMode   bool
-	testCpu           int
+	testCPU           int
 }
 
 // ExecutorDealerOption is the defining option for the initialisation of a ExecutorDealer.
@@ -82,7 +80,7 @@ func NewExecutorDealer(mod gomodule.GoModule, wdd workdir.Dealer, elapsed time.D
 	buildTags := configuration.Get[string](configuration.UnleashTagsKey)
 	dryRun := configuration.Get[bool](configuration.UnleashDryRunKey)
 	integrationMode := configuration.Get[bool](configuration.UnleashIntegrationMode)
-	testCpu := configuration.Get[int](configuration.UnleashTestCpuKey)
+	testCPU := configuration.Get[int](configuration.UnleashTestCPUKey)
 	tCoefficient := configuration.Get[int](configuration.UnleashTimeoutCoefficientKey)
 
 	coefficient := DefaultTimeoutCoefficient
@@ -90,8 +88,8 @@ func NewExecutorDealer(mod gomodule.GoModule, wdd workdir.Dealer, elapsed time.D
 		coefficient = tCoefficient
 	}
 
-	if testCpu != 0 && integrationMode {
-		testCpu = testCpu / 2
+	if testCPU != 0 && integrationMode {
+		testCPU /= testCPU
 	}
 
 	jd := MutantExecutorDealer{
@@ -100,15 +98,9 @@ func NewExecutorDealer(mod gomodule.GoModule, wdd workdir.Dealer, elapsed time.D
 		buildTags:         buildTags,
 		dryRun:            dryRun,
 		integrationMode:   integrationMode,
-		testCpu:           testCpu,
+		testCPU:           testCPU,
 		testExecutionTime: elapsed * time.Duration(coefficient),
 		execContext:       exec.CommandContext,
-		apply: func(m mutant.Mutant) error {
-			return m.Apply()
-		},
-		rollback: func(m mutant.Mutant) error {
-			return m.Rollback()
-		},
 	}
 
 	for _, opt := range opts {
@@ -133,9 +125,7 @@ func (m MutantExecutorDealer) NewExecutor(mut mutant.Mutant, outCh chan<- mutant
 		integrationMode:   m.integrationMode,
 		buildTags:         m.buildTags,
 		execContext:       m.execContext,
-		apply:             m.apply,
-		rollback:          m.rollback,
-		testCpu:           m.testCpu,
+		testCPU:           m.testCPU,
 		testExecutionTime: m.testExecutionTime,
 	}
 
@@ -150,14 +140,12 @@ type mutantExecutor struct {
 	outCh             chan<- mutant.Mutant
 	wg                *sync.WaitGroup
 	execContext       execContext
-	apply             func(m mutant.Mutant) error
-	rollback          func(m mutant.Mutant) error
 	module            gomodule.GoModule
 	buildTags         string
 	testExecutionTime time.Duration
 	dryRun            bool
 	integrationMode   bool
-	testCpu           int
+	testCPU           int
 }
 
 // Start is the implementation of the workerpool.Executor definition and is the
@@ -193,7 +181,7 @@ func (m *mutantExecutor) Start(w *workerpool.Worker) {
 		return
 	}
 
-	if err := m.apply(m.mutant); err != nil {
+	if err := m.mutant.Apply(); err != nil {
 		log.Errorf("failed to apply mutation at %s - %s\n\t%v", m.mutant.Position(), m.mutant.Status(), err)
 
 		return
@@ -201,7 +189,7 @@ func (m *mutantExecutor) Start(w *workerpool.Worker) {
 
 	m.mutant.SetStatus(m.runTests(m.mutant.Pkg()))
 
-	if err := m.rollback(m.mutant); err != nil {
+	if err := m.mutant.Rollback(); err != nil {
 		// What should we do now?
 		log.Errorf("failed to restore mutation at %s - %s\n\t%v", m.mutant.Position(), m.mutant.Status(), err)
 	}
@@ -240,8 +228,8 @@ func (m *mutantExecutor) getTestArgs(pkg string) []string {
 	args = append(args, "-timeout", (2*time.Second + m.testExecutionTime).String())
 	args = append(args, "-failfast")
 
-	if m.testCpu != 0 {
-		args = append(args, fmt.Sprintf("-cpu %d", m.testCpu))
+	if m.testCPU != 0 {
+		args = append(args, fmt.Sprintf("-cpu %d", m.testCPU))
 	}
 
 	path := pkg

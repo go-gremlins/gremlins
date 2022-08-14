@@ -96,7 +96,7 @@ func size(wNum int, intMode bool) int {
 		wNum = runtime.NumCPU()
 	}
 	if intMode && wNum > 1 {
-		wNum = wNum / 2
+		wNum /= 2
 	}
 
 	return wNum
@@ -128,6 +128,7 @@ func (p *Pool) Stop() {
 	wg.Wait()
 }
 
+// ActiveWorkers gives the number of active workers on the Pool.
 func (p *Pool) ActiveWorkers() int {
 	return len(p.workers)
 }

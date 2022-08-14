@@ -48,7 +48,7 @@ const (
 	paramDryRun             = "dry-run"
 	paramOutput             = "output"
 	paramIntegrationMode    = "integration"
-	paramTestCpu            = "test-cpu"
+	paramTestCPU            = "test-cpu"
 	paramWorkers            = "workers"
 	paramTimeoutCoefficient = "timeout-coefficient"
 
@@ -183,7 +183,7 @@ func setFlagsOnCmd(cmd *cobra.Command) error {
 		{Name: paramThresholdEfficacy, CfgKey: configuration.UnleashThresholdEfficacyKey, DefaultV: float64(0), Usage: "threshold for code-efficacy percent"},
 		{Name: paramThresholdMCoverage, CfgKey: configuration.UnleashThresholdMCoverageKey, DefaultV: float64(0), Usage: "threshold for mutant-coverage percent"},
 		{Name: paramWorkers, CfgKey: configuration.UnleashWorkersKey, DefaultV: 0, Usage: "the number of workers to use in mutation testing"},
-		{Name: paramTestCpu, CfgKey: configuration.UnleashTestCpuKey, DefaultV: 0, Usage: "the number of CPUs to allow each test run to use"},
+		{Name: paramTestCPU, CfgKey: configuration.UnleashTestCPUKey, DefaultV: 0, Usage: "the number of CPUs to allow each test run to use"},
 		{Name: paramTimeoutCoefficient, CfgKey: configuration.UnleashTimeoutCoefficientKey, DefaultV: 0, Usage: "the coefficient by which the timeout is increased"},
 	}
 
