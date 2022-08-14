@@ -414,6 +414,10 @@ func (stubMutant) Pos() token.Pos {
 	return 123
 }
 
+func (stubMutant) Pkg() string {
+	panic("implement me")
+}
+
 func (stubMutant) SetWorkdir(_ string) {
 	panic("implement me")
 }

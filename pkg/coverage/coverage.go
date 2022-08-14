@@ -48,7 +48,8 @@ type Coverage struct {
 	fileName   string
 	mod        gomodule.GoModule
 
-	buildTags string
+	buildTags       string
+	integrationMode bool
 }
 
 // Option for the Coverage initialization.
@@ -65,14 +66,16 @@ func New(workdir string, mod gomodule.GoModule, opts ...Option) *Coverage {
 // NewWithCmd instantiates a Coverage element given a custom execContext.
 func NewWithCmd(cmdContext execContext, workdir string, mod gomodule.GoModule, opts ...Option) *Coverage {
 	buildTags := configuration.Get[string](configuration.UnleashTagsKey)
+	integrationMode := configuration.Get[bool](configuration.UnleashIntegrationMode)
 
 	c := &Coverage{
-		cmdContext: cmdContext,
-		workDir:    workdir,
-		path:       "./...",
-		fileName:   "coverage",
-		mod:        mod,
-		buildTags:  buildTags,
+		cmdContext:      cmdContext,
+		workDir:         workdir,
+		path:            "./...",
+		fileName:        "coverage",
+		mod:             mod,
+		buildTags:       buildTags,
+		integrationMode: integrationMode,
 	}
 	for _, opt := range opts {
 		c = opt(c)
@@ -88,6 +91,7 @@ func NewWithCmd(cmdContext execContext, workdir string, mod gomodule.GoModule, o
 // is later used as timeout for the mutant testing execution.
 func (c *Coverage) Run() (Result, error) {
 	log.Infof("Gathering coverage... ")
+	_ = os.Chdir(c.mod.Root)
 	if err := c.downloadModules(); err != nil {
 		return Result{}, fmt.Errorf("impossible to download modules: %w", err)
 	}
@@ -137,7 +141,8 @@ func (c *Coverage) executeCoverage() (time.Duration, error) {
 	if c.buildTags != "" {
 		args = append(args, "-tags", c.buildTags)
 	}
-	args = append(args, "-cover", "-coverprofile", c.filePath(), c.path)
+
+	args = append(args, "-cover", "-coverprofile", c.filePath(), c.scanPath())
 	cmd := c.cmdContext("go", args...)
 	cmd.Stderr = os.Stderr
 
@@ -147,6 +152,17 @@ func (c *Coverage) executeCoverage() (time.Duration, error) {
 	}
 
 	return time.Since(start), nil
+}
+
+func (c *Coverage) scanPath() string {
+	path := "./..."
+	if !c.integrationMode {
+		if c.mod.CallingDir != "." {
+			path = fmt.Sprintf("./%s/...", c.mod.CallingDir)
+		}
+	}
+
+	return path
 }
 
 func (c *Coverage) parse(data io.Reader) (Profile, error) {
@@ -176,7 +192,7 @@ func (c *Coverage) parse(data io.Reader) (Profile, error) {
 
 func (c *Coverage) removeModuleFromPath(p *cover.Profile) string {
 	path := strings.ReplaceAll(p.FileName, c.mod.Name+"/", "")
-	path, _ = filepath.Rel(c.mod.PkgDir, path)
+	path, _ = filepath.Rel(c.mod.CallingDir, path)
 
 	return path
 }

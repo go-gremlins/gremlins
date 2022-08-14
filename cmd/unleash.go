@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 
@@ -45,9 +44,10 @@ type unleashCmd struct {
 const (
 	commandName = "unleash"
 
-	paramBuildTags = "tags"
-	paramDryRun    = "dry-run"
-	paramOutput    = "output"
+	paramBuildTags       = "tags"
+	paramDryRun          = "dry-run"
+	paramOutput          = "output"
+	paramIntegrationMode = "integration"
 
 	// Thresholds.
 	paramThresholdEfficacy  = "threshold-efficacy"
@@ -87,23 +87,27 @@ KILLED + LIVED mutants, over the total mutants.`,
 func runUnleash(ctx context.Context) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		log.Infoln("Starting...")
-		currPath, runDir, err := changePath(args, os.Chdir, os.Getwd)
+		path, _ := os.Getwd()
+		if len(args) > 0 {
+			path = args[0]
+		}
+		mod, err := gomodule.Init(path)
 		if err != nil {
-			return err
+			return fmt.Errorf("not in a Go module: %w", err)
 		}
 
 		workDir, err := os.MkdirTemp(os.TempDir(), "gremlins-")
 		if err != nil {
 			return fmt.Errorf("impossible to create the workdir: %w", err)
 		}
-		defer cleanUp(workDir, runDir)
+		defer cleanUp(workDir)
 
 		wg := &sync.WaitGroup{}
 		wg.Add(1)
 		cancelled := false
 		var results report.Results
 		go runWithCancel(ctx, wg, func(c context.Context) {
-			results, err = run(c, workDir, currPath)
+			results, err = run(c, mod, workDir)
 		}, func() {
 			cancelled = true
 		})
@@ -131,20 +135,14 @@ func runWithCancel(ctx context.Context, wg *sync.WaitGroup, runner func(c contex
 	wg.Done()
 }
 
-func cleanUp(wd, rd string) {
-	if err := os.Chdir(rd); err != nil {
-		log.Errorf("impossible to move back to original folder: %s\n\t%s", err, wd)
-	}
+func cleanUp(wd string) {
 	if err := os.RemoveAll(wd); err != nil {
 		log.Errorf("impossible to remove temporary folder: %s\n\t%s", err, wd)
 	}
 }
 
-func run(ctx context.Context, workDir, currPath string) (report.Results, error) {
-	mod, err := gomodule.Init(currPath)
-	if err != nil {
-		return report.Results{}, fmt.Errorf("%q is not in a Go module: %w", currPath, err)
-	}
+func run(ctx context.Context, mod gomodule.GoModule, workDir string) (report.Results, error) {
+
 	c := coverage.New(workDir, mod)
 
 	p, err := c.Run()
@@ -158,25 +156,6 @@ func run(ctx context.Context, workDir, currPath string) (report.Results, error) 
 	results := mut.Run(ctx)
 
 	return results, nil
-}
-
-func changePath(args []string, chdir func(dir string) error, getwd func() (string, error)) (string, string, error) {
-	rd, err := getwd()
-	if err != nil {
-		return "", "", err
-	}
-	cp, _ := os.Getwd()
-	if len(args) > 0 {
-		cp, _ = filepath.Abs(args[0])
-	}
-	if cp != "." {
-		err = chdir(cp)
-		if err != nil {
-			return "", "", err
-		}
-	}
-
-	return cp, rd, nil
 }
 
 func setFlagsOnCmd(cmd *cobra.Command) error {
@@ -195,6 +174,7 @@ func setFlagsOnCmd(cmd *cobra.Command) error {
 		{Name: paramDryRun, CfgKey: configuration.UnleashDryRunKey, Shorthand: "d", DefaultV: false, Usage: "find mutations but do not executes tests"},
 		{Name: paramBuildTags, CfgKey: configuration.UnleashTagsKey, Shorthand: "t", DefaultV: "", Usage: "a comma-separated list of build tags"},
 		{Name: paramOutput, CfgKey: configuration.UnleashOutputKey, Shorthand: "o", DefaultV: "", Usage: "set the output file for machine readable results"},
+		{Name: paramIntegrationMode, CfgKey: configuration.UnleashIntegrationMode, Shorthand: "i", DefaultV: false, Usage: "makes Gremlins run the complete test suite for each mutation"},
 		{Name: paramThresholdEfficacy, CfgKey: configuration.UnleashThresholdEfficacyKey, DefaultV: float64(0), Usage: "threshold for code-efficacy percent"},
 		{Name: paramThresholdMCoverage, CfgKey: configuration.UnleashThresholdMCoverageKey, DefaultV: float64(0), Usage: "threshold for mutant-coverage percent"},
 	}

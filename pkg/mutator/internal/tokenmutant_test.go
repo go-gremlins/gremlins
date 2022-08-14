@@ -64,7 +64,7 @@ func TestMutantApplyAndRollback(t *testing.T) {
 		if !ok {
 			t.Fatal("new actualToken node should be created")
 		}
-		mut := internal.NewTokenMutant(set, f, n)
+		mut := internal.NewTokenMutant("example.com/test", set, f, n)
 		mut.SetType(mutant.ArithmeticBase)
 		mut.SetStatus(mutant.Runnable)
 		mut.SetWorkdir(workdir)

@@ -36,6 +36,7 @@ const (
 	UnleashDryRunKey             = "unleash.dry-run"
 	UnleashOutputKey             = "unleash.output"
 	UnleashTagsKey               = "unleash.tags"
+	UnleashIntegrationMode       = "unleash.integration"
 	UnleashThresholdEfficacyKey  = "unleash.threshold.efficacy"
 	UnleashThresholdMCoverageKey = "unleash.threshold.mutant-coverage"
 )
