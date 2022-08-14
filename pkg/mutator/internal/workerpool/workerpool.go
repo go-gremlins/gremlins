@@ -16,35 +16,45 @@
 
 package workerpool
 
-import "sync"
+import (
+	"runtime"
+	"sync"
 
-type Job interface {
+	"github.com/go-gremlins/gremlins/configuration"
+)
+
+// Executor is the unit of work that executes a task.
+type Executor interface {
 	Start(worker *Worker)
 }
 
+// Worker takes an executor and starts the actual executor.
 type Worker struct {
-	Name   string
-	Id     int
 	stopCh chan struct{}
+	Name   string
+	ID     int
 }
 
+// NewWorker instantiates a new worker with an ID and name.
 func NewWorker(id int, name string) *Worker {
 	return &Worker{
 		Name: name,
-		Id:   id,
+		ID:   id,
 	}
 }
 
-func (w *Worker) Start(jobQueue <-chan Job) {
+// Start gets an executor queue and starts working on it.
+func (w *Worker) Start(executorQueue <-chan Executor) {
 	w.stopCh = make(chan struct{})
 	go func() {
 		for {
-			job, ok := <-jobQueue
+			executor, ok := <-executorQueue
 			if !ok {
 				w.stopCh <- struct{}{}
+
 				break
 			}
-			job.Start(w)
+			executor.Start(w)
 		}
 	}()
 }
@@ -53,16 +63,22 @@ func (w *Worker) stop() {
 	<-w.stopCh
 }
 
+// Pool manages and limits the number of concurrent Worker.
 type Pool struct {
-	queue   chan Job
+	queue   chan Executor
 	name    string
 	workers []*Worker
 	size    int
 }
 
-func Initialise(name string, size int) *Pool {
+// Initialize creates a new Pool with a name and the number of parallel
+// workers it will use.
+func Initialize(name string) *Pool {
+	wNum := configuration.Get[int](configuration.UnleashWorkersKey)
+	intMode := configuration.Get[bool](configuration.UnleashIntegrationMode)
+
 	p := &Pool{
-		size: size,
+		size: size(wNum, intMode),
 		name: name,
 	}
 	p.workers = []*Worker{}
@@ -70,21 +86,35 @@ func Initialise(name string, size int) *Pool {
 		w := NewWorker(i, p.name)
 		p.workers = append(p.workers, w)
 	}
-	p.queue = make(chan Job, 1)
+	p.queue = make(chan Executor, 1)
 
 	return p
 }
 
-func (p *Pool) AppendJob(job Job) {
-	p.queue <- job
+func size(wNum int, intMode bool) int {
+	if wNum == 0 {
+		wNum = runtime.NumCPU()
+	}
+	if intMode && wNum > 1 {
+		wNum = wNum / 2
+	}
+
+	return wNum
 }
 
+// AppendExecutor adds a new Executor to the queue of Executor to be processed.
+func (p *Pool) AppendExecutor(executor Executor) {
+	p.queue <- executor
+}
+
+// Start the Pool.
 func (p *Pool) Start() {
 	for _, w := range p.workers {
 		w.Start(p.queue)
 	}
 }
 
+// Stop the Pool and wait for all the pending Worker to complete.
 func (p *Pool) Stop() {
 	close(p.queue)
 	var wg sync.WaitGroup
@@ -96,4 +126,8 @@ func (p *Pool) Stop() {
 		}(worker)
 	}
 	wg.Wait()
+}
+
+func (p *Pool) ActiveWorkers() int {
+	return len(p.workers)
 }

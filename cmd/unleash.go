@@ -44,10 +44,13 @@ type unleashCmd struct {
 const (
 	commandName = "unleash"
 
-	paramBuildTags       = "tags"
-	paramDryRun          = "dry-run"
-	paramOutput          = "output"
-	paramIntegrationMode = "integration"
+	paramBuildTags          = "tags"
+	paramDryRun             = "dry-run"
+	paramOutput             = "output"
+	paramIntegrationMode    = "integration"
+	paramTestCpu            = "test-cpu"
+	paramWorkers            = "workers"
+	paramTimeoutCoefficient = "timeout-coefficient"
 
 	// Thresholds.
 	paramThresholdEfficacy  = "threshold-efficacy"
@@ -142,17 +145,19 @@ func cleanUp(wd string) {
 }
 
 func run(ctx context.Context, mod gomodule.GoModule, workDir string) (report.Results, error) {
-
 	c := coverage.New(workDir, mod)
 
-	p, err := c.Run()
+	cProfile, err := c.Run()
 	if err != nil {
 		return report.Results{}, fmt.Errorf("failed to gather coverage: %w", err)
 	}
 
-	d := workdir.NewCachedDealer(workDir, mod.Root)
+	wdDealer := workdir.NewCachedDealer(workDir, mod.Root)
+	defer wdDealer.Clean()
 
-	mut := mutator.New(mod, p, d)
+	jDealer := mutator.NewExecutorDealer(mod, wdDealer, cProfile.Elapsed)
+
+	mut := mutator.New(mod, cProfile, jDealer)
 	results := mut.Run(ctx)
 
 	return results, nil
@@ -177,6 +182,9 @@ func setFlagsOnCmd(cmd *cobra.Command) error {
 		{Name: paramIntegrationMode, CfgKey: configuration.UnleashIntegrationMode, Shorthand: "i", DefaultV: false, Usage: "makes Gremlins run the complete test suite for each mutation"},
 		{Name: paramThresholdEfficacy, CfgKey: configuration.UnleashThresholdEfficacyKey, DefaultV: float64(0), Usage: "threshold for code-efficacy percent"},
 		{Name: paramThresholdMCoverage, CfgKey: configuration.UnleashThresholdMCoverageKey, DefaultV: float64(0), Usage: "threshold for mutant-coverage percent"},
+		{Name: paramWorkers, CfgKey: configuration.UnleashWorkersKey, DefaultV: 0, Usage: "the number of workers to use in mutation testing"},
+		{Name: paramTestCpu, CfgKey: configuration.UnleashTestCpuKey, DefaultV: 0, Usage: "the number of CPUs to allow each test run to use"},
+		{Name: paramTimeoutCoefficient, CfgKey: configuration.UnleashTimeoutCoefficientKey, DefaultV: 0, Usage: "the coefficient by which the timeout is increased"},
 	}
 
 	for _, f := range fls {

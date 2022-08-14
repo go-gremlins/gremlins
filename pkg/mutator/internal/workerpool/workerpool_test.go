@@ -18,42 +18,47 @@ package workerpool_test
 
 import (
 	"go/token"
+	"runtime"
 	"testing"
 
+	"github.com/go-gremlins/gremlins/configuration"
 	"github.com/go-gremlins/gremlins/pkg/mutant"
 	"github.com/go-gremlins/gremlins/pkg/mutator/internal/workerpool"
 )
 
-type JobMock struct {
+type ExecutorMock struct {
 	mutant mutant.Mutant
 	outCh  chan<- mutant.Mutant
 }
 
-func (tj *JobMock) Start(w *workerpool.Worker) {
+func (tj *ExecutorMock) Start(w *workerpool.Worker) {
 	fm := fakeMutant{
 		name: w.Name,
-		id:   w.Id,
+		id:   w.ID,
 	}
 	tj.outCh <- fm
 }
 
 func TestWorker(t *testing.T) {
-	jobQueue := make(chan workerpool.Job)
+	executorQueue := make(chan workerpool.Executor)
 	outCh := make(chan mutant.Mutant)
 
 	worker := workerpool.NewWorker(1, "test")
-	worker.Start(jobQueue)
+	worker.Start(executorQueue)
 
-	tj := &JobMock{
+	tj := &ExecutorMock{
 		mutant: &fakeMutant{},
 		outCh:  outCh,
 	}
 
-	jobQueue <- tj
-	close(jobQueue)
+	executorQueue <- tj
+	close(executorQueue)
 
 	m := <-outCh
-	got := m.(fakeMutant)
+	got, ok := m.(fakeMutant)
+	if !ok {
+		t.Fatal("it should be a fakeMutant")
+	}
 
 	if got.name != "test" {
 		t.Errorf("want %q, got %q", "test", got.name)
@@ -64,28 +69,90 @@ func TestWorker(t *testing.T) {
 }
 
 func TestPool(t *testing.T) {
-	outCh := make(chan mutant.Mutant)
+	t.Run("test executes work", func(t *testing.T) {
+		configuration.Set(configuration.UnleashWorkersKey, 1)
+		defer configuration.Reset()
 
-	pool := workerpool.Initialise("test", 1)
-	pool.Start()
-	defer pool.Stop()
+		outCh := make(chan mutant.Mutant)
 
-	tj := &JobMock{
-		mutant: &fakeMutant{},
-		outCh:  outCh,
-	}
+		pool := workerpool.Initialize("test")
+		pool.Start()
+		defer pool.Stop()
 
-	pool.AppendJob(tj)
+		tj := &ExecutorMock{
+			mutant: &fakeMutant{},
+			outCh:  outCh,
+		}
 
-	m := <-outCh
-	got := m.(fakeMutant)
+		pool.AppendExecutor(tj)
 
-	if got.name != "test" {
-		t.Errorf("want %q, got %q", "test", got.name)
-	}
-	if got.id != 0 {
-		t.Errorf("want %d, got %d", 0, got.id)
-	}
+		m := <-outCh
+		got, ok := m.(fakeMutant)
+		if !ok {
+			t.Fatal("it should be a fakeMutant")
+		}
+
+		if got.name != "test" {
+			t.Errorf("want %q, got %q", "test", got.name)
+		}
+		if got.id != 0 {
+			t.Errorf("want %d, got %d", 0, got.id)
+		}
+	})
+
+	t.Run("default uses runtime CPUs as number of workers", func(t *testing.T) {
+		configuration.Set(configuration.UnleashWorkersKey, 0)
+		defer configuration.Reset()
+
+		pool := workerpool.Initialize("test")
+		pool.Start()
+		defer pool.Stop()
+
+		if pool.ActiveWorkers() != runtime.NumCPU() {
+			t.Errorf("want %d, got %d", runtime.NumCPU(), pool.ActiveWorkers())
+		}
+	})
+
+	t.Run("default uses half of runtime CPUs as number of workers in integration mode", func(t *testing.T) {
+		configuration.Set(configuration.UnleashWorkersKey, 0)
+		configuration.Set(configuration.UnleashIntegrationMode, true)
+		defer configuration.Reset()
+
+		pool := workerpool.Initialize("test")
+		pool.Start()
+		defer pool.Stop()
+
+		if pool.ActiveWorkers() != runtime.NumCPU()/2 {
+			t.Errorf("want %d, got %d", runtime.NumCPU()/2, pool.ActiveWorkers())
+		}
+	})
+
+	t.Run("can override CPUs", func(t *testing.T) {
+		configuration.Set(configuration.UnleashWorkersKey, 3)
+		defer configuration.Reset()
+
+		pool := workerpool.Initialize("test")
+		pool.Start()
+		defer pool.Stop()
+
+		if pool.ActiveWorkers() != 3 {
+			t.Errorf("want %d, got %d", 3, pool.ActiveWorkers())
+		}
+	})
+
+	t.Run("in integration mode, overrides CPUs by half", func(t *testing.T) {
+		configuration.Set(configuration.UnleashWorkersKey, 2)
+		configuration.Set(configuration.UnleashIntegrationMode, true)
+		defer configuration.Reset()
+
+		pool := workerpool.Initialize("test")
+		pool.Start()
+		defer pool.Stop()
+
+		if pool.ActiveWorkers() != 1 {
+			t.Errorf("want %d, got %d", 1, pool.ActiveWorkers())
+		}
+	})
 }
 
 type fakeMutant struct {
@@ -94,51 +161,41 @@ type fakeMutant struct {
 }
 
 func (f fakeMutant) Type() mutant.Type {
-	//TODO implement me
-	panic("implement me")
+	panic("not used in test")
 }
 
-func (f fakeMutant) SetType(mt mutant.Type) {
-	//TODO implement me
-	panic("implement me")
+func (f fakeMutant) SetType(_ mutant.Type) {
+	panic("not used in test")
 }
 
 func (f fakeMutant) Status() mutant.Status {
-	//TODO implement me
-	panic("implement me")
+	panic("not used in test")
 }
 
-func (f fakeMutant) SetStatus(s mutant.Status) {
-	//TODO implement me
-	panic("implement me")
+func (f fakeMutant) SetStatus(_ mutant.Status) {
+	panic("not used in test")
 }
 
 func (f fakeMutant) Position() token.Position {
-	//TODO implement me
-	panic("implement me")
+	panic("not used in test")
 }
 
 func (f fakeMutant) Pos() token.Pos {
-	//TODO implement me
-	panic("implement me")
+	panic("not used in test")
 }
 
 func (f fakeMutant) Pkg() string {
-	//TODO implement me
-	panic("implement me")
+	panic("not used in test")
 }
 
-func (f fakeMutant) SetWorkdir(p string) {
-	//TODO implement me
-	panic("implement me")
+func (f fakeMutant) SetWorkdir(_ string) {
+	panic("not used in test")
 }
 
 func (f fakeMutant) Apply() error {
-	//TODO implement me
-	panic("implement me")
+	panic("not used in test")
 }
 
 func (f fakeMutant) Rollback() error {
-	//TODO implement me
-	panic("implement me")
+	panic("not used in test")
 }

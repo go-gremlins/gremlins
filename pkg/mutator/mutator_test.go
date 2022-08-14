@@ -18,19 +18,11 @@ package mutator_test
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"go/token"
 	"io"
 	"os"
-	"os/exec"
-	"strings"
-	"sync"
 	"testing"
 	"testing/fstest"
-	"time"
-
-	"github.com/google/go-cmp/cmp"
 
 	"github.com/go-gremlins/gremlins/configuration"
 	"github.com/go-gremlins/gremlins/internal/gomodule"
@@ -39,60 +31,27 @@ import (
 	"github.com/go-gremlins/gremlins/pkg/mutator"
 )
 
-var viperMutex sync.RWMutex
-
-func init() {
-	viperMutex.Lock()
-	viperReset()
-}
-
-const defaultFixture = "testdata/fixtures/gtr_go"
-
-func viperSet(set map[string]any) {
-	viperMutex.Lock()
-	for k, v := range set {
-		configuration.Set(k, v)
-	}
-}
-
-func viperReset() {
-	configuration.Reset()
-	for _, mt := range mutant.MutantTypes {
-		configuration.Set(configuration.MutantTypeEnabledKey(mt), true)
-	}
-	viperMutex.Unlock()
-}
-
-const expectedTimeout = 10 * time.Second
-const expectedModule = "example.com"
+const (
+	defaultFixture = "testdata/fixtures/gtr_go"
+	expectedModule = "example.com"
+)
 
 func coveredPosition(fixture string) coverage.Result {
 	fn := filenameFromFixture(fixture)
 	p := coverage.Profile{fn: {{StartLine: 6, EndLine: 7, StartCol: 8, EndCol: 9}}}
 
-	return coverage.Result{Profile: p, Elapsed: expectedTimeout}
+	return coverage.Result{Profile: p, Elapsed: 10}
 }
 
 func notCoveredPosition(fixture string) coverage.Result {
 	fn := filenameFromFixture(fixture)
 	p := coverage.Profile{fn: {{StartLine: 9, EndLine: 9, StartCol: 8, EndCol: 9}}}
 
-	return coverage.Result{Profile: p, Elapsed: expectedTimeout}
+	return coverage.Result{Profile: p, Elapsed: 10}
 }
-
-type dealerStub struct {
-	t *testing.T
-}
-
-func (d dealerStub) Get(_ string) (string, error) {
-	return d.t.TempDir(), nil
-}
-
-func (d dealerStub) Clean() {}
 
 func TestMutations(t *testing.T) {
 	t.Parallel()
-
 	testCases := []struct {
 		name       string
 		fixture    string
@@ -277,7 +236,7 @@ func TestMutations(t *testing.T) {
 			mapFS, mod, c := loadFixture(tc.fixture, ".")
 			defer c()
 
-			mut := mutator.New(mod, tc.covResult, dealerStub{t: t}, mutator.WithDirFs(mapFS))
+			mut := mutator.New(mod, tc.covResult, newJobDealerStub(t), mutator.WithDirFs(mapFS))
 			res := mut.Run(context.Background())
 			got := res.Mutants
 
@@ -309,6 +268,7 @@ func TestMutations(t *testing.T) {
 func TestMutantSkipDisabled(t *testing.T) {
 	t.Parallel()
 	for _, mt := range mutant.MutantTypes {
+		mt := mt
 		t.Run(mt.String(), func(t *testing.T) {
 			t.Parallel()
 			mapFS, mod, c := loadFixture(defaultFixture, ".")
@@ -316,12 +276,11 @@ func TestMutantSkipDisabled(t *testing.T) {
 
 			viperSet(map[string]any{
 				configuration.UnleashDryRunKey:         true,
-				configuration.MutantTypeEnabledKey(mt): false},
-			)
+				configuration.MutantTypeEnabledKey(mt): false,
+			})
 			defer viperReset()
 
-			mut := mutator.New(mod, coveredPosition(defaultFixture), dealerStub{t: t},
-				mutator.WithExecContext(fakeExecCommandSuccess), mutator.WithDirFs(mapFS))
+			mut := mutator.New(mod, coveredPosition(defaultFixture), newJobDealerStub(t), mutator.WithDirFs(mapFS))
 			res := mut.Run(context.Background())
 			got := res.Mutants
 
@@ -350,7 +309,7 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 	}
 	viperSet(map[string]any{configuration.UnleashDryRunKey: true})
 	defer viperReset()
-	mut := mutator.New(mod, coverage.Result{}, dealerStub{t: t}, mutator.WithDirFs(sys))
+	mut := mutator.New(mod, coverage.Result{}, newJobDealerStub(t), mutator.WithDirFs(sys))
 	res := mut.Run(context.Background())
 
 	if got := res.Mutants; len(got) != 0 {
@@ -358,16 +317,23 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 	}
 }
 
-type commandHolder struct {
-	m       sync.Mutex
-	command string
-	args    []string
-	timeout time.Duration
+func TestStopsOnCancel(t *testing.T) {
+	mapFS, mod, c := loadFixture(defaultFixture, ".")
+	defer c()
+
+	mut := mutator.New(mod, coveredPosition(defaultFixture), newJobDealerStub(t),
+		mutator.WithDirFs(mapFS))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	res := mut.Run(ctx)
+
+	if len(res.Mutants) > 0 {
+		t.Errorf("expected to receive no mutants, got %d", len(res.Mutants))
+	}
 }
 
-type execContext = func(ctx context.Context, name string, args ...string) *exec.Cmd
-
-func TestMutatorRun(t *testing.T) {
+func TestPackageDiscovery(t *testing.T) {
 	testCases := []struct {
 		name     string
 		fromPkg  string
@@ -386,18 +352,6 @@ func TestMutatorRun(t *testing.T) {
 			intMode:  false,
 			wantPath: "example.com/testdata/main",
 		},
-		{
-			name:     "from root, integration mode",
-			fromPkg:  ".",
-			intMode:  true,
-			wantPath: "./...",
-		},
-		{
-			name:     "from subpackage, integration mode",
-			fromPkg:  "testdata/fixture",
-			intMode:  true,
-			wantPath: "./testdata/fixture/...",
-		},
 	}
 	for _, tc := range testCases {
 		tc := tc
@@ -410,275 +364,17 @@ func TestMutatorRun(t *testing.T) {
 			mapFS, mod, c := loadFixture(defaultFixture, tc.fromPkg)
 			defer c()
 
-			holder := &commandHolder{}
-			mut := mutator.New(mod, coveredPosition(defaultFixture), dealerStub{t: t},
-				mutator.WithDirFs(mapFS),
-				mutator.WithExecContext(fakeExecCommandSuccessWithHolder(holder)),
-				mutator.WithApplyAndRollback(
-					func(m mutant.Mutant) error {
-						return nil
-					},
-					func(m mutant.Mutant) error {
-						return nil
-					}))
+			jds := newJobDealerStub(t)
+			mut := mutator.New(mod, coveredPosition(defaultFixture), jds, mutator.WithDirFs(mapFS))
 
 			_ = mut.Run(context.Background())
 
-			want := "go test -tags tag1 tag2 -timeout 32s -failfast " + tc.wantPath
-			got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
+			got := jds.gotMutants[0].Pkg()
 
-			if !cmp.Equal(got, want) {
-				t.Errorf(fmt.Sprintf("\n+ %s\n- %s\n", got, want))
-			}
+			if got != tc.wantPath {
+				t.Errorf("want %q, got %q", tc.wantPath, got)
 
-			timeoutDifference := absTimeDiff(holder.timeout, expectedTimeout*2)
-			diffThreshold := 100 * time.Second
-			if timeoutDifference > diffThreshold {
-				t.Errorf("expected timeout to be within %s from the set timeout, got %s", diffThreshold, timeoutDifference)
 			}
 		})
 	}
-}
-
-func absTimeDiff(a, b time.Duration) time.Duration {
-	if a > b {
-		return a - b
-	}
-
-	return b - a
-}
-
-func TestMutatorTestExecution(t *testing.T) {
-	testCases := []struct {
-		name          string
-		fixture       string
-		testResult    execContext
-		covResult     coverage.Result
-		wantMutStatus mutant.Status
-	}{
-		{
-			name:          "it skips NOT_COVERED",
-			fixture:       "testdata/fixtures/gtr_go",
-			testResult:    fakeExecCommandSuccess,
-			covResult:     notCoveredPosition("testdata/fixtures/gtr_go"),
-			wantMutStatus: mutant.NotCovered,
-		},
-		{
-			name:          "if tests pass then mutation is LIVED",
-			fixture:       "testdata/fixtures/gtr_go",
-			testResult:    fakeExecCommandSuccess,
-			covResult:     coveredPosition("testdata/fixtures/gtr_go"),
-			wantMutStatus: mutant.Lived,
-		},
-		{
-			name:          "if tests fails then mutation is KILLED",
-			fixture:       "testdata/fixtures/gtr_go",
-			testResult:    fakeExecCommandTestsFailure,
-			covResult:     coveredPosition("testdata/fixtures/gtr_go"),
-			wantMutStatus: mutant.Killed,
-		},
-		{
-			name:          "if build fails then mutation is BUILD FAILED",
-			fixture:       "testdata/fixtures/gtr_go",
-			testResult:    fakeExecCommandBuildFailure,
-			covResult:     coveredPosition("testdata/fixtures/gtr_go"),
-			wantMutStatus: mutant.NotViable,
-		},
-	}
-	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			viperSet(map[string]any{configuration.UnleashDryRunKey: false})
-			defer viperReset()
-			mapFS, mod, c := loadFixture(tc.fixture, ".")
-			defer c()
-
-			mut := mutator.New(mod, tc.covResult, dealerStub{t: t},
-				mutator.WithDirFs(mapFS),
-				mutator.WithExecContext(tc.testResult),
-				mutator.WithApplyAndRollback(
-					func(m mutant.Mutant) error {
-						return nil
-					},
-					func(m mutant.Mutant) error {
-						return nil
-					}))
-			res := mut.Run(context.Background())
-			got := res.Mutants
-
-			if len(got) < 1 {
-				t.Fatal("no mutants received")
-			}
-			if got[0].Status() != tc.wantMutStatus {
-				t.Errorf("expected mutation to be %v, but got: %v", tc.wantMutStatus, got[0].Status())
-			}
-			if tc.wantMutStatus != mutant.NotCovered && res.Elapsed <= 0 {
-				t.Errorf("expected elapsed time to be greater than zero, got %s", res.Elapsed)
-			}
-		})
-	}
-}
-
-func TestApplyAndRollbackError(t *testing.T) {
-	t.Run("apply fails", func(t *testing.T) {
-		mapFS, mod, c := loadFixture(defaultFixture, ".")
-		defer c()
-
-		mut := mutator.New(mod, coveredPosition(defaultFixture), dealerStub{t: t},
-			mutator.WithDirFs(mapFS),
-			mutator.WithExecContext(fakeExecCommandSuccess),
-			mutator.WithApplyAndRollback(
-				func(m mutant.Mutant) error {
-					return errors.New("test error")
-				},
-				func(m mutant.Mutant) error {
-					return nil
-				}))
-		res := mut.Run(context.Background())
-		got := res.Mutants
-
-		if len(got) != 0 {
-			t.Fatal("expected no mutants")
-		}
-	})
-
-	t.Run("rollback fails", func(t *testing.T) {
-		mapFS, mod, c := loadFixture(defaultFixture, ".")
-		defer c()
-
-		mut := mutator.New(mod, coveredPosition(defaultFixture), dealerStub{t: t},
-			mutator.WithDirFs(mapFS),
-			mutator.WithExecContext(fakeExecCommandSuccess),
-			mutator.WithApplyAndRollback(
-				func(m mutant.Mutant) error {
-					return nil
-				},
-				func(m mutant.Mutant) error {
-					return errors.New("test error")
-				}))
-		res := mut.Run(context.Background())
-		got := res.Mutants
-
-		if len(got) < 1 { // For now, in case of rollback failure, we expect the mutations still to be reported.
-			t.Fatal("expected no mutants")
-		}
-	})
-}
-
-func TestStopsOnCancel(t *testing.T) {
-	mapFS, mod, c := loadFixture(defaultFixture, ".")
-	defer c()
-
-	mut := mutator.New(mod, coveredPosition(defaultFixture), dealerStub{t: t},
-		mutator.WithDirFs(mapFS),
-		mutator.WithExecContext(fakeExecCommandSuccess),
-		mutator.WithApplyAndRollback(
-			func(m mutant.Mutant) error {
-				return nil
-			},
-			func(m mutant.Mutant) error {
-				return nil
-			}))
-
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	res := mut.Run(ctx)
-
-	if len(res.Mutants) > 0 {
-		t.Errorf("expected to receive no mutants, got %d", len(res.Mutants))
-	}
-}
-
-// loadFixture loads a fixture into a mapFS and returns also the GoModule.
-//
-//	fromPackage parameters can be path/pkgName.
-func loadFixture(fixture, fromPackage string) (fstest.MapFS, gomodule.GoModule, func()) {
-	f, _ := os.Open(fixture)
-	src, _ := io.ReadAll(f)
-	filename := filenameFromFixture(fixture)
-	mapFS := fstest.MapFS{
-		filename: {Data: src},
-	}
-
-	return mapFS, gomodule.GoModule{
-			Name:       "example.com",
-			Root:       ".",
-			CallingDir: fromPackage,
-		}, func() {
-			_ = f.Close()
-		}
-}
-
-func TestCoverageProcessSuccess(_ *testing.T) {
-	if os.Getenv("GO_TEST_PROCESS") != "1" {
-		return
-	}
-	os.Exit(0)
-}
-
-func TestProcessTestsFailure(_ *testing.T) {
-	if os.Getenv("GO_TEST_PROCESS") != "1" {
-		return
-	}
-	os.Exit(1)
-}
-
-func TestProcessBuildFailure(_ *testing.T) {
-	if os.Getenv("GO_TEST_PROCESS") != "1" {
-		return
-	}
-	os.Exit(2)
-}
-
-func fakeExecCommandSuccess(ctx context.Context, command string, args ...string) *exec.Cmd {
-	cs := []string{"-test.run=TestCoverageProcessSuccess", "--", command}
-	cs = append(cs, args...)
-	// #nosec G204 - We are in tests, we don't care
-	cmd := exec.CommandContext(ctx, os.Args[0], cs...)
-	cmd.Env = []string{"GO_TEST_PROCESS=1"}
-
-	return cmd
-}
-
-func fakeExecCommandSuccessWithHolder(got *commandHolder) execContext {
-	return func(ctx context.Context, command string, args ...string) *exec.Cmd {
-		dl, _ := ctx.Deadline()
-		got.m.Lock()
-		defer got.m.Unlock()
-		if got != nil {
-			got.command = command
-			got.args = args
-			got.timeout = time.Until(dl)
-		}
-		cs := []string{"-test.run=TestCoverageProcessSuccess", "--", command}
-		cs = append(cs, args...)
-
-		return getCmd(ctx, cs)
-	}
-}
-
-func fakeExecCommandTestsFailure(ctx context.Context, command string, args ...string) *exec.Cmd {
-	cs := []string{"-test.run=TestProcessTestsFailure", "--", command}
-	cs = append(cs, args...)
-
-	return getCmd(ctx, cs)
-}
-
-func fakeExecCommandBuildFailure(ctx context.Context, command string, args ...string) *exec.Cmd {
-	cs := []string{"-test.run=TestProcessBuildFailure", "--", command}
-	cs = append(cs, args...)
-
-	return getCmd(ctx, cs)
-}
-
-func getCmd(ctx context.Context, cs []string) *exec.Cmd {
-	// #nosec G204 - We are in tests, we don't care
-	cmd := exec.CommandContext(ctx, os.Args[0], cs...)
-	cmd.Env = []string{"GO_TEST_PROCESS=1"}
-
-	return cmd
-}
-
-func filenameFromFixture(fix string) string {
-	return strings.ReplaceAll(fix, "_go", ".go")
 }
