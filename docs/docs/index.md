@@ -7,6 +7,8 @@ _microservices_, on which it helps validate the test suite, aids the TDD process
 
 As of now, Gremlins doesn't work very well on very big Go modules, mainly because a run can take hours to complete.
 
+![](assets/images/gremlins-term.webp)
+
 [//]: # (@formatter:off)
 !!! warning
     Gremlins is still in its 0.x.x release, which, as per SemVer, doesn't guarantee backward compatibility. What this 
