@@ -46,6 +46,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://gremlins.dev/next/usage/commands/unleash/workers/</loc>
+         <lastmod>2022-08-17</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://gremlins.dev/next/usage/mutations/</loc>
          <lastmod>2022-08-17</lastmod>
          <changefreq>daily</changefreq>
