@@ -15,11 +15,8 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version-file: 'go.mod'
-          cache: true
-          cache-dependency-path: go.sum
-        # While we wait for a Gremlins Action to be made, let's install Gremlins directly.
       - name: Run Gremlins
-        uses: go-gremlins/gremlins-action@main
+        uses: go-gremlins/gremlins-action@v1
         with:
           version: latest
           args: --silent
