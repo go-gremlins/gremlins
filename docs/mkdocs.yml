@@ -54,6 +54,9 @@ nav:
           - usage/mutations/conditionals_negation.md
           - usage/mutations/increment_decrement.md
           - usage/mutations/invert_negatives.md
+      - Continuous integration:
+          - usage/ci/github-action.md
+          - usage/ci/docker.md
   - Contributing: CONTRIBUTING.md
 
 plugins:
