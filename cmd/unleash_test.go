@@ -79,6 +79,21 @@ func TestUnleash(t *testing.T) {
 			flagType:  "bool",
 			defValue:  "false",
 		},
+		{
+			name:     "test-cpu",
+			flagType: "int",
+			defValue: "0",
+		},
+		{
+			name:     "workers",
+			flagType: "int",
+			defValue: "0",
+		},
+		{
+			name:     "timeout-coefficient",
+			flagType: "int",
+			defValue: "0",
+		},
 	}
 
 	for _, tc := range testCases {

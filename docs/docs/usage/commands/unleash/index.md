@@ -143,7 +143,7 @@ gremlins unleash --threshold-mcover 80
 
 :material-flag: `--arithmetic-base` · :material-sign-direction: Default: `true`
 
-Enables/disables the [ARITHMETIC BASE](../mutations/arithmetic_base.md) mutant type.
+Enables/disables the [ARITHMETIC BASE](../../mutations/arithmetic_base.md) mutant type.
 
 ```shell
 gremlins unleash --arithmetic-base=false
@@ -153,7 +153,7 @@ gremlins unleash --arithmetic-base=false
 
 :material-flag: `--conditionals-boundary` · :material-sign-direction: Default: `true`
 
-Enables/disables the [CONDITIONALS BOUNDARY](../mutations/conditionals_boundary.md) mutant type.
+Enables/disables the [CONDITIONALS BOUNDARY](../../mutations/conditionals_boundary.md) mutant type.
 
 ```shell
 gremlins unleash --conditionals_boundary=false
@@ -163,7 +163,7 @@ gremlins unleash --conditionals_boundary=false
 
 :material-flag: `--conditionals-negation` · :material-sign-direction: Default: `true`
 
-Enables/disables the [CONDITIONALS NEGATION](../mutations/conditionals_negation.md) mutant type.
+Enables/disables the [CONDITIONALS NEGATION](../../mutations/conditionals_negation.md) mutant type.
 
 ```shell
 gremlins unleash --conditionals_negation=false
@@ -173,7 +173,7 @@ gremlins unleash --conditionals_negation=false
 
 :material-flag: `--increment-decrement` · :material-sign-direction: Default: `true`
 
-Enables/disables the [INCREMENT DECREMENT](../mutations/increment_decrement.md) mutant type.
+Enables/disables the [INCREMENT DECREMENT](../../mutations/increment_decrement.md) mutant type.
 
 ```shell
 gremlins unleash --increment-decrement=false
@@ -183,8 +183,61 @@ gremlins unleash --increment-decrement=false
 
 :material-flag: `--invert-negatives` · :material-sign-direction: Default: `true`
 
-Enables/disables the [INVERT NEGATIVES](../mutations/invert_negatives.md) mutant type.
+Enables/disables the [INVERT NEGATIVES](../../mutations/invert_negatives.md) mutant type.
 
 ```shell
 gremlins unleash --invert_negatives=false
+```
+
+### Workers
+
+:material-flag: `--workers` · :material-sign-direction: Default: `0`
+
+[//]: # (@formatter:off)
+!!! tip
+    To understand better the use of these flag, check [workers](workers.md)
+[//]: # (@formatter:on)
+
+Gremlins runs in parallel mode, which means that more than one test at a time will be performed, based on the number of
+CPU cores available.
+
+By default, Gremlins will use all the available CPU cores of, and , in _integration mode_, it will use half of the
+available CPU cores.
+
+The `--workers` flag allows to override the number of CPUs to use (`0` means use the default).
+
+```shell
+gremlins unleash --workers=4
+```
+
+### Test CPU
+
+:material-flag: `--test-cpu` · :material-sign-direction: Default: `0`
+
+[//]: # (@formatter:off)
+!!! tip
+    To understand better the use of these flag, check [workers](workers.md)
+[//]: # (@formatter:on)
+
+This flag overrides the number of CPUs the Go test tool will utilize. By default, Gremlins doesn't set this value.
+
+```shell
+gremlins unleash --test-cpu=1
+```
+
+### Timeout coefficient
+
+:material-flag: `--timeout-coefficient` · :material-sign-direction: Default: `0`
+
+[//]: # (@formatter:off)
+!!! tip
+    To understand better the use of these flag, check [workers](workers.md)
+[//]: # (@formatter:on)
+
+Gremlins determines the timeout for each Go test run by multiplying by a coefficient the time it took to perform the
+coverage run.
+It is possible to override this coefficient (`0` means use the default).
+
+```shell
+gremlins unleash --timeout-coefficient=3
 ```

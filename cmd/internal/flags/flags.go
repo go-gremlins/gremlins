@@ -55,6 +55,8 @@ func setFlags(flag *Flag, fs *pflag.FlagSet) error {
 		setBool(flag, fs, dv)
 	case string:
 		setString(flag, fs, dv)
+	case int:
+		setInt(flag, fs, dv)
 	case float64:
 		setFloat64(flag, fs, dv)
 	}
@@ -64,6 +66,14 @@ func setFlags(flag *Flag, fs *pflag.FlagSet) error {
 	}
 
 	return nil
+}
+
+func setInt(flag *Flag, flags *pflag.FlagSet, dv int) {
+	if flag.Shorthand != "" {
+		flags.IntP(flag.Name, flag.Shorthand, dv, flag.Usage)
+	} else {
+		flags.Int(flag.Name, dv, flag.Usage)
+	}
 }
 
 func setFloat64(flag *Flag, flags *pflag.FlagSet, dv float64) {

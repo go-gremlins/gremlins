@@ -67,7 +67,24 @@ func TestSet(t *testing.T) {
 				Usage:     "test usage",
 			},
 		},
-
+		{
+			flag: Flag{
+				Name:      "int-flag-no-sh",
+				CfgKey:    "test.cfg",
+				Shorthand: "",
+				DefaultV:  0,
+				Usage:     "test usage",
+			},
+		},
+		{
+			flag: Flag{
+				Name:      "int-flag-sh",
+				CfgKey:    "test.cfg",
+				Shorthand: "t",
+				DefaultV:  0,
+				Usage:     "test usage",
+			},
+		},
 		{
 			flag: Flag{
 				Name:      "float64-flag-no-sh",

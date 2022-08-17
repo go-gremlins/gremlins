@@ -21,6 +21,7 @@ import (
 	"go/parser"
 	"go/token"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -38,7 +39,7 @@ func TestMutantApplyAndRollback(t *testing.T) {
 
 	workdir := t.TempDir()
 	filePath := "sourceFile.go"
-	fileFullPath := workdir + "/" + filePath
+	fileFullPath := filepath.Join(workdir, filePath)
 
 	err := os.WriteFile(fileFullPath, []byte(rollbackWant), os.ModePerm)
 	if err != nil {

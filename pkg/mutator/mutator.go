@@ -18,25 +18,23 @@ package mutator
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"io/fs"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-gremlins/gremlins/configuration"
 	"github.com/go-gremlins/gremlins/internal/gomodule"
 	"github.com/go-gremlins/gremlins/pkg/coverage"
-	"github.com/go-gremlins/gremlins/pkg/log"
 	"github.com/go-gremlins/gremlins/pkg/mutant"
 	"github.com/go-gremlins/gremlins/pkg/mutator/internal"
-	"github.com/go-gremlins/gremlins/pkg/mutator/workdir"
+	"github.com/go-gremlins/gremlins/pkg/mutator/internal/workerpool"
 	"github.com/go-gremlins/gremlins/pkg/report"
 )
 
@@ -45,23 +43,12 @@ import (
 // It traverses the AST of the project, finds which TokenMutant can be applied and
 // performs the actual mutation testing.
 type Mutator struct {
-	module            gomodule.GoModule
-	fs                fs.FS
-	wdManager         workdir.Dealer
-	covProfile        coverage.Profile
-	execContext       execContext
-	apply             func(m mutant.Mutant) error
-	rollback          func(m mutant.Mutant) error
-	mutantStream      chan mutant.Mutant
-	buildTags         string
-	testExecutionTime time.Duration
-	dryRun            bool
-	integrationMode   bool
+	fs           fs.FS
+	jDealer      ExecutorDealer
+	covProfile   coverage.Profile
+	mutantStream chan mutant.Mutant
+	module       gomodule.GoModule
 }
-
-const timeoutCoefficient = 2
-
-type execContext = func(ctx context.Context, name string, args ...string) *exec.Cmd
 
 // Option for the Mutator initialization.
 type Option func(m Mutator) Mutator
@@ -70,61 +57,19 @@ type Option func(m Mutator) Mutator
 //
 // It gets a fs.FS on which to perform the analysis, a coverage.Profile to
 // check if the mutants are covered and a sets of Option.
-//
-// By default, it sets uses exec.Command to perform the tests on the source
-// code. This can be overridden, for example in tests.
-//
-// The apply and rollback functions are wrappers around the TokenMutant apply and
-// rollback. These can be overridden with nop functions in tests. Not an
-// ideal setup. In the future we can think of a better way to handle this.
-func New(mod gomodule.GoModule, r coverage.Result, manager workdir.Dealer, opts ...Option) Mutator {
+func New(mod gomodule.GoModule, r coverage.Result, jDealer ExecutorDealer, opts ...Option) Mutator {
 	dirFS := os.DirFS(filepath.Join(mod.Root, mod.CallingDir))
-	buildTags := configuration.Get[string](configuration.UnleashTagsKey)
-	dryRun := configuration.Get[bool](configuration.UnleashDryRunKey)
-	integrationMode := configuration.Get[bool](configuration.UnleashIntegrationMode)
-
 	mut := Mutator{
-		module:            mod,
-		wdManager:         manager,
-		covProfile:        r.Profile,
-		testExecutionTime: r.Elapsed * timeoutCoefficient,
-		fs:                dirFS,
-		execContext:       exec.CommandContext,
-		apply: func(m mutant.Mutant) error {
-			return m.Apply()
-		},
-		rollback: func(m mutant.Mutant) error {
-			return m.Rollback()
-		},
-
-		buildTags:       buildTags,
-		dryRun:          dryRun,
-		integrationMode: integrationMode,
+		module:     mod,
+		jDealer:    jDealer,
+		covProfile: r.Profile,
+		fs:         dirFS,
 	}
 	for _, opt := range opts {
 		mut = opt(mut)
 	}
 
 	return mut
-}
-
-// WithExecContext overrides the default exec.Command with a custom executor.
-func WithExecContext(c execContext) Option {
-	return func(m Mutator) Mutator {
-		m.execContext = c
-
-		return m
-	}
-}
-
-// WithApplyAndRollback overrides the apply and rollback functions.
-func WithApplyAndRollback(a, r func(m mutant.Mutant) error) Option {
-	return func(m Mutator) Mutator {
-		m.apply = a
-		m.rollback = r
-
-		return m
-	}
 }
 
 // WithDirFs overrides the fs.FS of the module (mainly used for testing purposes).
@@ -140,11 +85,6 @@ func WithDirFs(dirFS fs.FS) Option {
 //
 // It walks the fs.FS provided and checks every .go file which is not a test.
 // For each file it will scan for tokenMutations and gather all the mutants found.
-// For each TokenMutant found, if it is RUNNABLE, and it is not in dry-run mode,
-// it will apply the mutation, run the tests and mark the TokenMutant as either
-// KILLED or LIVED depending on the result. If the tests pass, it means the
-// TokenMutant survived, so it will be LIVED, if the tests fail, the TokenMutant will
-// be KILLED.
 func (mu *Mutator) Run(ctx context.Context) report.Results {
 	mu.mutantStream = make(chan mutant.Mutant)
 	go func() {
@@ -241,53 +181,40 @@ func (mu *Mutator) mutationStatus(pos token.Position) mutant.Status {
 }
 
 func (mu *Mutator) executeTests(ctx context.Context) report.Results {
+	// TODO: add config for CPU
+	// - if integration mode, use half cpu
+	// - if cpu not set, use numCPU
+	// - make timeout coefficient configurable
+	// - make test cpu configurable
+	// - set sensible defaults
+	pool := workerpool.Initialize("mutator")
+	pool.Start()
+
 	var mutants []mutant.Mutant
-	if mu.dryRun {
-		log.Infoln("Running in 'dry-run' mode...")
-	} else {
-		log.Infoln("Executing mutation testing on covered mutants...")
-	}
-	currDir, _ := os.Getwd()
-	rootDir, cl, err := mu.wdManager.Get()
-	if err != nil {
-		panic("error, this is temporary")
-	}
-	defer func(d string) {
-		_ = os.Chdir(d)
-		cl()
-	}(currDir)
-	wrkDir := filepath.Join(rootDir, mu.module.CallingDir)
+	outCh := make(chan mutant.Mutant)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for mut := range mu.mutantStream {
+			ok := checkDone(ctx)
+			if !ok {
+				pool.Stop()
 
-	_ = os.Chdir(rootDir)
-
-	for mut := range mu.mutantStream {
-		ok := checkDone(ctx)
-		if !ok {
-			return results(mutants)
+				break
+			}
+			wg.Add(1)
+			pool.AppendExecutor(mu.jDealer.NewExecutor(mut, outCh, wg))
 		}
-		mut.SetWorkdir(wrkDir)
-		if mut.Status() == mutant.NotCovered || mu.dryRun {
-			mutants = append(mutants, mut)
-			report.Mutant(mut)
+	}()
 
-			continue
-		}
+	go func() {
+		wg.Wait()
+		close(outCh)
+	}()
 
-		if err := mu.apply(mut); err != nil {
-			log.Errorf("failed to apply mutation at %s - %s\n\t%v", mut.Position(), mut.Status(), err)
-
-			continue
-		}
-
-		mut.SetStatus(mu.runTests(mut.Pkg()))
-
-		if err := mu.rollback(mut); err != nil {
-			// What should we do now?
-			log.Errorf("failed to restore mutation at %s - %s\n\t%v", mut.Position(), mut.Status(), err)
-		}
-
-		report.Mutant(mut)
-		mutants = append(mutants, mut)
+	for m := range outCh {
+		mutants = append(mutants, m)
 	}
 
 	return results(mutants)
@@ -304,68 +231,4 @@ func checkDone(ctx context.Context) bool {
 
 func results(m []mutant.Mutant) report.Results {
 	return report.Results{Mutants: m}
-}
-
-func (mu *Mutator) runTests(pkg string) mutant.Status {
-	ctx, cancel := context.WithTimeout(context.Background(), mu.testExecutionTime)
-	defer cancel()
-	cmd := mu.execContext(ctx, "go", mu.getTestArgs(pkg)...)
-
-	rel, err := run(cmd)
-	defer rel()
-
-	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-		return mutant.TimedOut
-	}
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) {
-		return getTestFailedStatus(exitErr.ExitCode())
-	}
-
-	return mutant.Lived
-}
-
-func run(cmd *exec.Cmd) (func(), error) {
-	if err := cmd.Run(); err != nil {
-
-		return func() {}, err
-	}
-
-	return func() {
-		err := cmd.Process.Release()
-		if err != nil {
-			_ = cmd.Process.Kill()
-		}
-	}, nil
-}
-
-func (mu *Mutator) getTestArgs(pkg string) []string {
-	args := []string{"test"}
-	if mu.buildTags != "" {
-		args = append(args, "-tags", mu.buildTags)
-	}
-	args = append(args, "-timeout", (1*time.Second + mu.testExecutionTime).String())
-	args = append(args, "-failfast")
-
-	path := pkg
-	if mu.integrationMode {
-		path = "./..."
-		if mu.module.CallingDir != "." {
-			path = fmt.Sprintf("./%s/...", mu.module.CallingDir)
-		}
-	}
-	args = append(args, path)
-
-	return args
-}
-
-func getTestFailedStatus(exitCode int) mutant.Status {
-	switch exitCode {
-	case 1:
-		return mutant.Killed
-	case 2:
-		return mutant.NotViable
-	default:
-		return mutant.Lived
-	}
 }
