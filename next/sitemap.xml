@@ -26,6 +26,16 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://gremlins.dev/next/usage/ci/docker/</loc>
+         <lastmod>2022-08-17</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://gremlins.dev/next/usage/ci/github-action/</loc>
+         <lastmod>2022-08-17</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://gremlins.dev/next/usage/commands/</loc>
          <lastmod>2022-08-17</lastmod>
          <changefreq>daily</changefreq>
