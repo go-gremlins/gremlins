@@ -23,6 +23,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -62,22 +63,9 @@ func newUnleashCmd(ctx context.Context) (*unleashCmd, error) {
 		Use:     fmt.Sprintf("%s [path]", commandName),
 		Aliases: []string{"run", "r"},
 		Args:    cobra.MaximumNArgs(1),
-		Short:   "Unleash the gremlins.",
-		Long: `'gremlins unleash' unleashes the gremlins and performs mutation testing on 
-a Go module. It works by first gathering the coverage of the test suite and then
-analysing the source code to look for supported mutants.
-
-Unleash only tests covered mutants, since it doesn't make sense to test mutants 
-that no test case is able to catch.
-
-In 'dry-run' mode, unleash only performs the analysis of the source code, but it
-doesn't actually perform the test.
-
-Thresholds are configurable quality gates that make gremlins exit with an error 
-if those values are not met. Efficacy is the percent of KILLED mutants over
-the total KILLED and LIVED mutants. Mutant coverage is the percent of total
-KILLED + LIVED mutants, over the total mutants.`,
-		RunE: runUnleash(ctx),
+		Short:   "Unleash the gremlins",
+		Long:    longExplainer(),
+		RunE:    runUnleash(ctx),
 	}
 
 	if err := setFlagsOnCmd(cmd); err != nil {
@@ -85,6 +73,25 @@ KILLED + LIVED mutants, over the total mutants.`,
 	}
 
 	return &unleashCmd{cmd: cmd}, nil
+}
+
+func longExplainer() string {
+	return heredoc.Doc(`
+		Unleashes the gremlins and performs mutation testing on a Go module. It works by
+		first gathering the coverage of the test suite and then analysing the source
+		code to look for supported mutants.
+
+		Unleash only tests covered mutants, since it doesn't make sense to test mutants 
+		that no test case is able to catch.
+
+		In 'dry-run' mode, unleash only performs the analysis of the source code, but it
+		doesn't actually perform the test.
+
+		Thresholds are configurable quality gates that make gremlins exit with an error 
+		if those values are not met. Efficacy is the percent of KILLED mutants over
+		the total KILLED and LIVED mutants. Mutant coverage is the percent of total
+		KILLED + LIVED mutants, over the total mutants.
+	`)
 }
 
 func runUnleash(ctx context.Context) func(cmd *cobra.Command, args []string) error {
