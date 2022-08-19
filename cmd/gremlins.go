@@ -21,6 +21,7 @@ import (
 	"errors"
 	"os"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/spf13/cobra"
 
 	"github.com/go-gremlins/gremlins/cmd/internal/flags"
@@ -68,11 +69,9 @@ func newRootCmd(ctx context.Context, version string) (*gremlinsCmd, error) {
 		Hidden:        true,
 		SilenceUsage:  true,
 		SilenceErrors: true,
-		Use:           "gremlins <command> [arguments]",
-		Short: `Gremlins is a mutation testing tool for Go projects, made with love by k3rn31 
-and friends.
-`,
-		Version: version,
+		Use:           "gremlins",
+		Short:         shortExplainer(),
+		Version:       version,
 	}
 
 	uc, err := newUnleashCmd(ctx)
@@ -90,4 +89,11 @@ and friends.
 	return &gremlinsCmd{
 		cmd: cmd,
 	}, nil
+}
+
+func shortExplainer() string {
+	return heredoc.Doc(`
+		Gremlins is a mutation testing tool for Go projects, made with love by k3rn31 
+		and friends.
+	`)
 }
