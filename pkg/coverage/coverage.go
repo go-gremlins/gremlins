@@ -144,10 +144,10 @@ func (c *Coverage) executeCoverage() (time.Duration, error) {
 
 	args = append(args, "-cover", "-coverprofile", c.filePath(), c.scanPath())
 	cmd := c.cmdContext("go", args...)
-	cmd.Stderr = os.Stderr
 
 	start := time.Now()
-	if err := cmd.Run(); err != nil {
+	if out, err := cmd.CombinedOutput(); err != nil {
+		log.Infof("\n%s\n", string(out))
 		return 0, err
 	}
 
