@@ -148,6 +148,7 @@ func (c *Coverage) executeCoverage() (time.Duration, error) {
 	start := time.Now()
 	if out, err := cmd.CombinedOutput(); err != nil {
 		log.Infof("\n%s\n", string(out))
+
 		return 0, err
 	}
 
