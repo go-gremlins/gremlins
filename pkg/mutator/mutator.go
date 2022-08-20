@@ -181,12 +181,6 @@ func (mu *Mutator) mutationStatus(pos token.Position) mutant.Status {
 }
 
 func (mu *Mutator) executeTests(ctx context.Context) report.Results {
-	// TODO: add config for CPU
-	// - if integration mode, use half cpu
-	// - if cpu not set, use numCPU
-	// - make timeout coefficient configurable
-	// - make test cpu configurable
-	// - set sensible defaults
 	pool := workerpool.Initialize("mutator")
 	pool.Start()
 
