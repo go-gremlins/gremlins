@@ -4,7 +4,6 @@ linters:
     - asciicheck
     - containedctx
     - decorder
-    - dupl
     - dogsled
     - durationcheck
     - errname
