@@ -93,6 +93,11 @@ func TestTypeString(t *testing.T) {
 			mutantType: mutant.IncrementDecrement,
 		},
 		{
+			name:       "INVERT_LOGICAL",
+			expected:   "INVERT_LOGICAL",
+			mutantType: mutant.InvertLogical,
+		},
+		{
 			name:       "INVERT_NEGATIVES",
 			expected:   "INVERT_NEGATIVES",
 			mutantType: mutant.InvertNegatives,

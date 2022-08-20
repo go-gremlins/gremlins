@@ -46,6 +46,10 @@ func TestMutantDefaultStatus(t *testing.T) {
 			expected:   true,
 		},
 		{
+			mutantType: mutant.InvertLogical,
+			expected:   false,
+		},
+		{
 			mutantType: mutant.InvertNegatives,
 			expected:   true,
 		},

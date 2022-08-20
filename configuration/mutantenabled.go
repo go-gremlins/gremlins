@@ -23,6 +23,7 @@ var mutationEnabled = map[mutant.Type]bool{
 	mutant.ConditionalsBoundary: true,
 	mutant.ConditionalsNegation: true,
 	mutant.IncrementDecrement:   true,
+	mutant.InvertLogical:        false,
 	mutant.InvertNegatives:      true,
 }
 
