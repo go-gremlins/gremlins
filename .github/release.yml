@@ -3,6 +3,7 @@ changelog:
     labels:
       - c/chore
       - c/docs
+      - c/refactoring
   categories:
     - title: New Features and Enhancements 🎉
       labels:

@@ -1,6 +1,8 @@
 name: Documentation
 
 on:
+  push:
+    branches: [ 'main' ]
   workflow_call:
     inputs:
       version:
@@ -15,7 +17,7 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     env:
-      GR_VERSION_TAG: ${{ inputs.version }}
+      GR_VERSION_TAG: ${{ inputs.version || 'next' }}
     if: ${{ github.event_name != 'pull_request' }}
     steps:
       - uses: actions/checkout@v3

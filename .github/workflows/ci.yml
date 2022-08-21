@@ -1,9 +1,6 @@
 name: CI
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
+on: [ push, pull_request ]
 
 jobs:
   lint:
@@ -62,11 +59,4 @@ jobs:
           coverage-reports: coverage.out
           language: go
           force-coverage-parser: go
-  documentation:
-    name: Build documentation
-    if: ${{ github.event_name != 'pull_request' }}
-    needs: test
-    uses: ./.github/workflows/docs.yml
-    with:
-      version: "next"
 
