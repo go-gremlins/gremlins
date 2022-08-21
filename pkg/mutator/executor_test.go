@@ -405,21 +405,21 @@ func TestCoverageProcessSuccess(_ *testing.T) {
 	if os.Getenv("GO_TEST_PROCESS") != "1" {
 		return
 	}
-	os.Exit(0)
+	os.Exit(0) // skipcq: RVV-A0003
 }
 
 func TestProcessTestsFailure(_ *testing.T) {
 	if os.Getenv("GO_TEST_PROCESS") != "1" {
 		return
 	}
-	os.Exit(1)
+	os.Exit(1) // skipcq: RVV-A0003
 }
 
 func TestProcessBuildFailure(_ *testing.T) {
 	if os.Getenv("GO_TEST_PROCESS") != "1" {
 		return
 	}
-	os.Exit(2)
+	os.Exit(2) // skipcq: RVV-A0003
 }
 
 func fakeExecCommandSuccess(ctx context.Context, command string, args ...string) *exec.Cmd {
