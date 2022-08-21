@@ -59,4 +59,3 @@ jobs:
           coverage-reports: coverage.out
           language: go
           force-coverage-parser: go
-
