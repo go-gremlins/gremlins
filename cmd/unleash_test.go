@@ -116,7 +116,7 @@ func TestUnleash(t *testing.T) {
 	}
 
 	// test for MutantTypes flags
-	for _, mt := range mutant.MutantTypes {
+	for _, mt := range mutant.Types {
 		s := strings.ToLower(mt.String())
 		mtf := flags.Lookup(s)
 		if mtf == nil {

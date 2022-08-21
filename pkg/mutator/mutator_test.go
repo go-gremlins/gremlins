@@ -284,7 +284,7 @@ func TestMutations(t *testing.T) {
 
 func TestMutantSkipDisabled(t *testing.T) {
 	t.Parallel()
-	for _, mt := range mutant.MutantTypes {
+	for _, mt := range mutant.Types {
 		mt := mt
 		t.Run(mt.String(), func(t *testing.T) {
 			t.Parallel()
