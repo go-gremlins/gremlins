@@ -25,10 +25,11 @@ import (
 
 func TestMutantDefaultStatus(t *testing.T) {
 	t.Parallel()
-	testCases := []struct {
+	type testCase struct {
 		mutantType mutant.Type
 		expected   bool
-	}{
+	}
+	testCases := []testCase{
 		{
 			mutantType: mutant.ArithmeticBase,
 			expected:   true,
@@ -66,6 +67,27 @@ func TestMutantDefaultStatus(t *testing.T) {
 			}
 		})
 	}
+
+	// This should prevent the behaviour described in #142
+	t.Run("all MutantTypes are testes for default", func(t *testing.T) {
+		contains := func(testedMT []testCase, mt mutant.Type) bool {
+			for _, c := range testedMT {
+				if mt == c.mutantType {
+					return true
+				}
+			}
+
+			return false
+		}
+
+		for _, mt := range mutant.Types {
+			if contains(testCases, mt) {
+				continue
+			}
+
+			t.Errorf("MutantTypes contains %q which is not tested for default", mt)
+		}
+	})
 }
 
 func enabled(b bool) string {
