@@ -77,8 +77,8 @@ const (
 	InvertNegatives
 )
 
-// MutantTypes allows to iterate over Type.
-var MutantTypes = []Type{
+// Types allows to iterate over Type.
+var Types = []Type{
 	ArithmeticBase,
 	ConditionalsBoundary,
 	ConditionalsNegation,

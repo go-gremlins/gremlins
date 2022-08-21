@@ -205,7 +205,7 @@ func setFlagsOnCmd(cmd *cobra.Command) error {
 }
 
 func setMutantTypeFlags(cmd *cobra.Command) error {
-	for _, mt := range mutant.MutantTypes {
+	for _, mt := range mutant.Types {
 		name := mt.String()
 		usage := fmt.Sprintf("enable %q mutants", name)
 		param := strings.ReplaceAll(name, "_", "-")

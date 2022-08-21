@@ -48,7 +48,7 @@ func viperSet(set map[string]any) {
 
 func viperReset() {
 	configuration.Reset()
-	for _, mt := range mutant.MutantTypes {
+	for _, mt := range mutant.Types {
 		configuration.Set(configuration.MutantTypeEnabledKey(mt), true)
 	}
 	viperMutex.Unlock()
