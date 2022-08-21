@@ -73,6 +73,7 @@ const (
 	ConditionalsBoundary
 	ConditionalsNegation
 	IncrementDecrement
+	InvertLogical
 	InvertNegatives
 )
 
@@ -82,6 +83,7 @@ var MutantTypes = []Type{
 	ConditionalsBoundary,
 	ConditionalsNegation,
 	IncrementDecrement,
+	InvertLogical,
 	InvertNegatives,
 }
 
@@ -93,6 +95,8 @@ func (mt Type) String() string {
 		return "CONDITIONALS_NEGATION"
 	case IncrementDecrement:
 		return "INCREMENT_DECREMENT"
+	case InvertLogical:
+		return "INVERT_LOGICAL"
 	case InvertNegatives:
 		return "INVERT_NEGATIVES"
 	case ArithmeticBase:

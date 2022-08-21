@@ -209,6 +209,23 @@ func TestMutations(t *testing.T) {
 			covResult:  notCoveredPosition("testdata/fixtures/rem_go"),
 			mutStatus:  mutant.NotCovered,
 		},
+		// INVERT_LOGICAL
+		{
+			name:       "it recognizes INVERT_LOGICAL with LAND",
+			fixture:    "testdata/fixtures/land_go",
+			mutantType: mutant.InvertLogical,
+			token:      token.LAND,
+			covResult:  notCoveredPosition("testdata/fixtures/land_go"),
+			mutStatus:  mutant.NotCovered,
+		},
+		{
+			name:       "it recognizes INVERT_LOGICAL with LOR",
+			fixture:    "testdata/fixtures/lor_go",
+			mutantType: mutant.InvertLogical,
+			token:      token.LOR,
+			covResult:  notCoveredPosition("testdata/fixtures/lor_go"),
+			mutStatus:  mutant.NotCovered,
+		},
 		// Common behaviours
 		{
 			name:       "it works with recursion",

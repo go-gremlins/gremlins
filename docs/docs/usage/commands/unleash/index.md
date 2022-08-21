@@ -189,6 +189,16 @@ Enables/disables the [INVERT NEGATIVES](../../mutations/invert_negatives.md) mut
 gremlins unleash --invert_negatives=false
 ```
 
+### Invert logical operators
+
+:material-flag: `--invert-logical` · :material-sign-direction: Default: `false`
+
+Enables/disables the [INVERT LOGICAL](../../mutations/invert_logical.md) mutant type.
+
+```shell
+gremlins unleash --invert_logical=true
+```
+
 ### Workers
 
 :material-flag: `--workers` · :material-sign-direction: Default: `0`

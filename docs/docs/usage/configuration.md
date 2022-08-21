@@ -68,6 +68,8 @@ mutants:
     enabled: true
   invert-negatives:
     enabled: true
+  invert-logical:
+    enabled: false
 
 ```
 

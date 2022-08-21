@@ -25,19 +25,21 @@ import (
 // TokenMutantType is the mapping from each token.Token and all the
 // mutant.Type that can be applied to it.
 var TokenMutantType = map[token.Token][]mutant.Type{
-	token.SUB: {mutant.InvertNegatives, mutant.ArithmeticBase},
-	token.ADD: {mutant.ArithmeticBase},
-	token.MUL: {mutant.ArithmeticBase},
-	token.QUO: {mutant.ArithmeticBase},
-	token.REM: {mutant.ArithmeticBase},
-	token.EQL: {mutant.ConditionalsNegation},
-	token.NEQ: {mutant.ConditionalsNegation},
-	token.GTR: {mutant.ConditionalsBoundary, mutant.ConditionalsNegation},
-	token.LSS: {mutant.ConditionalsBoundary, mutant.ConditionalsNegation},
-	token.GEQ: {mutant.ConditionalsBoundary, mutant.ConditionalsNegation},
-	token.LEQ: {mutant.ConditionalsBoundary, mutant.ConditionalsNegation},
-	token.INC: {mutant.IncrementDecrement},
-	token.DEC: {mutant.IncrementDecrement},
+	token.SUB:  {mutant.InvertNegatives, mutant.ArithmeticBase},
+	token.ADD:  {mutant.ArithmeticBase},
+	token.MUL:  {mutant.ArithmeticBase},
+	token.QUO:  {mutant.ArithmeticBase},
+	token.REM:  {mutant.ArithmeticBase},
+	token.EQL:  {mutant.ConditionalsNegation},
+	token.NEQ:  {mutant.ConditionalsNegation},
+	token.GTR:  {mutant.ConditionalsBoundary, mutant.ConditionalsNegation},
+	token.LSS:  {mutant.ConditionalsBoundary, mutant.ConditionalsNegation},
+	token.GEQ:  {mutant.ConditionalsBoundary, mutant.ConditionalsNegation},
+	token.LEQ:  {mutant.ConditionalsBoundary, mutant.ConditionalsNegation},
+	token.INC:  {mutant.IncrementDecrement},
+	token.DEC:  {mutant.IncrementDecrement},
+	token.LAND: {mutant.InvertLogical},
+	token.LOR:  {mutant.InvertLogical},
 }
 
 var tokenMutations = map[mutant.Type]map[token.Token]token.Token{
@@ -65,6 +67,10 @@ var tokenMutations = map[mutant.Type]map[token.Token]token.Token{
 	mutant.IncrementDecrement: {
 		token.INC: token.DEC,
 		token.DEC: token.INC,
+	},
+	mutant.InvertLogical: {
+		token.LAND: token.LOR,
+		token.LOR:  token.LAND,
 	},
 	mutant.InvertNegatives: {
 		token.SUB: token.ADD,
