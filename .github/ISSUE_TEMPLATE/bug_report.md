@@ -11,7 +11,9 @@ assignees: k3rn31
 
 ### Bug Description
 
+<!--
 A clear and concise description of what the bug is.
+-->
 
 ### To Reproduce
 
@@ -23,15 +25,15 @@ Steps to reproduce the behavior:
 
 ### Found behaviour
 
-A description of the problem found
+<!-- A description of the problem found -->
 
 ### Expected behaviour
 
-A clear and concise description of what you expected to happen.
+<!-- A clear and concise description of what you expected to happen. -->
 
 ### Screenshots
 
-If applicable, add screenshots to help explain your problem.
+<!-- If applicable, add screenshots to help explain your problem, otherwise remove this section. -->
 
 ### Operating System
 
@@ -39,4 +41,5 @@ If applicable, add screenshots to help explain your problem.
 - Version [e.g. v0.1.0]
 
 ### Additional Context
-Add any other context about the problem here.
+
+<!-- Add any other context about the problem here, otherwise remove this section. -->
