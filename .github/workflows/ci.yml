@@ -61,7 +61,7 @@ jobs:
           force-coverage-parser: go
   documentation:
     name: Build documentation
-    if: ${{ github.event_name != 'pull_request' }}
+    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
     needs: test
     uses: ./.github/workflows/docs.yml
     with:
