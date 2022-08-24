@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"sync"
 	"testing"
 
@@ -31,69 +32,12 @@ import (
 	"github.com/go-gremlins/gremlins/internal/engine/workdir"
 )
 
-func TestLinkFolder(t *testing.T) {
-	srcDir := t.TempDir()
-	populateSrcDir(t, srcDir, 3)
-	dstDir := t.TempDir()
-
-	dealer := workdir.NewCachedDealer(dstDir, srcDir, workdir.WithDockerRootFolder(dstDir))
-
-	dstDir, err := dealer.Get("test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer dealer.Clean()
-
-	err = filepath.Walk(srcDir, func(path string, srcFileInfo fs.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		relPath, err := filepath.Rel(srcDir, path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if relPath == "." {
-			return nil
-		}
-		dstPath := filepath.Join(dstDir, relPath)
-		dstFileInfo, err := os.Lstat(dstPath)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if srcFileInfo.Mode().IsRegular() {
-			sameFile := os.SameFile(dstFileInfo, srcFileInfo)
-			if !sameFile {
-				t.Error("expected file to be the same, got different file")
-			}
-		}
-		if !cmp.Equal(dstFileInfo.Name(), srcFileInfo.Name()) {
-			t.Errorf("expected Name to be %v, got %v", srcFileInfo.Name(), dstFileInfo.Name())
-		}
-		if !cmp.Equal(dstFileInfo.Mode(), srcFileInfo.Mode()) {
-			t.Errorf(cmp.Diff(srcFileInfo.Mode(), dstFileInfo.Mode()))
-		}
-
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestCopyFolder(t *testing.T) {
 	srcDir := t.TempDir()
 	populateSrcDir(t, srcDir, 3)
 	wdDir := t.TempDir()
 
-	dockerRootDir := t.TempDir()
-	dockerEnv := filepath.Join(dockerRootDir, ".dockerenv")
-	err := os.WriteFile(dockerEnv, []byte{}, 0400)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	dealer := workdir.NewCachedDealer(wdDir, srcDir, workdir.WithDockerRootFolder(dockerRootDir))
+	dealer := workdir.NewCachedDealer(wdDir, srcDir)
 	defer dealer.Clean()
 
 	dstDir, err := dealer.Get("test")
@@ -101,7 +45,16 @@ func TestCopyFolder(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = filepath.Walk(srcDir, func(path string, srcFileInfo fs.FileInfo, err error) error {
+	err = filepath.Walk(srcDir, checkForDifferentFile(t, srcDir, dstDir))
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func checkForDifferentFile(t *testing.T, srcDir string, dstDir string) func(path string, srcFileInfo fs.FileInfo, err error) error {
+	t.Helper()
+
+	return func(path string, srcFileInfo fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -131,9 +84,6 @@ func TestCopyFolder(t *testing.T) {
 		}
 
 		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
 	}
 }
 
@@ -143,7 +93,7 @@ func TestCachesFolder(t *testing.T) {
 		populateSrcDir(t, srcDir, 0)
 		dstDir := t.TempDir()
 
-		mngr := workdir.NewCachedDealer(dstDir, srcDir, workdir.WithDockerRootFolder(dstDir))
+		mngr := workdir.NewCachedDealer(dstDir, srcDir)
 		defer mngr.Clean()
 
 		firstDir, err := mngr.Get("worker-1")
@@ -174,7 +124,7 @@ func TestCachesFolder(t *testing.T) {
 		populateSrcDir(t, srcDir, 0)
 		dstDir := t.TempDir()
 
-		dealer := workdir.NewCachedDealer(dstDir, srcDir, workdir.WithDockerRootFolder(dstDir))
+		dealer := workdir.NewCachedDealer(dstDir, srcDir)
 
 		firstDir, err := dealer.Get("worker-1")
 		if err != nil {
@@ -198,7 +148,7 @@ func TestCachesFolder(t *testing.T) {
 		populateSrcDir(t, srcDir, 0)
 		dstDir := t.TempDir()
 
-		dealer := workdir.NewCachedDealer(dstDir, srcDir, workdir.WithDockerRootFolder(dstDir))
+		dealer := workdir.NewCachedDealer(dstDir, srcDir)
 		defer dealer.Clean()
 
 		foldersLock := sync.Mutex{}
@@ -295,7 +245,46 @@ func TestErrors(t *testing.T) {
 	})
 }
 
-func populateSrcDir(t *testing.T, srcDir string, depth int) {
+func BenchmarkDealerGet(b *testing.B) {
+	srcDir := b.TempDir()
+	populateSrcDir(b, srcDir, 5)
+
+	var wIdx = -1
+	var workers = []int{1, 2, 3, 4, 5, 6, 7, 8}
+
+	getNextWorker := func() string {
+		wIdx++
+		if wIdx > 7 {
+			wIdx = 0
+		}
+
+		return "worker-" + strconv.Itoa(workers[wIdx])
+	}
+
+	for i := 0; i < b.N; i++ {
+		runTest(b, srcDir, getNextWorker())
+	}
+}
+
+func runTest(b *testing.B, srcDir, workerName string) {
+	b.Helper()
+	dstDir := b.TempDir()
+
+	mngr := workdir.NewCachedDealer(dstDir, srcDir)
+	defer mngr.Clean()
+
+	_, err := mngr.Get(workerName)
+	if err != nil {
+		b.Fatal(err)
+	}
+}
+
+type testT interface {
+	Helper()
+	Fatal(args ...any)
+}
+
+func populateSrcDir(t testT, srcDir string, depth int) {
 	t.Helper()
 	if depth == 0 {
 		return
@@ -312,9 +301,15 @@ func populateSrcDir(t *testing.T, srcDir string, depth int) {
 
 	for i := 0; i < 10; i++ {
 		fileName := filepath.Join(srcDir, fmt.Sprintf("srcfile-%d", i))
-		err := os.WriteFile(fileName, []byte{}, 0400)
+		err := os.WriteFile(fileName, getFileBytes(), 0400)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
+}
+
+func getFileBytes() []byte {
+	b, _ := os.ReadFile("testdata/filetocopy_go")
+
+	return b
 }

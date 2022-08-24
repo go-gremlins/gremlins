@@ -101,14 +101,6 @@ func (m *TokenMutator) Pkg() string {
 // stores the original file in the TokenMutator in order to allow
 // Rollback to put it back later.
 //
-// To apply the modification, it first removes the source code file which
-// contains the mutant position, then it writes it back with the mutation
-// applied.
-// The removal of the file is necessary because it might be a hard link
-// to the original file, and, if it was modified in place, it would modify
-// the original. Removing the link and re-writing the file preserves the
-// original to be modified.
-//
 // Apply also puts back the original Token after the mutated file write.
 // This is done in order to facilitate the atomicity of the operation,
 // avoiding locking in a method and unlocking in another.
@@ -139,13 +131,6 @@ func (m *TokenMutator) Apply() error {
 func (m *TokenMutator) writeMutatedFile(filename string) error {
 	w := &bytes.Buffer{}
 	err := printer.Fprint(w, m.fs, m.file)
-	if err != nil {
-		return err
-	}
-
-	// We need to remove the file before writing because it can be
-	// a hard link to the original file.
-	err = os.RemoveAll(filename)
 	if err != nil {
 		return err
 	}
@@ -190,10 +175,6 @@ func cachedLock(filename string) (*sync.Mutex, bool) {
 
 // Rollback puts back the original file after the test and cleans up the
 // TokenMutator to free memory.
-//
-// It isn't necessary to remove the file before writing as it is done in
-// Apply, because in this case, we can be sure the file is not a hard link,
-// since Apply already made it a concrete one.
 func (m *TokenMutator) Rollback() error {
 	defer m.resetOrigFile()
 	filename := filepath.Join(m.workDir, m.Position().Filename)
