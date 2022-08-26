@@ -22,9 +22,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-gremlins/gremlins/internal/mutant"
-
 	"github.com/go-gremlins/gremlins/internal/configuration"
+	"github.com/go-gremlins/gremlins/internal/mutator"
 )
 
 func TestUnleash(t *testing.T) {
@@ -117,7 +116,7 @@ func TestUnleash(t *testing.T) {
 	}
 
 	// test for MutantTypes flags
-	for _, mt := range mutant.Types {
+	for _, mt := range mutator.Types {
 		s := strings.ToLower(mt.String())
 		mtf := flags.Lookup(s)
 		if mtf == nil {

@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package mutator
+package engine
 
 import (
 	"context"
@@ -26,10 +26,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-gremlins/gremlins/internal/engine/workdir"
+	"github.com/go-gremlins/gremlins/internal/engine/workerpool"
 	"github.com/go-gremlins/gremlins/internal/log"
-	"github.com/go-gremlins/gremlins/internal/mutant"
-	"github.com/go-gremlins/gremlins/internal/mutator/workdir"
-	"github.com/go-gremlins/gremlins/internal/mutator/workerpool"
+	"github.com/go-gremlins/gremlins/internal/mutator"
 	"github.com/go-gremlins/gremlins/internal/report"
 
 	"github.com/go-gremlins/gremlins/internal/configuration"
@@ -42,7 +42,7 @@ const DefaultTimeoutCoefficient = 3
 
 // ExecutorDealer is the initializer for new workerpool.Executor.
 type ExecutorDealer interface {
-	NewExecutor(mut mutant.Mutant, outCh chan<- mutant.Mutant, wg *sync.WaitGroup) workerpool.Executor
+	NewExecutor(mut mutator.Mutator, outCh chan<- mutator.Mutator, wg *sync.WaitGroup) workerpool.Executor
 }
 
 // MutantExecutorDealer is a ExecutorDealer for the initialisation of a mutantExecutor.
@@ -50,7 +50,7 @@ type ExecutorDealer interface {
 // By default, it sets uses exec.Command to perform the tests on the source
 // code. This can be overridden, for example in tests.
 //
-// The apply and rollback functions are wrappers around the TokenMutant apply and
+// The apply and rollback functions are wrappers around the TokenMutator apply and
 // rollback. These can be overridden with nop functions in tests. Not an
 // ideal setup. In the future we can think of a better way to handle this.
 type MutantExecutorDealer struct {
@@ -111,11 +111,11 @@ func NewExecutorDealer(mod gomodule.GoModule, wdd workdir.Dealer, elapsed time.D
 	return &jd
 }
 
-// NewExecutor returns a new workerpool.Executor for the given mutant.Mutant.
-// It gets an output channel of mutant.Mutant and a sync.WaitGroup. The channel
+// NewExecutor returns a new workerpool.Executor for the given mutator.Mutator.
+// It gets an output channel of mutator.Mutator and a sync.WaitGroup. The channel
 // will stream the results of the executor, and the wait group will be done when the
 // executor is complete.
-func (m MutantExecutorDealer) NewExecutor(mut mutant.Mutant, outCh chan<- mutant.Mutant, wg *sync.WaitGroup) workerpool.Executor {
+func (m MutantExecutorDealer) NewExecutor(mut mutator.Mutator, outCh chan<- mutator.Mutator, wg *sync.WaitGroup) workerpool.Executor {
 	mj := mutantExecutor{
 		mutant:            mut,
 		outCh:             outCh,
@@ -136,9 +136,9 @@ func (m MutantExecutorDealer) NewExecutor(mut mutant.Mutant, outCh chan<- mutant
 type execContext = func(ctx context.Context, name string, args ...string) *exec.Cmd
 
 type mutantExecutor struct {
-	mutant            mutant.Mutant
+	mutant            mutator.Mutator
 	wdDealer          workdir.Dealer
-	outCh             chan<- mutant.Mutant
+	outCh             chan<- mutator.Mutator
 	wg                *sync.WaitGroup
 	execContext       execContext
 	module            gomodule.GoModule
@@ -151,11 +151,11 @@ type mutantExecutor struct {
 
 // Start is the implementation of the workerpool.Executor definition and is the
 // method responsible for performing the actual mutation testing.
-// The executor runs on its mutant.Mutant.
+// The executor runs on its mutator.Mutator.
 // If it is RUNNABLE, and it is not in dry-run mode, it will apply the mutation,
-// run the tests and mark the TokenMutant as either KILLED or LIVED depending
-// on the result. If the tests pass, it means the TokenMutant survived, so it
-// will be LIVED, if the tests fail, the TokenMutant will be KILLED.
+// run the tests and mark the TokenMutator as either KILLED or LIVED depending
+// on the result. If the tests pass, it means the TokenMutator survived, so it
+// will be LIVED, if the tests fail, the TokenMutator will be KILLED.
 // The timeout of the test is managed outside the run of the test, using
 // a context with timeout. This is done because the Go test command doesn't
 // make it easy to distinguish failures from timeouts.
@@ -175,7 +175,7 @@ func (m *mutantExecutor) Start(w *workerpool.Worker) {
 	workingDir := filepath.Join(rootDir, m.module.CallingDir)
 	m.mutant.SetWorkdir(workingDir)
 
-	if m.mutant.Status() == mutant.NotCovered || m.dryRun {
+	if m.mutant.Status() == mutator.NotCovered || m.dryRun {
 		m.outCh <- m.mutant
 		report.Mutant(m.mutant)
 
@@ -199,7 +199,7 @@ func (m *mutantExecutor) Start(w *workerpool.Worker) {
 	report.Mutant(m.mutant)
 }
 
-func (m *mutantExecutor) runTests(pkg string) mutant.Status {
+func (m *mutantExecutor) runTests(pkg string) mutator.Status {
 	ctx, cancel := context.WithTimeout(context.Background(), m.testExecutionTime)
 	defer cancel()
 	cmd := m.execContext(ctx, "go", m.getTestArgs(pkg)...)
@@ -208,14 +208,14 @@ func (m *mutantExecutor) runTests(pkg string) mutant.Status {
 	defer rel()
 
 	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-		return mutant.TimedOut
+		return mutator.TimedOut
 	}
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
 		return getTestFailedStatus(exitErr.ExitCode())
 	}
 
-	return mutant.Lived
+	return mutator.Lived
 }
 
 func (m *mutantExecutor) getTestArgs(pkg string) []string {
@@ -259,13 +259,13 @@ func run(cmd *exec.Cmd) (func(), error) {
 	}, nil
 }
 
-func getTestFailedStatus(exitCode int) mutant.Status {
+func getTestFailedStatus(exitCode int) mutator.Status {
 	switch exitCode {
 	case 1:
-		return mutant.Killed
+		return mutator.Killed
 	case 2:
-		return mutant.NotViable
+		return mutator.NotViable
 	default:
-		return mutant.Lived
+		return mutator.Lived
 	}
 }

@@ -21,15 +21,14 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/go-gremlins/gremlins/internal/mutant"
-	"github.com/go-gremlins/gremlins/internal/mutator/workerpool"
-
 	"github.com/go-gremlins/gremlins/internal/configuration"
+	"github.com/go-gremlins/gremlins/internal/engine/workerpool"
+	"github.com/go-gremlins/gremlins/internal/mutator"
 )
 
 type ExecutorMock struct {
-	mutant mutant.Mutant
-	outCh  chan<- mutant.Mutant
+	mutant mutator.Mutator
+	outCh  chan<- mutator.Mutator
 }
 
 func (tj *ExecutorMock) Start(w *workerpool.Worker) {
@@ -42,7 +41,7 @@ func (tj *ExecutorMock) Start(w *workerpool.Worker) {
 
 func TestWorker(t *testing.T) {
 	executorQueue := make(chan workerpool.Executor)
-	outCh := make(chan mutant.Mutant)
+	outCh := make(chan mutator.Mutator)
 
 	worker := workerpool.NewWorker(1, "test")
 	worker.Start(executorQueue)
@@ -74,7 +73,7 @@ func TestPool(t *testing.T) {
 		configuration.Set(configuration.UnleashWorkersKey, 1)
 		defer configuration.Reset()
 
-		outCh := make(chan mutant.Mutant)
+		outCh := make(chan mutator.Mutator)
 
 		pool := workerpool.Initialize("test")
 		pool.Start()
@@ -161,19 +160,19 @@ type fakeMutant struct {
 	id   int
 }
 
-func (fakeMutant) Type() mutant.Type {
+func (fakeMutant) Type() mutator.Type {
 	panic("not used in test")
 }
 
-func (fakeMutant) SetType(_ mutant.Type) {
+func (fakeMutant) SetType(_ mutator.Type) {
 	panic("not used in test")
 }
 
-func (fakeMutant) Status() mutant.Status {
+func (fakeMutant) Status() mutator.Status {
 	panic("not used in test")
 }
 
-func (fakeMutant) SetStatus(_ mutant.Status) {
+func (fakeMutant) SetStatus(_ mutator.Status) {
 	panic("not used in test")
 }
 

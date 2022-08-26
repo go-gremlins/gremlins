@@ -25,7 +25,7 @@ import (
 	"github.com/hako/durafmt"
 
 	"github.com/go-gremlins/gremlins/internal/log"
-	"github.com/go-gremlins/gremlins/internal/mutant"
+	"github.com/go-gremlins/gremlins/internal/mutator"
 	"github.com/go-gremlins/gremlins/internal/report/internal"
 
 	"github.com/go-gremlins/gremlins/internal/configuration"
@@ -40,11 +40,11 @@ var (
 	fgHiYellow = color.New(color.FgYellow).SprintFunc()
 )
 
-// Results contains the list of mutant.Mutant to be reported
+// Results contains the list of mutator.Mutator to be reported
 // and the time it took to discover and test them.
 type Results struct {
 	Module  string
-	Mutants []mutant.Mutant
+	Mutants []mutator.Mutator
 	Elapsed time.Duration
 }
 
@@ -84,17 +84,17 @@ func newReport(results Results) (*reportStatus, bool) {
 		})
 
 		switch m.Status() {
-		case mutant.Killed:
+		case mutator.Killed:
 			rep.killed++
-		case mutant.Lived:
+		case mutator.Lived:
 			rep.lived++
-		case mutant.NotCovered:
+		case mutator.NotCovered:
 			rep.notCovered++
-		case mutant.TimedOut:
+		case mutator.TimedOut:
 			rep.timedOut++
-		case mutant.NotViable:
+		case mutator.NotViable:
 			rep.notViable++
-		case mutant.Runnable:
+		case mutator.Runnable:
 			rep.runnable++
 		}
 	}
@@ -164,7 +164,7 @@ func (r *reportStatus) dryRunReport() {
 	log.Infoln("")
 	log.Infof("Dry run completed in %s\n", r.elapsed.String())
 	log.Infof("Runnable: %s, Not covered: %s\n", runnable, notCovered)
-	log.Infof("Mutant coverage: %.2f%%\n", r.mCovered)
+	log.Infof("Mutator coverage: %.2f%%\n", r.mCovered)
 }
 
 func (r *reportStatus) fullRunReport() {
@@ -178,7 +178,7 @@ func (r *reportStatus) fullRunReport() {
 	log.Infof("Killed: %s, Lived: %s, Not covered: %s\n", killed, lived, notCovered)
 	log.Infof("Timed out: %s, Not viable: %s\n", timedOut, notViable)
 	log.Infof("Test efficacy: %.2f%%\n", r.tEfficacy)
-	log.Infof("Mutant coverage: %.2f%%\n", r.mCovered)
+	log.Infof("Mutator coverage: %.2f%%\n", r.mCovered)
 }
 
 func (r *reportStatus) assess(tEfficacy, rCoverage float64) error {
@@ -220,29 +220,29 @@ func Do(results Results) error {
 	return rep.assess(rep.tEfficacy, rep.mCovered)
 }
 
-// Mutant logs a mutant.Mutant.
-// It reports the mutant.Status, the mutant.Type and its position.
+// Mutant logs a mutator.Mutator.
+// It reports the mutant.Status, the mutator.Type and its position.
 // This function uses the log package in gremlins to write to the
 // chosen io.Writer, so it is necessary to call log.Init before
 // the report generation.
-func Mutant(m mutant.Mutant) {
+func Mutant(m mutator.Mutator) {
 	status := m.Status().String()
 	switch m.Status() {
-	case mutant.Killed, mutant.Runnable:
+	case mutator.Killed, mutator.Runnable:
 		status = fgHiGreen(m.Status())
-	case mutant.Lived:
+	case mutator.Lived:
 		status = fgRed(m.Status())
-	case mutant.NotCovered:
+	case mutator.NotCovered:
 		status = fgHiYellow(m.Status())
-	case mutant.TimedOut:
+	case mutator.TimedOut:
 		status = fgGreen(m.Status())
-	case mutant.NotViable:
+	case mutator.NotViable:
 		status = fgHiBlack(m.Status())
 	}
 	log.Infof("%s%s %s at %s\n", padding(m.Status()), status, m.Type(), m.Position())
 }
 
-func padding(s mutant.Status) string {
+func padding(s mutator.Status) string {
 	var pad string
 	padLen := 12 - len(s.String())
 	for i := 0; i < padLen; i++ {

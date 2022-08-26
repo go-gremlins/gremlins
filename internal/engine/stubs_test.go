@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package mutator_test
+package engine_test
 
 import (
 	"errors"
@@ -26,11 +26,10 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/go-gremlins/gremlins/internal/mutant"
-	"github.com/go-gremlins/gremlins/internal/mutator/workerpool"
-
 	"github.com/go-gremlins/gremlins/internal/configuration"
+	"github.com/go-gremlins/gremlins/internal/engine/workerpool"
 	"github.com/go-gremlins/gremlins/internal/gomodule"
+	"github.com/go-gremlins/gremlins/internal/mutator"
 )
 
 var viperMutex sync.RWMutex
@@ -49,7 +48,7 @@ func viperSet(set map[string]any) {
 
 func viperReset() {
 	configuration.Reset()
-	for _, mt := range mutant.Types {
+	for _, mt := range mutator.Types {
 		configuration.Set(configuration.MutantTypeEnabledKey(mt), true)
 	}
 	viperMutex.Unlock()
@@ -93,7 +92,7 @@ func (d dealerStub) Get(_ string) (string, error) {
 func (dealerStub) Clean() {}
 
 type executorDealerStub struct {
-	gotMutants []mutant.Mutant
+	gotMutants []mutator.Mutator
 }
 
 func newJobDealerStub(t *testing.T) *executorDealerStub {
@@ -102,7 +101,7 @@ func newJobDealerStub(t *testing.T) *executorDealerStub {
 	return &executorDealerStub{}
 }
 
-func (j *executorDealerStub) NewExecutor(mut mutant.Mutant, outCh chan<- mutant.Mutant, wg *sync.WaitGroup) workerpool.Executor {
+func (j *executorDealerStub) NewExecutor(mut mutator.Mutator, outCh chan<- mutator.Mutator, wg *sync.WaitGroup) workerpool.Executor {
 	j.gotMutants = append(j.gotMutants, mut)
 
 	return &executorStub{
@@ -113,8 +112,8 @@ func (j *executorDealerStub) NewExecutor(mut mutant.Mutant, outCh chan<- mutant.
 }
 
 type executorStub struct {
-	mut   mutant.Mutant
-	outCh chan<- mutant.Mutant
+	mut   mutator.Mutator
+	outCh chan<- mutator.Mutator
 	wg    *sync.WaitGroup
 }
 
@@ -127,27 +126,27 @@ type mutantStub struct {
 	worDir         string
 	pkg            string
 	position       token.Position
-	status         mutant.Status
-	mutType        mutant.Type
+	status         mutator.Status
+	mutType        mutator.Type
 	applyCalled    bool
 	rollbackCalled bool
 
 	hasApplyError bool
 }
 
-func (m *mutantStub) Type() mutant.Type {
+func (m *mutantStub) Type() mutator.Type {
 	return m.mutType
 }
 
-func (m *mutantStub) SetType(mt mutant.Type) {
+func (m *mutantStub) SetType(mt mutator.Type) {
 	m.mutType = mt
 }
 
-func (m *mutantStub) Status() mutant.Status {
+func (m *mutantStub) Status() mutator.Status {
 	return m.status
 }
 
-func (m *mutantStub) SetStatus(s mutant.Status) {
+func (m *mutantStub) SetStatus(s mutator.Status) {
 	m.status = s
 }
 

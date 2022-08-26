@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package mutator_test
+package engine_test
 
 import (
 	"context"
@@ -28,12 +28,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/go-gremlins/gremlins/internal/mutant"
-	"github.com/go-gremlins/gremlins/internal/mutator"
-	"github.com/go-gremlins/gremlins/internal/mutator/workerpool"
-
 	"github.com/go-gremlins/gremlins/internal/configuration"
+	"github.com/go-gremlins/gremlins/internal/engine"
+	"github.com/go-gremlins/gremlins/internal/engine/workerpool"
 	"github.com/go-gremlins/gremlins/internal/gomodule"
+	"github.com/go-gremlins/gremlins/internal/mutator"
 )
 
 func TestApplyAndRollback(t *testing.T) {
@@ -45,13 +44,13 @@ func TestApplyAndRollback(t *testing.T) {
 			Root:       tmpDir,
 			CallingDir: ".",
 		}
-		mjd := mutator.NewExecutorDealer(mod, wdDealer, expectedTimeout, mutator.WithExecContext(fakeExecCommandSuccess))
+		mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout, engine.WithExecContext(fakeExecCommandSuccess))
 		mut := &mutantStub{
-			status:  mutant.Runnable,
-			mutType: mutant.ConditionalsBoundary,
+			status:  mutator.Runnable,
+			mutType: mutator.ConditionalsBoundary,
 			pkg:     "example.com",
 		}
-		outCh := make(chan mutant.Mutant)
+		outCh := make(chan mutator.Mutator)
 		wg := sync.WaitGroup{}
 		wg.Add(1)
 		executor := mjd.NewExecutor(mut, outCh, &wg)
@@ -85,14 +84,14 @@ func TestApplyAndRollback(t *testing.T) {
 			Root:       tmpDir,
 			CallingDir: ".",
 		}
-		mjd := mutator.NewExecutorDealer(mod, wdDealer, expectedTimeout, mutator.WithExecContext(fakeExecCommandSuccess))
+		mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout, engine.WithExecContext(fakeExecCommandSuccess))
 		mut := &mutantStub{
-			status:        mutant.Runnable,
-			mutType:       mutant.ConditionalsBoundary,
+			status:        mutator.Runnable,
+			mutType:       mutator.ConditionalsBoundary,
 			pkg:           "example.com",
 			hasApplyError: true,
 		}
-		outCh := make(chan mutant.Mutant)
+		outCh := make(chan mutator.Mutator)
 		wg := sync.WaitGroup{}
 		wg.Add(1)
 		executor := mjd.NewExecutor(mut, outCh, &wg)
@@ -125,32 +124,32 @@ func TestMutatorTestExecution(t *testing.T) {
 	testCases := []struct {
 		testResult    execContext
 		name          string
-		mutantStatus  mutant.Status
-		wantMutStatus mutant.Status
+		mutantStatus  mutator.Status
+		wantMutStatus mutator.Status
 	}{
 		{
 			name:          "it skips NOT_COVERED",
 			testResult:    fakeExecCommandSuccess,
-			mutantStatus:  mutant.NotCovered,
-			wantMutStatus: mutant.NotCovered,
+			mutantStatus:  mutator.NotCovered,
+			wantMutStatus: mutator.NotCovered,
 		},
 		{
 			name:          "if tests pass then mutation is LIVED",
 			testResult:    fakeExecCommandSuccess,
-			mutantStatus:  mutant.Runnable,
-			wantMutStatus: mutant.Lived,
+			mutantStatus:  mutator.Runnable,
+			wantMutStatus: mutator.Lived,
 		},
 		{
 			name:          "if tests fails then mutation is KILLED",
 			testResult:    fakeExecCommandTestsFailure,
-			mutantStatus:  mutant.Runnable,
-			wantMutStatus: mutant.Killed,
+			mutantStatus:  mutator.Runnable,
+			wantMutStatus: mutator.Killed,
 		},
 		{
 			name:          "if build fails then mutation is BUILD FAILED",
 			testResult:    fakeExecCommandBuildFailure,
-			mutantStatus:  mutant.Runnable,
-			wantMutStatus: mutant.NotViable,
+			mutantStatus:  mutator.Runnable,
+			wantMutStatus: mutator.NotViable,
 		},
 	}
 	for _, tc := range testCases {
@@ -164,13 +163,13 @@ func TestMutatorTestExecution(t *testing.T) {
 				Root:       ".",
 				CallingDir: ".",
 			}
-			mjd := mutator.NewExecutorDealer(mod, wdDealer, expectedTimeout, mutator.WithExecContext(tc.testResult))
+			mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout, engine.WithExecContext(tc.testResult))
 			mut := &mutantStub{
 				status:  tc.mutantStatus,
-				mutType: mutant.ConditionalsBoundary,
+				mutType: mutator.ConditionalsBoundary,
 				pkg:     "example.com",
 			}
-			outCh := make(chan mutant.Mutant)
+			outCh := make(chan mutator.Mutator)
 			wg := sync.WaitGroup{}
 			wg.Add(1)
 			executor := mjd.NewExecutor(mut, outCh, &wg)
@@ -179,7 +178,7 @@ func TestMutatorTestExecution(t *testing.T) {
 				ID:   1,
 			}
 
-			var got mutant.Mutant
+			var got mutator.Mutator
 			mutex := sync.RWMutex{}
 			go func() {
 				mutex.Lock()
@@ -263,14 +262,14 @@ func TestMutatorRun(t *testing.T) {
 			}
 			wdDealer := newWdDealerStub(t)
 			holder := &commandHolder{}
-			mjd := mutator.NewExecutorDealer(mod, wdDealer, expectedTimeout,
-				mutator.WithExecContext(fakeExecCommandSuccessWithHolder(holder)))
+			mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout,
+				engine.WithExecContext(fakeExecCommandSuccessWithHolder(holder)))
 			mut := &mutantStub{
-				status:  mutant.Runnable,
-				mutType: mutant.ConditionalsBoundary,
+				status:  mutator.Runnable,
+				mutType: mutator.ConditionalsBoundary,
 				pkg:     tc.pkg,
 			}
-			outCh := make(chan mutant.Mutant)
+			outCh := make(chan mutator.Mutator)
 			wg := sync.WaitGroup{}
 			wg.Add(1)
 			executor := mjd.NewExecutor(mut, outCh, &wg)
@@ -285,7 +284,7 @@ func TestMutatorRun(t *testing.T) {
 			executor.Start(w)
 			wg.Wait()
 
-			wantTimeout := 2*time.Second + expectedTimeout*mutator.DefaultTimeoutCoefficient
+			wantTimeout := 2*time.Second + expectedTimeout*engine.DefaultTimeoutCoefficient
 			if tc.timeoutCoefficient != 0 {
 				wantTimeout = 2*time.Second + expectedTimeout*time.Duration(tc.timeoutCoefficient)
 			}
@@ -352,14 +351,14 @@ func TestCPU(t *testing.T) {
 			}
 			wdDealer := newWdDealerStub(t)
 			holder := &commandHolder{}
-			mjd := mutator.NewExecutorDealer(mod, wdDealer, expectedTimeout,
-				mutator.WithExecContext(fakeExecCommandSuccessWithHolder(holder)))
+			mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout,
+				engine.WithExecContext(fakeExecCommandSuccessWithHolder(holder)))
 			mut := &mutantStub{
-				status:  mutant.Runnable,
-				mutType: mutant.ConditionalsBoundary,
+				status:  mutator.Runnable,
+				mutType: mutator.ConditionalsBoundary,
 				pkg:     "test",
 			}
-			outCh := make(chan mutant.Mutant)
+			outCh := make(chan mutator.Mutator)
 			wg := sync.WaitGroup{}
 			wg.Add(1)
 			executor := mjd.NewExecutor(mut, outCh, &wg)

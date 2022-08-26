@@ -19,40 +19,39 @@ package configuration_test
 import (
 	"testing"
 
-	"github.com/go-gremlins/gremlins/internal/mutant"
-
 	"github.com/go-gremlins/gremlins/internal/configuration"
+	"github.com/go-gremlins/gremlins/internal/mutator"
 )
 
 func TestMutantDefaultStatus(t *testing.T) {
 	t.Parallel()
 	type testCase struct {
-		mutantType mutant.Type
+		mutantType mutator.Type
 		expected   bool
 	}
 	testCases := []testCase{
 		{
-			mutantType: mutant.ArithmeticBase,
+			mutantType: mutator.ArithmeticBase,
 			expected:   true,
 		},
 		{
-			mutantType: mutant.ConditionalsBoundary,
+			mutantType: mutator.ConditionalsBoundary,
 			expected:   true,
 		},
 		{
-			mutantType: mutant.ConditionalsNegation,
+			mutantType: mutator.ConditionalsNegation,
 			expected:   true,
 		},
 		{
-			mutantType: mutant.IncrementDecrement,
+			mutantType: mutator.IncrementDecrement,
 			expected:   true,
 		},
 		{
-			mutantType: mutant.InvertLogical,
+			mutantType: mutator.InvertLogical,
 			expected:   false,
 		},
 		{
-			mutantType: mutant.InvertNegatives,
+			mutantType: mutator.InvertNegatives,
 			expected:   true,
 		},
 	}
@@ -71,7 +70,7 @@ func TestMutantDefaultStatus(t *testing.T) {
 
 	// This should prevent the behaviour described in #142
 	t.Run("all MutantTypes are testes for default", func(t *testing.T) {
-		contains := func(testedMT []testCase, mt mutant.Type) bool {
+		contains := func(testedMT []testCase, mt mutator.Type) bool {
 			for _, c := range testedMT {
 				if mt == c.mutantType {
 					return true
@@ -81,7 +80,7 @@ func TestMutantDefaultStatus(t *testing.T) {
 			return false
 		}
 
-		for _, mt := range mutant.Types {
+		for _, mt := range mutator.Types {
 			if contains(testCases, mt) {
 				continue
 			}

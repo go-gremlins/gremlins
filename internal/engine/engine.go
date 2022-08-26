@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package mutator
+package engine
 
 import (
 	"context"
@@ -30,8 +30,8 @@ import (
 	"time"
 
 	"github.com/go-gremlins/gremlins/internal/coverage"
-	"github.com/go-gremlins/gremlins/internal/mutant"
-	"github.com/go-gremlins/gremlins/internal/mutator/workerpool"
+	"github.com/go-gremlins/gremlins/internal/engine/workerpool"
+	"github.com/go-gremlins/gremlins/internal/mutator"
 	"github.com/go-gremlins/gremlins/internal/report"
 
 	"github.com/go-gremlins/gremlins/internal/configuration"
@@ -40,13 +40,13 @@ import (
 
 // Engine is the "engine" that performs the mutation testing.
 //
-// It traverses the AST of the project, finds which TokenMutant can be applied and
+// It traverses the AST of the project, finds which TokenMutator can be applied and
 // performs the actual mutation testing.
 type Engine struct {
 	fs           fs.FS
 	jDealer      ExecutorDealer
 	covProfile   coverage.Profile
-	mutantStream chan mutant.Mutant
+	mutantStream chan mutator.Mutator
 	module       gomodule.GoModule
 }
 
@@ -86,7 +86,7 @@ func WithDirFs(dirFS fs.FS) Option {
 // It walks the fs.FS provided and checks every .go file which is not a test.
 // For each file it will scan for tokenMutations and gather all the mutants found.
 func (mu *Engine) Run(ctx context.Context) report.Results {
-	mu.mutantStream = make(chan mutant.Mutant)
+	mu.mutantStream = make(chan mutator.Mutator)
 	go func() {
 		defer close(mu.mutantStream)
 		_ = fs.WalkDir(mu.fs, ".", func(path string, d fs.DirEntry, err error) error {
@@ -171,10 +171,10 @@ func normalisePkgPath(pkg string) string {
 	return strings.ReplaceAll(pkg, sep, "/")
 }
 
-func (mu *Engine) mutationStatus(pos token.Position) mutant.Status {
-	var status mutant.Status
+func (mu *Engine) mutationStatus(pos token.Position) mutator.Status {
+	var status mutator.Status
 	if mu.covProfile.IsCovered(pos) {
-		status = mutant.Runnable
+		status = mutator.Runnable
 	}
 
 	return status
@@ -184,8 +184,8 @@ func (mu *Engine) executeTests(ctx context.Context) report.Results {
 	pool := workerpool.Initialize("mutator")
 	pool.Start()
 
-	var mutants []mutant.Mutant
-	outCh := make(chan mutant.Mutant)
+	var mutants []mutator.Mutator
+	outCh := make(chan mutator.Mutator)
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
@@ -223,6 +223,6 @@ func checkDone(ctx context.Context) bool {
 	}
 }
 
-func results(m []mutant.Mutant) report.Results {
+func results(m []mutator.Mutator) report.Results {
 	return report.Results{Mutants: m}
 }

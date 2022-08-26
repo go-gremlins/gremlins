@@ -27,7 +27,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 
-	"github.com/go-gremlins/gremlins/internal/mutant"
+	"github.com/go-gremlins/gremlins/internal/mutator"
 )
 
 // This is the list of the keys available in config files and ad flags.
@@ -95,7 +95,7 @@ func Init(cPaths []string) error {
 //		mutants:
 //	 		mutant-name:
 //	 			enabled: [bool]
-func MutantTypeEnabledKey(mt mutant.Type) string {
+func MutantTypeEnabledKey(mt mutator.Type) string {
 	m := mt.String()
 	m = strings.ReplaceAll(m, "_", "-")
 	m = strings.ToLower(m)

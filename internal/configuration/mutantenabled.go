@@ -16,20 +16,22 @@
 
 package configuration
 
-import "github.com/go-gremlins/gremlins/internal/mutant"
+import (
+	"github.com/go-gremlins/gremlins/internal/mutator"
+)
 
-var mutationEnabled = map[mutant.Type]bool{
-	mutant.ArithmeticBase:       true,
-	mutant.ConditionalsBoundary: true,
-	mutant.ConditionalsNegation: true,
-	mutant.IncrementDecrement:   true,
-	mutant.InvertLogical:        false,
-	mutant.InvertNegatives:      true,
+var mutationEnabled = map[mutator.Type]bool{
+	mutator.ArithmeticBase:       true,
+	mutator.ConditionalsBoundary: true,
+	mutator.ConditionalsNegation: true,
+	mutator.IncrementDecrement:   true,
+	mutator.InvertLogical:        false,
+	mutator.InvertNegatives:      true,
 }
 
 // IsDefaultEnabled returns the default enabled/disabled state of the mutation.
 // It gets the state from the table above that must be kept up to date when adding
 // new mutant types.
-func IsDefaultEnabled(mt mutant.Type) bool {
+func IsDefaultEnabled(mt mutator.Type) bool {
 	return mutationEnabled[mt]
 }

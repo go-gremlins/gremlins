@@ -33,7 +33,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/go-gremlins/gremlins/internal/log"
-	"github.com/go-gremlins/gremlins/internal/mutant"
+	"github.com/go-gremlins/gremlins/internal/mutator"
 	"github.com/go-gremlins/gremlins/internal/report"
 	"github.com/go-gremlins/gremlins/internal/report/internal"
 
@@ -49,12 +49,12 @@ func TestReport(t *testing.T) {
 		log.Init(out, &bytes.Buffer{})
 		defer log.Reset()
 
-		mutants := []mutant.Mutant{
-			stubMutant{status: mutant.Lived, mutantType: mutant.ConditionalsNegation, position: fakePosition},
-			stubMutant{status: mutant.Killed, mutantType: mutant.ConditionalsNegation, position: fakePosition},
-			stubMutant{status: mutant.NotCovered, mutantType: mutant.ConditionalsNegation, position: fakePosition},
-			stubMutant{status: mutant.NotViable, mutantType: mutant.ConditionalsBoundary, position: fakePosition},
-			stubMutant{status: mutant.TimedOut, mutantType: mutant.ConditionalsBoundary, position: fakePosition},
+		mutants := []mutator.Mutator{
+			stubMutant{status: mutator.Lived, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+			stubMutant{status: mutator.Killed, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+			stubMutant{status: mutator.NotCovered, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+			stubMutant{status: mutator.NotViable, mutantType: mutator.ConditionalsBoundary, position: fakePosition},
+			stubMutant{status: mutator.TimedOut, mutantType: mutator.ConditionalsBoundary, position: fakePosition},
 		}
 		data := report.Results{
 			Mutants: mutants,
@@ -71,7 +71,7 @@ func TestReport(t *testing.T) {
 			"Killed: 1, Lived: 1, Not covered: 1\n" +
 			"Timed out: 1, Not viable: 1\n" +
 			"Test efficacy: 50.00%\n" +
-			"Mutant coverage: 66.67%\n"
+			"Mutator coverage: 66.67%\n"
 
 		if !cmp.Equal(got, want) {
 			t.Errorf(cmp.Diff(want, got))
@@ -86,10 +86,10 @@ func TestReport(t *testing.T) {
 		log.Init(out, &bytes.Buffer{})
 		defer log.Reset()
 
-		mutants := []mutant.Mutant{
-			stubMutant{status: mutant.Runnable, mutantType: mutant.ConditionalsNegation, position: fakePosition},
-			stubMutant{status: mutant.Runnable, mutantType: mutant.ConditionalsNegation, position: fakePosition},
-			stubMutant{status: mutant.NotCovered, mutantType: mutant.ConditionalsNegation, position: fakePosition},
+		mutants := []mutator.Mutator{
+			stubMutant{status: mutator.Runnable, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+			stubMutant{status: mutator.Runnable, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+			stubMutant{status: mutator.NotCovered, mutantType: mutator.ConditionalsNegation, position: fakePosition},
 		}
 		data := report.Results{
 			Mutants: mutants,
@@ -104,7 +104,7 @@ func TestReport(t *testing.T) {
 			// Limit the time reporting to the first two units (millis are excluded)
 			"Dry run completed in 2 minutes 22 seconds\n" +
 			"Runnable: 2, Not covered: 1\n" +
-			"Mutant coverage: 66.67%\n"
+			"Mutator coverage: 66.67%\n"
 
 		if !cmp.Equal(got, want) {
 			t.Errorf(cmp.Diff(want, got))
@@ -116,7 +116,7 @@ func TestReport(t *testing.T) {
 		log.Init(out, &bytes.Buffer{})
 		defer log.Reset()
 
-		var mutants []mutant.Mutant
+		var mutants []mutator.Mutator
 		data := report.Results{
 			Mutants: mutants,
 		}
@@ -176,7 +176,7 @@ func TestAssessment(t *testing.T) {
 			value:       51,
 			expectError: true,
 		},
-		// Mutant coverage-threshold as float
+		// Mutator coverage-threshold as float
 		{
 			name:        "coverage < coverage-threshold",
 			confKey:     configuration.UnleashThresholdMCoverageKey,
@@ -195,7 +195,7 @@ func TestAssessment(t *testing.T) {
 			value:       float64(0),
 			expectError: false,
 		},
-		// Mutant coverage-threshold as int
+		// Mutator coverage-threshold as int
 		{
 			name:        "coverage < coverage-threshold",
 			confKey:     configuration.UnleashThresholdMCoverageKey,
@@ -214,11 +214,11 @@ func TestAssessment(t *testing.T) {
 			defer viper.Reset()
 
 			// Always 50%
-			mutants := []mutant.Mutant{
-				stubMutant{status: mutant.Killed, mutantType: mutant.ConditionalsNegation, position: fakePosition},
-				stubMutant{status: mutant.Lived, mutantType: mutant.ConditionalsNegation, position: fakePosition},
-				stubMutant{status: mutant.NotCovered, mutantType: mutant.ConditionalsNegation, position: fakePosition},
-				stubMutant{status: mutant.NotCovered, mutantType: mutant.ConditionalsNegation, position: fakePosition},
+			mutants := []mutator.Mutator{
+				stubMutant{status: mutator.Killed, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+				stubMutant{status: mutator.Lived, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+				stubMutant{status: mutator.NotCovered, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+				stubMutant{status: mutator.NotCovered, mutantType: mutator.ConditionalsNegation, position: fakePosition},
 			}
 			data := report.Results{
 				Mutants: mutants,
@@ -251,17 +251,17 @@ func TestMutantLog(t *testing.T) {
 	log.Init(out, &bytes.Buffer{})
 	defer log.Reset()
 
-	m := stubMutant{status: mutant.Lived, mutantType: mutant.ConditionalsBoundary, position: fakePosition}
+	m := stubMutant{status: mutator.Lived, mutantType: mutator.ConditionalsBoundary, position: fakePosition}
 	report.Mutant(m)
-	m = stubMutant{status: mutant.Killed, mutantType: mutant.ConditionalsBoundary, position: fakePosition}
+	m = stubMutant{status: mutator.Killed, mutantType: mutator.ConditionalsBoundary, position: fakePosition}
 	report.Mutant(m)
-	m = stubMutant{status: mutant.NotCovered, mutantType: mutant.ConditionalsBoundary, position: fakePosition}
+	m = stubMutant{status: mutator.NotCovered, mutantType: mutator.ConditionalsBoundary, position: fakePosition}
 	report.Mutant(m)
-	m = stubMutant{status: mutant.Runnable, mutantType: mutant.ConditionalsBoundary, position: fakePosition}
+	m = stubMutant{status: mutator.Runnable, mutantType: mutator.ConditionalsBoundary, position: fakePosition}
 	report.Mutant(m)
-	m = stubMutant{status: mutant.NotViable, mutantType: mutant.ConditionalsBoundary, position: fakePosition}
+	m = stubMutant{status: mutator.NotViable, mutantType: mutator.ConditionalsBoundary, position: fakePosition}
 	report.Mutant(m)
-	m = stubMutant{status: mutant.TimedOut, mutantType: mutant.ConditionalsBoundary, position: fakePosition}
+	m = stubMutant{status: mutator.TimedOut, mutantType: mutator.ConditionalsBoundary, position: fakePosition}
 	report.Mutant(m)
 
 	got := out.String()
@@ -281,12 +281,12 @@ func TestMutantLog(t *testing.T) {
 
 func TestReportToFile(t *testing.T) {
 	outFile := "findings.json"
-	mutants := []mutant.Mutant{
-		stubMutant{status: mutant.Killed, mutantType: mutant.ConditionalsNegation, position: newPosition("file1.go", 3, 10)},
-		stubMutant{status: mutant.Lived, mutantType: mutant.ArithmeticBase, position: newPosition("file1.go", 8, 20)},
-		stubMutant{status: mutant.NotCovered, mutantType: mutant.IncrementDecrement, position: newPosition("file2.go", 3, 20)},
-		stubMutant{status: mutant.NotCovered, mutantType: mutant.ConditionalsBoundary, position: newPosition("file2.go", 3, 500)},
-		stubMutant{status: mutant.NotViable, mutantType: mutant.InvertNegatives, position: newPosition("file3.go", 4, 200)},
+	mutants := []mutator.Mutator{
+		stubMutant{status: mutator.Killed, mutantType: mutator.ConditionalsNegation, position: newPosition("file1.go", 3, 10)},
+		stubMutant{status: mutator.Lived, mutantType: mutator.ArithmeticBase, position: newPosition("file1.go", 8, 20)},
+		stubMutant{status: mutator.NotCovered, mutantType: mutator.IncrementDecrement, position: newPosition("file2.go", 3, 20)},
+		stubMutant{status: mutator.NotCovered, mutantType: mutator.ConditionalsBoundary, position: newPosition("file2.go", 3, 500)},
+		stubMutant{status: mutator.NotViable, mutantType: mutator.InvertNegatives, position: newPosition("file3.go", 4, 200)},
 	}
 	data := report.Results{
 		Module:  "example.com/go/module",
@@ -387,23 +387,23 @@ func sortMutation(x, y internal.Mutation) bool {
 
 type stubMutant struct {
 	position   token.Position
-	status     mutant.Status
-	mutantType mutant.Type
+	status     mutator.Status
+	mutantType mutator.Type
 }
 
-func (s stubMutant) Type() mutant.Type {
+func (s stubMutant) Type() mutator.Type {
 	return s.mutantType
 }
 
-func (stubMutant) SetType(_ mutant.Type) {
+func (stubMutant) SetType(_ mutator.Type) {
 	panic("implement me")
 }
 
-func (s stubMutant) Status() mutant.Status {
+func (s stubMutant) Status() mutator.Status {
 	return s.status
 }
 
-func (stubMutant) SetStatus(_ mutant.Status) {
+func (stubMutant) SetStatus(_ mutator.Status) {
 	panic("implement me")
 }
 

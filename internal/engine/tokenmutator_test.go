@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package mutator_test
+package engine_test
 
 import (
 	"go/ast"
@@ -26,7 +26,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/go-gremlins/gremlins/internal/mutant"
+	"github.com/go-gremlins/gremlins/internal/engine"
 	"github.com/go-gremlins/gremlins/internal/mutator"
 )
 
@@ -61,13 +61,13 @@ func TestMutantApplyAndRollback(t *testing.T) {
 	})
 
 	for i, node := range nodes {
-		n, ok := mutator.NewTokenNode(node)
+		n, ok := engine.NewTokenNode(node)
 		if !ok {
 			t.Fatal("new actualToken node should be created")
 		}
-		mut := mutator.NewTokenMutant("example.com/test", set, f, n)
-		mut.SetType(mutant.ArithmeticBase)
-		mut.SetStatus(mutant.Runnable)
+		mut := engine.NewTokenMutant("example.com/test", set, f, n)
+		mut.SetType(mutator.ArithmeticBase)
+		mut.SetStatus(mutator.Runnable)
 		mut.SetWorkdir(workdir)
 
 		err = mut.Apply()

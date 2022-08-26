@@ -14,49 +14,49 @@
  *    limitations under the License.
  */
 
-package mutator
+package engine
 
 import (
 	"go/token"
 
-	"github.com/go-gremlins/gremlins/internal/mutant"
+	"github.com/go-gremlins/gremlins/internal/mutator"
 )
 
 // TokenMutantType is the mapping from each token.Token and all the
-// mutant.Type that can be applied to it.
-var TokenMutantType = map[token.Token][]mutant.Type{
-	token.SUB:  {mutant.InvertNegatives, mutant.ArithmeticBase},
-	token.ADD:  {mutant.ArithmeticBase},
-	token.MUL:  {mutant.ArithmeticBase},
-	token.QUO:  {mutant.ArithmeticBase},
-	token.REM:  {mutant.ArithmeticBase},
-	token.EQL:  {mutant.ConditionalsNegation},
-	token.NEQ:  {mutant.ConditionalsNegation},
-	token.GTR:  {mutant.ConditionalsBoundary, mutant.ConditionalsNegation},
-	token.LSS:  {mutant.ConditionalsBoundary, mutant.ConditionalsNegation},
-	token.GEQ:  {mutant.ConditionalsBoundary, mutant.ConditionalsNegation},
-	token.LEQ:  {mutant.ConditionalsBoundary, mutant.ConditionalsNegation},
-	token.INC:  {mutant.IncrementDecrement},
-	token.DEC:  {mutant.IncrementDecrement},
-	token.LAND: {mutant.InvertLogical},
-	token.LOR:  {mutant.InvertLogical},
+// mutator.Type that can be applied to it.
+var TokenMutantType = map[token.Token][]mutator.Type{
+	token.SUB:  {mutator.InvertNegatives, mutator.ArithmeticBase},
+	token.ADD:  {mutator.ArithmeticBase},
+	token.MUL:  {mutator.ArithmeticBase},
+	token.QUO:  {mutator.ArithmeticBase},
+	token.REM:  {mutator.ArithmeticBase},
+	token.EQL:  {mutator.ConditionalsNegation},
+	token.NEQ:  {mutator.ConditionalsNegation},
+	token.GTR:  {mutator.ConditionalsBoundary, mutator.ConditionalsNegation},
+	token.LSS:  {mutator.ConditionalsBoundary, mutator.ConditionalsNegation},
+	token.GEQ:  {mutator.ConditionalsBoundary, mutator.ConditionalsNegation},
+	token.LEQ:  {mutator.ConditionalsBoundary, mutator.ConditionalsNegation},
+	token.INC:  {mutator.IncrementDecrement},
+	token.DEC:  {mutator.IncrementDecrement},
+	token.LAND: {mutator.InvertLogical},
+	token.LOR:  {mutator.InvertLogical},
 }
 
-var tokenMutations = map[mutant.Type]map[token.Token]token.Token{
-	mutant.ArithmeticBase: {
+var tokenMutations = map[mutator.Type]map[token.Token]token.Token{
+	mutator.ArithmeticBase: {
 		token.ADD: token.SUB,
 		token.SUB: token.ADD,
 		token.MUL: token.QUO,
 		token.QUO: token.MUL,
 		token.REM: token.MUL,
 	},
-	mutant.ConditionalsBoundary: {
+	mutator.ConditionalsBoundary: {
 		token.GTR: token.GEQ,
 		token.LSS: token.LEQ,
 		token.GEQ: token.GTR,
 		token.LEQ: token.LSS,
 	},
-	mutant.ConditionalsNegation: {
+	mutator.ConditionalsNegation: {
 		token.EQL: token.NEQ,
 		token.NEQ: token.EQL,
 		token.LEQ: token.GTR,
@@ -64,15 +64,15 @@ var tokenMutations = map[mutant.Type]map[token.Token]token.Token{
 		token.LSS: token.GEQ,
 		token.GEQ: token.LSS,
 	},
-	mutant.IncrementDecrement: {
+	mutator.IncrementDecrement: {
 		token.INC: token.DEC,
 		token.DEC: token.INC,
 	},
-	mutant.InvertLogical: {
+	mutator.InvertLogical: {
 		token.LAND: token.LOR,
 		token.LOR:  token.LAND,
 	},
-	mutant.InvertNegatives: {
+	mutator.InvertNegatives: {
 		token.SUB: token.ADD,
 	},
 }

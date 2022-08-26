@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package mutator
+package engine
 
 import (
 	"go/ast"

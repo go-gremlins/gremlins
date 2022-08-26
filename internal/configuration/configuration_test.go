@@ -26,7 +26,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 
-	"github.com/go-gremlins/gremlins/internal/mutant"
+	"github.com/go-gremlins/gremlins/internal/mutator"
 )
 
 type envEntry struct {
@@ -231,7 +231,7 @@ func TestConfigPaths(t *testing.T) {
 }
 
 func TestGeneratesMutantTypeEnabledKey(t *testing.T) {
-	mt := mutant.ArithmeticBase
+	mt := mutator.ArithmeticBase
 	want := "mutants.arithmetic-base.enabled"
 
 	got := MutantTypeEnabledKey(mt)

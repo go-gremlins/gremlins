@@ -28,7 +28,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/hectane/go-acl"
 
-	"github.com/go-gremlins/gremlins/internal/mutator/workdir"
+	"github.com/go-gremlins/gremlins/internal/engine/workdir"
 )
 
 func TestLinkFolder(t *testing.T) {

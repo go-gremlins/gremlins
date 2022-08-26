@@ -14,51 +14,51 @@
  *    limitations under the License.
  */
 
-package mutant_test
+package mutator_test
 
 import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/go-gremlins/gremlins/internal/mutant"
+	"github.com/go-gremlins/gremlins/internal/mutator"
 )
 
 func TestStatusString(t *testing.T) {
 	testCases := []struct {
 		name           string
 		expected       string
-		mutationStatus mutant.Status
+		mutationStatus mutator.Status
 	}{
 		{
 			name:           "NotCovered",
 			expected:       "NOT COVERED",
-			mutationStatus: mutant.NotCovered,
+			mutationStatus: mutator.NotCovered,
 		},
 		{
 			name:           "Runnable",
 			expected:       "RUNNABLE",
-			mutationStatus: mutant.Runnable,
+			mutationStatus: mutator.Runnable,
 		},
 		{
 			name:           "Lived",
 			expected:       "LIVED",
-			mutationStatus: mutant.Lived,
+			mutationStatus: mutator.Lived,
 		},
 		{
 			name:           "Killed",
 			expected:       "KILLED",
-			mutationStatus: mutant.Killed,
+			mutationStatus: mutator.Killed,
 		},
 		{
 			name:           "NotViable",
 			expected:       "NOT VIABLE",
-			mutationStatus: mutant.NotViable,
+			mutationStatus: mutator.NotViable,
 		},
 		{
 			name:           "TimedOut",
 			expected:       "TIMED OUT",
-			mutationStatus: mutant.TimedOut,
+			mutationStatus: mutator.TimedOut,
 		},
 	}
 	for _, tc := range testCases {
@@ -75,37 +75,37 @@ func TestTypeString(t *testing.T) {
 	testCases := []struct {
 		name       string
 		expected   string
-		mutantType mutant.Type
+		mutantType mutator.Type
 	}{
 		{
 			name:       "CONDITIONALS_BOUNDARY",
 			expected:   "CONDITIONALS_BOUNDARY",
-			mutantType: mutant.ConditionalsBoundary,
+			mutantType: mutator.ConditionalsBoundary,
 		},
 		{
 			name:       "CONDITIONALS_NEGATION",
 			expected:   "CONDITIONALS_NEGATION",
-			mutantType: mutant.ConditionalsNegation,
+			mutantType: mutator.ConditionalsNegation,
 		},
 		{
 			name:       "INCREMENT_DECREMENT",
 			expected:   "INCREMENT_DECREMENT",
-			mutantType: mutant.IncrementDecrement,
+			mutantType: mutator.IncrementDecrement,
 		},
 		{
 			name:       "INVERT_LOGICAL",
 			expected:   "INVERT_LOGICAL",
-			mutantType: mutant.InvertLogical,
+			mutantType: mutator.InvertLogical,
 		},
 		{
 			name:       "INVERT_NEGATIVES",
 			expected:   "INVERT_NEGATIVES",
-			mutantType: mutant.InvertNegatives,
+			mutantType: mutator.InvertNegatives,
 		},
 		{
 			name:       "ARITHMETIC_BASE",
 			expected:   "ARITHMETIC_BASE",
-			mutantType: mutant.ArithmeticBase,
+			mutantType: mutator.ArithmeticBase,
 		},
 	}
 	for _, tc := range testCases {

@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package mutant
+package mutator
 
 import "go/token"
 
@@ -106,33 +106,33 @@ func (mt Type) String() string {
 	}
 }
 
-// Mutant represents a possible mutation of the source code.
-type Mutant interface {
-	// Type returns the Type of the Mutant.
+// Mutator represents a possible mutation of the source code.
+type Mutator interface {
+	// Type returns the Type of the Mutator.
 	Type() Type
 
-	// SetType sets the Type of the Mutant.
+	// SetType sets the Type of the Mutator.
 	SetType(mt Type)
 
-	// Status returns the Status of the Mutant.
+	// Status returns the Status of the Mutator.
 	Status() Status
 
-	// SetStatus sets the Status of the Mutant.
+	// SetStatus sets the Status of the Mutator.
 	SetStatus(s Status)
 
-	// Position returns the token.Position for the Mutant.
+	// Position returns the token.Position for the Mutator.
 	// token.Position consumes more space than token.Pos, and in the future
-	// we can consider a refactoring to remove its use and only use Mutant.Pos.
+	// we can consider a refactoring to remove its use and only use Mutator.Pos.
 	Position() token.Position
 
-	// Pos returns the token.Pos of the Mutant.
+	// Pos returns the token.Pos of the Mutator.
 	Pos() token.Pos
 
-	// Pkg returns the package where the Mutant is fount.
+	// Pkg returns the package where the Mutator is fount.
 	Pkg() string
 
 	// SetWorkdir sets the working directory which contains the source code on
-	// which the Mutant will apply its mutations.
+	// which the Mutator will apply its mutations.
 	SetWorkdir(p string)
 
 	// Apply applies the mutation on the actual source code.
