@@ -96,7 +96,7 @@ func WithDockerRootFolder(rootFolder string) Option {
 // to the original files in the source directory. It makes full copies
 // in case Gremlins is running inside a Docker container.
 func (cd *CachedDealer) Get(idf string) (string, error) {
-	dstDir, ok := cd.getFromCache(idf)
+	dstDir, ok := cd.fromCache(idf)
 	if ok {
 		return dstDir, nil
 	}
@@ -126,7 +126,7 @@ func (cd *CachedDealer) Clean() {
 	cd.cache = make(map[string]string)
 }
 
-func (cd *CachedDealer) getFromCache(idf string) (string, bool) {
+func (cd *CachedDealer) fromCache(idf string) (string, bool) {
 	cd.mutex.RLock()
 	defer cd.mutex.RUnlock()
 	dstDir, ok := cd.cache[idf]

@@ -101,7 +101,7 @@ func (c *Coverage) Run() (Result, error) {
 		return Result{}, fmt.Errorf("impossible to executeCoverage coverage: %w", err)
 	}
 	log.Infof("done in %s\n", elapsed)
-	profile, err := c.getProfile()
+	profile, err := c.profile()
 	if err != nil {
 		return Result{}, fmt.Errorf("an error occurred while generating coverage profile: %w", err)
 	}
@@ -109,7 +109,7 @@ func (c *Coverage) Run() (Result, error) {
 	return Result{Profile: profile, Elapsed: elapsed}, nil
 }
 
-func (c *Coverage) getProfile() (Profile, error) {
+func (c *Coverage) profile() (Profile, error) {
 	cf, err := os.Open(c.filePath())
 	defer func(cf *os.File) {
 		_ = cf.Close()

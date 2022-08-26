@@ -41,7 +41,7 @@ func Init(path string) (GoModule, error) {
 	if path == "" {
 		return GoModule{}, fmt.Errorf("path is not set")
 	}
-	mod, root, err := getMod(path)
+	mod, root, err := modPkg(path)
 	if err != nil {
 		return GoModule{}, err
 	}
@@ -54,7 +54,7 @@ func Init(path string) (GoModule, error) {
 	}, nil
 }
 
-func getMod(path string) (string, string, error) {
+func modPkg(path string) (string, string, error) {
 	root := findModuleRoot(path)
 	file, err := os.Open(root + "/go.mod")
 	defer func(file *os.File) {

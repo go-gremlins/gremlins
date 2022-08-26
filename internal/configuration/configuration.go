@@ -30,7 +30,7 @@ import (
 	"github.com/go-gremlins/gremlins/internal/mutator"
 )
 
-// This is the list of the keys available in config files and ad flags.
+// This is the list of the keys available in config files and as flags.
 const (
 	GremlinsSilentKey            = "silent"
 	UnleashDryRunKey             = "unleash.dry-run"
@@ -53,7 +53,7 @@ const (
 	windowsOs = "windows"
 )
 
-// Init gets the viper configuration for Gremlins
+// Init initializes the viper configuration for Gremlins.
 //
 // It sets the configuration file name as .gremlins.yaml, adds the passed paths as ConfigPaths
 // AutomaticEnv configuration having GREMLINS as prefix.
