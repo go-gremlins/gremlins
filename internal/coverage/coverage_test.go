@@ -189,14 +189,14 @@ func TestCoverageProcessSuccess(_ *testing.T) {
 	if os.Getenv("GO_TEST_PROCESS") != "1" {
 		return
 	}
-	os.Exit(0)
+	os.Exit(0) // skipcq: RVV-A0003
 }
 
 func TestCoverageProcessFailure(_ *testing.T) {
 	if os.Getenv("GO_TEST_PROCESS") != "1" {
 		return
 	}
-	os.Exit(1)
+	os.Exit(1) // skipcq: RVV-A0003
 }
 
 type execContext = func(name string, args ...string) *exec.Cmd
