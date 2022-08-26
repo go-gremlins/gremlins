@@ -29,7 +29,7 @@ import (
 
 	"github.com/go-gremlins/gremlins/cmd"
 	"github.com/go-gremlins/gremlins/internal/execution"
-	"github.com/go-gremlins/gremlins/pkg/log"
+	"github.com/go-gremlins/gremlins/internal/log"
 )
 
 var version = "dev"

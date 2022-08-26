@@ -27,15 +27,16 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/go-gremlins/gremlins/internal/coverage"
+	"github.com/go-gremlins/gremlins/internal/log"
+	"github.com/go-gremlins/gremlins/internal/mutant"
+	"github.com/go-gremlins/gremlins/internal/mutator"
+	"github.com/go-gremlins/gremlins/internal/mutator/workdir"
+	"github.com/go-gremlins/gremlins/internal/report"
+
 	"github.com/go-gremlins/gremlins/cmd/internal/flags"
-	"github.com/go-gremlins/gremlins/configuration"
+	configuration2 "github.com/go-gremlins/gremlins/internal/configuration"
 	"github.com/go-gremlins/gremlins/internal/gomodule"
-	"github.com/go-gremlins/gremlins/pkg/coverage"
-	"github.com/go-gremlins/gremlins/pkg/log"
-	"github.com/go-gremlins/gremlins/pkg/mutant"
-	"github.com/go-gremlins/gremlins/pkg/mutator"
-	"github.com/go-gremlins/gremlins/pkg/mutator/workdir"
-	"github.com/go-gremlins/gremlins/pkg/report"
 )
 
 type unleashCmd struct {
@@ -183,15 +184,15 @@ func setFlagsOnCmd(cmd *cobra.Command) error {
 	})
 
 	fls := []*flags.Flag{
-		{Name: paramDryRun, CfgKey: configuration.UnleashDryRunKey, Shorthand: "d", DefaultV: false, Usage: "find mutations but do not executes tests"},
-		{Name: paramBuildTags, CfgKey: configuration.UnleashTagsKey, Shorthand: "t", DefaultV: "", Usage: "a comma-separated list of build tags"},
-		{Name: paramOutput, CfgKey: configuration.UnleashOutputKey, Shorthand: "o", DefaultV: "", Usage: "set the output file for machine readable results"},
-		{Name: paramIntegrationMode, CfgKey: configuration.UnleashIntegrationMode, Shorthand: "i", DefaultV: false, Usage: "makes Gremlins run the complete test suite for each mutation"},
-		{Name: paramThresholdEfficacy, CfgKey: configuration.UnleashThresholdEfficacyKey, DefaultV: float64(0), Usage: "threshold for code-efficacy percent"},
-		{Name: paramThresholdMCoverage, CfgKey: configuration.UnleashThresholdMCoverageKey, DefaultV: float64(0), Usage: "threshold for mutant-coverage percent"},
-		{Name: paramWorkers, CfgKey: configuration.UnleashWorkersKey, DefaultV: 0, Usage: "the number of workers to use in mutation testing"},
-		{Name: paramTestCPU, CfgKey: configuration.UnleashTestCPUKey, DefaultV: 0, Usage: "the number of CPUs to allow each test run to use"},
-		{Name: paramTimeoutCoefficient, CfgKey: configuration.UnleashTimeoutCoefficientKey, DefaultV: 0, Usage: "the coefficient by which the timeout is increased"},
+		{Name: paramDryRun, CfgKey: configuration2.UnleashDryRunKey, Shorthand: "d", DefaultV: false, Usage: "find mutations but do not executes tests"},
+		{Name: paramBuildTags, CfgKey: configuration2.UnleashTagsKey, Shorthand: "t", DefaultV: "", Usage: "a comma-separated list of build tags"},
+		{Name: paramOutput, CfgKey: configuration2.UnleashOutputKey, Shorthand: "o", DefaultV: "", Usage: "set the output file for machine readable results"},
+		{Name: paramIntegrationMode, CfgKey: configuration2.UnleashIntegrationMode, Shorthand: "i", DefaultV: false, Usage: "makes Gremlins run the complete test suite for each mutation"},
+		{Name: paramThresholdEfficacy, CfgKey: configuration2.UnleashThresholdEfficacyKey, DefaultV: float64(0), Usage: "threshold for code-efficacy percent"},
+		{Name: paramThresholdMCoverage, CfgKey: configuration2.UnleashThresholdMCoverageKey, DefaultV: float64(0), Usage: "threshold for mutant-coverage percent"},
+		{Name: paramWorkers, CfgKey: configuration2.UnleashWorkersKey, DefaultV: 0, Usage: "the number of workers to use in mutation testing"},
+		{Name: paramTestCPU, CfgKey: configuration2.UnleashTestCPUKey, DefaultV: 0, Usage: "the number of CPUs to allow each test run to use"},
+		{Name: paramTimeoutCoefficient, CfgKey: configuration2.UnleashTimeoutCoefficientKey, DefaultV: 0, Usage: "the coefficient by which the timeout is increased"},
 	}
 
 	for _, f := range fls {
@@ -210,12 +211,12 @@ func setMutantTypeFlags(cmd *cobra.Command) error {
 		usage := fmt.Sprintf("enable %q mutants", name)
 		param := strings.ReplaceAll(name, "_", "-")
 		param = strings.ToLower(param)
-		confKey := configuration.MutantTypeEnabledKey(mt)
+		confKey := configuration2.MutantTypeEnabledKey(mt)
 
 		err := flags.Set(cmd, &flags.Flag{
 			Name:     param,
 			CfgKey:   confKey,
-			DefaultV: configuration.IsDefaultEnabled(mt),
+			DefaultV: configuration2.IsDefaultEnabled(mt),
 			Usage:    usage,
 		})
 		if err != nil {

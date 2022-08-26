@@ -25,8 +25,9 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/go-gremlins/gremlins/cmd/internal/flags"
-	"github.com/go-gremlins/gremlins/configuration"
-	"github.com/go-gremlins/gremlins/pkg/log"
+	"github.com/go-gremlins/gremlins/internal/configuration"
+
+	"github.com/go-gremlins/gremlins/internal/log"
 )
 
 const paramConfigFile = "config"
