@@ -27,15 +27,16 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/go-gremlins/gremlins/internal/coverage"
+	"github.com/go-gremlins/gremlins/internal/engine"
+	"github.com/go-gremlins/gremlins/internal/engine/workdir"
+	"github.com/go-gremlins/gremlins/internal/log"
+	"github.com/go-gremlins/gremlins/internal/mutator"
+	"github.com/go-gremlins/gremlins/internal/report"
+
 	"github.com/go-gremlins/gremlins/cmd/internal/flags"
-	"github.com/go-gremlins/gremlins/configuration"
+	"github.com/go-gremlins/gremlins/internal/configuration"
 	"github.com/go-gremlins/gremlins/internal/gomodule"
-	"github.com/go-gremlins/gremlins/pkg/coverage"
-	"github.com/go-gremlins/gremlins/pkg/log"
-	"github.com/go-gremlins/gremlins/pkg/mutant"
-	"github.com/go-gremlins/gremlins/pkg/mutator"
-	"github.com/go-gremlins/gremlins/pkg/mutator/workdir"
-	"github.com/go-gremlins/gremlins/pkg/report"
 )
 
 type unleashCmd struct {
@@ -162,9 +163,9 @@ func run(ctx context.Context, mod gomodule.GoModule, workDir string) (report.Res
 	wdDealer := workdir.NewCachedDealer(workDir, mod.Root)
 	defer wdDealer.Clean()
 
-	jDealer := mutator.NewExecutorDealer(mod, wdDealer, cProfile.Elapsed)
+	jDealer := engine.NewExecutorDealer(mod, wdDealer, cProfile.Elapsed)
 
-	mut := mutator.New(mod, cProfile, jDealer)
+	mut := engine.New(mod, cProfile, jDealer)
 	results := mut.Run(ctx)
 
 	return results, nil
@@ -205,7 +206,7 @@ func setFlagsOnCmd(cmd *cobra.Command) error {
 }
 
 func setMutantTypeFlags(cmd *cobra.Command) error {
-	for _, mt := range mutant.Types {
+	for _, mt := range mutator.Types {
 		name := mt.String()
 		usage := fmt.Sprintf("enable %q mutants", name)
 		param := strings.ReplaceAll(name, "_", "-")
