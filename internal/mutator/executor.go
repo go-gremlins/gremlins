@@ -28,8 +28,8 @@ import (
 
 	"github.com/go-gremlins/gremlins/internal/log"
 	"github.com/go-gremlins/gremlins/internal/mutant"
-	"github.com/go-gremlins/gremlins/internal/mutator/internal/workerpool"
 	"github.com/go-gremlins/gremlins/internal/mutator/workdir"
+	"github.com/go-gremlins/gremlins/internal/mutator/workerpool"
 	"github.com/go-gremlins/gremlins/internal/report"
 
 	"github.com/go-gremlins/gremlins/internal/configuration"

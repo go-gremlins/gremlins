@@ -27,7 +27,7 @@ import (
 	"testing/fstest"
 
 	"github.com/go-gremlins/gremlins/internal/mutant"
-	"github.com/go-gremlins/gremlins/internal/mutator/internal/workerpool"
+	"github.com/go-gremlins/gremlins/internal/mutator/workerpool"
 
 	"github.com/go-gremlins/gremlins/internal/configuration"
 	"github.com/go-gremlins/gremlins/internal/gomodule"

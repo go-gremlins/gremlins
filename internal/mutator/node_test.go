@@ -14,14 +14,14 @@
  *    limitations under the License.
  */
 
-package internal_test
+package mutator_test
 
 import (
 	"go/ast"
 	"go/token"
 	"testing"
 
-	"github.com/go-gremlins/gremlins/internal/mutator/internal"
+	"github.com/go-gremlins/gremlins/internal/mutator"
 )
 
 func TestNewTokenNode(t *testing.T) {
@@ -78,7 +78,7 @@ func TestNewTokenNode(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			tn, ok := internal.NewTokenNode(tc.node)
+			tn, ok := mutator.NewTokenNode(tc.node)
 			if ok != tc.supported {
 				t.Fatal("expected to receive a token")
 			}

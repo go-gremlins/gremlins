@@ -31,19 +31,18 @@ import (
 
 	"github.com/go-gremlins/gremlins/internal/coverage"
 	"github.com/go-gremlins/gremlins/internal/mutant"
-	"github.com/go-gremlins/gremlins/internal/mutator/internal"
-	"github.com/go-gremlins/gremlins/internal/mutator/internal/workerpool"
+	"github.com/go-gremlins/gremlins/internal/mutator/workerpool"
 	"github.com/go-gremlins/gremlins/internal/report"
 
 	"github.com/go-gremlins/gremlins/internal/configuration"
 	"github.com/go-gremlins/gremlins/internal/gomodule"
 )
 
-// Mutator is the "engine" that performs the mutation testing.
+// Engine is the "engine" that performs the mutation testing.
 //
 // It traverses the AST of the project, finds which TokenMutant can be applied and
 // performs the actual mutation testing.
-type Mutator struct {
+type Engine struct {
 	fs           fs.FS
 	jDealer      ExecutorDealer
 	covProfile   coverage.Profile
@@ -51,16 +50,16 @@ type Mutator struct {
 	module       gomodule.GoModule
 }
 
-// Option for the Mutator initialization.
-type Option func(m Mutator) Mutator
+// Option for the Engine initialization.
+type Option func(m Engine) Engine
 
-// New instantiates a Mutator.
+// New instantiates a Engine.
 //
 // It gets a fs.FS on which to perform the analysis, a coverage.Profile to
 // check if the mutants are covered and a sets of Option.
-func New(mod gomodule.GoModule, r coverage.Result, jDealer ExecutorDealer, opts ...Option) Mutator {
+func New(mod gomodule.GoModule, r coverage.Result, jDealer ExecutorDealer, opts ...Option) Engine {
 	dirFS := os.DirFS(filepath.Join(mod.Root, mod.CallingDir))
-	mut := Mutator{
+	mut := Engine{
 		module:     mod,
 		jDealer:    jDealer,
 		covProfile: r.Profile,
@@ -75,7 +74,7 @@ func New(mod gomodule.GoModule, r coverage.Result, jDealer ExecutorDealer, opts 
 
 // WithDirFs overrides the fs.FS of the module (mainly used for testing purposes).
 func WithDirFs(dirFS fs.FS) Option {
-	return func(m Mutator) Mutator {
+	return func(m Engine) Engine {
 		m.fs = dirFS
 
 		return m
@@ -86,7 +85,7 @@ func WithDirFs(dirFS fs.FS) Option {
 //
 // It walks the fs.FS provided and checks every .go file which is not a test.
 // For each file it will scan for tokenMutations and gather all the mutants found.
-func (mu *Mutator) Run(ctx context.Context) report.Results {
+func (mu *Engine) Run(ctx context.Context) report.Results {
 	mu.mutantStream = make(chan mutant.Mutant)
 	go func() {
 		defer close(mu.mutantStream)
@@ -107,14 +106,14 @@ func (mu *Mutator) Run(ctx context.Context) report.Results {
 	return res
 }
 
-func (mu *Mutator) runOnFile(fileName string) {
+func (mu *Engine) runOnFile(fileName string) {
 	src, _ := mu.fs.Open(fileName)
 	set := token.NewFileSet()
 	file, _ := parser.ParseFile(set, fileName, src, parser.ParseComments)
 	_ = src.Close()
 
 	ast.Inspect(file, func(node ast.Node) bool {
-		n, ok := internal.NewTokenNode(node)
+		n, ok := NewTokenNode(node)
 		if !ok {
 			return true
 		}
@@ -124,8 +123,8 @@ func (mu *Mutator) runOnFile(fileName string) {
 	})
 }
 
-func (mu *Mutator) findMutations(fileName string, set *token.FileSet, file *ast.File, node *internal.NodeToken) {
-	mutantTypes, ok := internal.TokenMutantType[node.Tok()]
+func (mu *Engine) findMutations(fileName string, set *token.FileSet, file *ast.File, node *NodeToken) {
+	mutantTypes, ok := TokenMutantType[node.Tok()]
 	if !ok {
 		return
 	}
@@ -136,7 +135,7 @@ func (mu *Mutator) findMutations(fileName string, set *token.FileSet, file *ast.
 			return
 		}
 		mutantType := mt
-		tm := internal.NewTokenMutant(pkg, set, file, node)
+		tm := NewTokenMutant(pkg, set, file, node)
 		tm.SetType(mutantType)
 		tm.SetStatus(mu.mutationStatus(set.Position(node.TokPos)))
 
@@ -144,7 +143,7 @@ func (mu *Mutator) findMutations(fileName string, set *token.FileSet, file *ast.
 	}
 }
 
-func (mu *Mutator) pkgName(fileName, fPkg string) string {
+func (mu *Engine) pkgName(fileName, fPkg string) string {
 	var pkg string
 	fn := fmt.Sprintf("%s/%s", mu.module.CallingDir, fileName)
 	p := filepath.Dir(fn)
@@ -172,7 +171,7 @@ func normalisePkgPath(pkg string) string {
 	return strings.ReplaceAll(pkg, sep, "/")
 }
 
-func (mu *Mutator) mutationStatus(pos token.Position) mutant.Status {
+func (mu *Engine) mutationStatus(pos token.Position) mutant.Status {
 	var status mutant.Status
 	if mu.covProfile.IsCovered(pos) {
 		status = mutant.Runnable
@@ -181,7 +180,7 @@ func (mu *Mutator) mutationStatus(pos token.Position) mutant.Status {
 	return status
 }
 
-func (mu *Mutator) executeTests(ctx context.Context) report.Results {
+func (mu *Engine) executeTests(ctx context.Context) report.Results {
 	pool := workerpool.Initialize("mutator")
 	pool.Start()
 
