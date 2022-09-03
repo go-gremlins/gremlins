@@ -164,7 +164,7 @@ func run(ctx context.Context, mod gomodule.GoModule, workDir string) (report.Res
 	wdDealer := workdir.NewCachedDealer(workDir, mod.Root)
 	defer wdDealer.Clean()
 
-	jDealer := engine.NewExecutorDealer(mod, wdDealer, cProfile.Elapsed)
+	jDealer := engine.NewExecutorDealer(mod, wdDealer)
 
 	mut := engine.New(mod, cProfile, jDealer)
 	results := mut.Run(ctx)

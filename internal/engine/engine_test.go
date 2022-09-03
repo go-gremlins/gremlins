@@ -40,14 +40,14 @@ func coveredPosition(fixture string) coverage.Result {
 	fn := filenameFromFixture(fixture)
 	p := coverage.Profile{fn: {{StartLine: 6, EndLine: 7, StartCol: 8, EndCol: 9}}}
 
-	return coverage.Result{Profile: p, Elapsed: 10}
+	return coverage.Result{Profile: p}
 }
 
 func notCoveredPosition(fixture string) coverage.Result {
 	fn := filenameFromFixture(fixture)
 	p := coverage.Profile{fn: {{StartLine: 9, EndLine: 9, StartCol: 8, EndCol: 9}}}
 
-	return coverage.Result{Profile: p, Elapsed: 10}
+	return coverage.Result{Profile: p}
 }
 
 type mutationsTest struct {

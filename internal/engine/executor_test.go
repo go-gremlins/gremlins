@@ -26,8 +26,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
-
 	"github.com/go-gremlins/gremlins/internal/configuration"
 	"github.com/go-gremlins/gremlins/internal/engine"
 	"github.com/go-gremlins/gremlins/internal/engine/workerpool"
@@ -44,7 +42,7 @@ func TestApplyAndRollback(t *testing.T) {
 			Root:       tmpDir,
 			CallingDir: ".",
 		}
-		mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout, engine.WithExecContext(fakeExecCommandSuccess))
+		mjd := engine.NewExecutorDealer(mod, wdDealer, engine.WithExecContext(fakeExecCommandSuccess))
 		mut := &mutantStub{
 			status:  mutator.Runnable,
 			mutType: mutator.ConditionalsBoundary,
@@ -84,7 +82,7 @@ func TestApplyAndRollback(t *testing.T) {
 			Root:       tmpDir,
 			CallingDir: ".",
 		}
-		mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout, engine.WithExecContext(fakeExecCommandSuccess))
+		mjd := engine.NewExecutorDealer(mod, wdDealer, engine.WithExecContext(fakeExecCommandSuccess))
 		mut := &mutantStub{
 			status:        mutator.Runnable,
 			mutType:       mutator.ConditionalsBoundary,
@@ -99,10 +97,6 @@ func TestApplyAndRollback(t *testing.T) {
 			Name: "test",
 			ID:   1,
 		}
-		go func() {
-			<-outCh
-			close(outCh)
-		}()
 
 		executor.Start(w)
 
@@ -163,7 +157,7 @@ func TestMutatorTestExecution(t *testing.T) {
 				Root:       ".",
 				CallingDir: ".",
 			}
-			mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout, engine.WithExecContext(tc.testResult))
+			mjd := engine.NewExecutorDealer(mod, wdDealer, engine.WithExecContext(tc.testResult))
 			mut := &mutantStub{
 				status:  tc.mutantStatus,
 				mutType: mutator.ConditionalsBoundary,
@@ -198,14 +192,13 @@ func TestMutatorTestExecution(t *testing.T) {
 	}
 }
 
-const expectedTimeout = 10 * time.Second
-
 type commandHolder struct {
-	cmd     *exec.Cmd
-	command string
-	args    []string
-	timeout time.Duration
-	m       sync.Mutex
+	events []struct {
+		cmd     *exec.Cmd
+		command string
+		args    []string
+		timeout time.Duration
+	}
 }
 
 func TestMutatorRun(t *testing.T) {
@@ -250,9 +243,6 @@ func TestMutatorRun(t *testing.T) {
 				configuration.UnleashIntegrationMode: tc.intMode,
 				configuration.UnleashTagsKey:         tc.tags,
 			}
-			if tc.timeoutCoefficient != 0 {
-				settings[configuration.UnleashTimeoutCoefficientKey] = tc.timeoutCoefficient
-			}
 			viperSet(settings)
 			defer viperReset()
 
@@ -263,8 +253,7 @@ func TestMutatorRun(t *testing.T) {
 			}
 			wdDealer := newWdDealerStub(t)
 			holder := &commandHolder{}
-			mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout,
-				engine.WithExecContext(fakeExecCommandSuccessWithHolder(holder)))
+			mjd := engine.NewExecutorDealer(mod, wdDealer, engine.WithExecContext(fakeExecCommandSuccessWithHolder(holder)))
 			mut := &mutantStub{
 				status:  mutator.Runnable,
 				mutType: mutator.ConditionalsBoundary,
@@ -285,21 +274,30 @@ func TestMutatorRun(t *testing.T) {
 			executor.Start(w)
 			wg.Wait()
 
-			wantTimeout := 2*time.Second + expectedTimeout*engine.DefaultTimeoutCoefficient
-			if tc.timeoutCoefficient != 0 {
-				wantTimeout = 2*time.Second + expectedTimeout*time.Duration(tc.timeoutCoefficient)
+			gotArgs := holder.events[1].args
+			if gotArgs[0] != "test" {
+				t.Errorf("want %s, got %s", "test", gotArgs[0])
 			}
-			want := fmt.Sprintf("go test -tags %s -timeout %s -failfast %s", tc.tags, wantTimeout, tc.wantPath)
-			got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
-
-			if !cmp.Equal(got, want) {
-				t.Errorf(fmt.Sprintf("\n+ %s\n- %s\n", got, want))
+			if gotArgs[1] != "-tags" {
+				t.Errorf("want %s, got %s", "-tags", gotArgs[1])
 			}
-
-			timeoutDifference := absTimeDiff(holder.timeout, expectedTimeout*2)
-			diffThreshold := 100 * time.Second
-			if timeoutDifference > diffThreshold {
-				t.Errorf("expected timeout to be within %s from the set timeout, got %s", diffThreshold, timeoutDifference)
+			if gotArgs[2] != tc.tags {
+				t.Errorf("want %s, got %s", tc.tags, gotArgs[2])
+			}
+			if gotArgs[3] != "-timeout" {
+				t.Errorf("want %s, got %s", "-timeout", gotArgs[3])
+			}
+			if gotArgs[4] == "" {
+				t.Errorf("want timeout not to be empty")
+			}
+			if gotArgs[5] != "-count=1" {
+				t.Errorf("want %s, got %s", "-failfast", gotArgs[5])
+			}
+			if gotArgs[6] != "-failfast" {
+				t.Errorf("want %s, got %s", "-failfast", gotArgs[5])
+			}
+			if gotArgs[7] != tc.wantPath {
+				t.Errorf("want %s, got %s", tc.wantPath, gotArgs[6])
 			}
 		})
 	}
@@ -352,7 +350,7 @@ func TestCPU(t *testing.T) {
 			}
 			wdDealer := newWdDealerStub(t)
 			holder := &commandHolder{}
-			mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout,
+			mjd := engine.NewExecutorDealer(mod, wdDealer,
 				engine.WithExecContext(fakeExecCommandSuccessWithHolder(holder)))
 			mut := &mutantStub{
 				status:  mutator.Runnable,
@@ -374,32 +372,25 @@ func TestCPU(t *testing.T) {
 			executor.Start(w)
 			wg.Wait()
 
-			for _, arg := range holder.args {
+			holderEvent := holder.events[1]
+			for _, arg := range holderEvent.args {
 				if !tc.cpuPresent && strings.Contains(arg, "-cpu") {
 					t.Fatalf("didn't expect to have -cpu flag")
 				}
 				if !tc.cpuPresent {
 					return
 				}
-				got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
+				got := fmt.Sprintf("go %v", strings.Join(holderEvent.args, " "))
 				cpuFlag := fmt.Sprintf("-cpu %d", tc.wantTestCPU)
 				if strings.Contains(got, cpuFlag) {
 					// PASS
 					return
 				}
-				t.Fatalf("want flag %q, got args %s", cpuFlag, holder.args)
+				t.Fatalf("want flag %q, got args %s", cpuFlag, holderEvent.args)
 			}
 
 		})
 	}
-}
-
-func absTimeDiff(a, b time.Duration) time.Duration {
-	if a > b {
-		return a - b
-	}
-
-	return b - a
 }
 
 func TestCoverageProcessSuccess(_ *testing.T) {
@@ -433,8 +424,7 @@ func TestMutatorRunInTheCorrectFolder(t *testing.T) {
 		}
 		wdDealer := newWdDealerStub(t)
 		holder := &commandHolder{}
-		mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout,
-			engine.WithExecContext(fakeExecCommandSuccessWithHolder(holder)))
+		mjd := engine.NewExecutorDealer(mod, wdDealer, engine.WithExecContext(fakeExecCommandSuccessWithHolder(holder)))
 		mut := &mutantStub{
 			status:  mutator.Runnable,
 			mutType: mutator.ConditionalsBoundary,
@@ -455,8 +445,10 @@ func TestMutatorRunInTheCorrectFolder(t *testing.T) {
 		executor.Start(w)
 		wg.Wait()
 
-		if mut.Workdir() != holder.cmd.Dir {
-			t.Errorf("expected working dir to be %s, got %s", holder.cmd.Dir, mut.Workdir())
+		cmd := holder.events[0].cmd
+
+		if mut.Workdir() != cmd.Dir {
+			t.Errorf("expected working dir to be %s, got %s", cmd.Dir, mut.Workdir())
 		}
 	})
 }
@@ -474,17 +466,17 @@ func fakeExecCommandSuccess(ctx context.Context, command string, args ...string)
 func fakeExecCommandSuccessWithHolder(got *commandHolder) execContext {
 	return func(ctx context.Context, command string, args ...string) *exec.Cmd {
 		dl, _ := ctx.Deadline()
-		got.m.Lock()
-		defer got.m.Unlock()
 
 		cs := []string{"-test.run=TestCoverageProcessSuccess", "--", command}
 		cs = append(cs, args...)
 		cmd := getCmd(ctx, cs)
 
-		got.cmd = cmd
-		got.command = command
-		got.args = args
-		got.timeout = time.Until(dl)
+		got.events = append(got.events, struct {
+			cmd     *exec.Cmd
+			command string
+			args    []string
+			timeout time.Duration
+		}{cmd: cmd, command: command, args: args, timeout: time.Until(dl)})
 
 		return cmd
 	}

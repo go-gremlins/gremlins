@@ -35,10 +35,6 @@ import (
 	"github.com/go-gremlins/gremlins/internal/gomodule"
 )
 
-// DefaultTimeoutCoefficient is the default multiplier for the timeout length
-// of each test run.
-const DefaultTimeoutCoefficient = 3
-
 // ExecutorDealer is the initializer for new workerpool.Executor.
 type ExecutorDealer interface {
 	NewExecutor(mut mutator.Mutator, outCh chan<- mutator.Mutator, wg *sync.WaitGroup) workerpool.Executor
@@ -53,14 +49,14 @@ type ExecutorDealer interface {
 // rollback. These can be overridden with nop functions in tests. Not an
 // ideal setup. In the future we can think of a better way to handle this.
 type MutantExecutorDealer struct {
-	wdDealer          workdir.Dealer
-	execContext       execContext
-	mod               gomodule.GoModule
-	buildTags         string
-	testExecutionTime time.Duration
-	dryRun            bool
-	integrationMode   bool
-	testCPU           int
+	wdDealer        workdir.Dealer
+	execContext     execContext
+	mod             gomodule.GoModule
+	timeout         *Timeout
+	buildTags       string
+	dryRun          bool
+	integrationMode bool
+	testCPU         int
 }
 
 // ExecutorDealerOption is the defining option for the initialisation of a ExecutorDealer.
@@ -76,31 +72,25 @@ func WithExecContext(c execContext) ExecutorDealerOption {
 }
 
 // NewExecutorDealer initialises a MutantExecutorDealer.
-func NewExecutorDealer(mod gomodule.GoModule, wdd workdir.Dealer, elapsed time.Duration, opts ...ExecutorDealerOption) *MutantExecutorDealer {
+func NewExecutorDealer(mod gomodule.GoModule, wdd workdir.Dealer, opts ...ExecutorDealerOption) *MutantExecutorDealer {
 	buildTags := configuration.Get[string](configuration.UnleashTagsKey)
 	dryRun := configuration.Get[bool](configuration.UnleashDryRunKey)
 	integrationMode := configuration.Get[bool](configuration.UnleashIntegrationMode)
 	testCPU := configuration.Get[int](configuration.UnleashTestCPUKey)
-	tCoefficient := configuration.Get[int](configuration.UnleashTimeoutCoefficientKey)
-
-	coefficient := DefaultTimeoutCoefficient
-	if tCoefficient != 0 {
-		coefficient = tCoefficient
-	}
 
 	if testCPU != 0 && integrationMode {
 		testCPU /= testCPU
 	}
 
 	jd := MutantExecutorDealer{
-		mod:               mod,
-		wdDealer:          wdd,
-		buildTags:         buildTags,
-		dryRun:            dryRun,
-		integrationMode:   integrationMode,
-		testCPU:           testCPU,
-		testExecutionTime: elapsed * time.Duration(coefficient),
-		execContext:       exec.CommandContext,
+		mod:             mod,
+		wdDealer:        wdd,
+		timeout:         NewTimeout(),
+		buildTags:       buildTags,
+		dryRun:          dryRun,
+		integrationMode: integrationMode,
+		testCPU:         testCPU,
+		execContext:     exec.CommandContext,
 	}
 
 	for _, opt := range opts {
@@ -116,17 +106,17 @@ func NewExecutorDealer(mod gomodule.GoModule, wdd workdir.Dealer, elapsed time.D
 // executor is complete.
 func (m MutantExecutorDealer) NewExecutor(mut mutator.Mutator, outCh chan<- mutator.Mutator, wg *sync.WaitGroup) workerpool.Executor {
 	mj := mutantExecutor{
-		mutant:            mut,
-		outCh:             outCh,
-		wg:                wg,
-		wdDealer:          m.wdDealer,
-		module:            m.mod,
-		dryRun:            m.dryRun,
-		integrationMode:   m.integrationMode,
-		buildTags:         m.buildTags,
-		execContext:       m.execContext,
-		testCPU:           m.testCPU,
-		testExecutionTime: m.testExecutionTime,
+		mutant:          mut,
+		outCh:           outCh,
+		wg:              wg,
+		timeout:         m.timeout,
+		wdDealer:        m.wdDealer,
+		module:          m.mod,
+		dryRun:          m.dryRun,
+		integrationMode: m.integrationMode,
+		buildTags:       m.buildTags,
+		execContext:     m.execContext,
+		testCPU:         m.testCPU,
 	}
 
 	return &mj
@@ -135,18 +125,20 @@ func (m MutantExecutorDealer) NewExecutor(mut mutator.Mutator, outCh chan<- muta
 type execContext = func(ctx context.Context, name string, args ...string) *exec.Cmd
 
 type mutantExecutor struct {
-	mutant            mutator.Mutator
-	wdDealer          workdir.Dealer
-	outCh             chan<- mutator.Mutator
-	wg                *sync.WaitGroup
-	execContext       execContext
-	module            gomodule.GoModule
-	buildTags         string
-	testExecutionTime time.Duration
-	dryRun            bool
-	integrationMode   bool
-	testCPU           int
+	mutant          mutator.Mutator
+	wdDealer        workdir.Dealer
+	outCh           chan<- mutator.Mutator
+	wg              *sync.WaitGroup
+	execContext     execContext
+	timeout         *Timeout
+	module          gomodule.GoModule
+	buildTags       string
+	dryRun          bool
+	integrationMode bool
+	testCPU         int
 }
+
+var lock sync.Mutex
 
 // Start is the implementation of the workerpool.Executor definition and is the
 // method responsible for performing the actual mutation testing.
@@ -176,13 +168,15 @@ func (m *mutantExecutor) Start(w *workerpool.Worker) {
 		return
 	}
 
+	testTimeout := m.determineTimeout()
+
 	if err := m.mutant.Apply(); err != nil {
 		log.Errorf("failed to apply mutation at %s - %s\n\t%v", m.mutant.Position(), m.mutant.Status(), err)
 
 		return
 	}
 
-	m.mutant.SetStatus(m.runTests(m.mutant.Pkg()))
+	m.mutant.SetStatus(m.runTests(m.mutant.Pkg(), testTimeout))
 
 	if err := m.mutant.Rollback(); err != nil {
 		// What should we do now?
@@ -193,15 +187,37 @@ func (m *mutantExecutor) Start(w *workerpool.Worker) {
 	report.Mutant(m.mutant)
 }
 
-func (m *mutantExecutor) runTests(pkg string) mutator.Status {
-	ctx, cancel := context.WithTimeout(context.Background(), m.testExecutionTime)
-	defer cancel()
+func (m *mutantExecutor) determineTimeout() time.Duration {
+	testTimeout, ok := m.timeout.Of(m.mutant.Pkg())
+	if !ok {
+		lock.Lock()
+		defer lock.Unlock()
+		testTimeout, ok = m.timeout.Of(m.mutant.Pkg())
+		if !ok {
+			start := time.Now()
+			m.runTests(m.mutant.Pkg(), 0)
+			elapsed := time.Since(start)
+			testTimeout = m.timeout.SetTo(m.mutant.Pkg(), elapsed)
+		}
+	}
 
-	cmd := m.execContext(ctx, "go", m.getTestArgs(pkg)...)
+	return testTimeout
+}
+
+func (m *mutantExecutor) runTests(pkg string, timeout time.Duration) mutator.Status {
+	start := time.Now()
+	ctx := context.Background()
+	if timeout > 0 {
+		var cancel func()
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+	cmd := m.execContext(ctx, "go", m.getTestArgs(pkg, timeout)...)
 	cmd.Dir = m.mutant.Workdir()
 
 	rel, err := run(cmd)
 	defer rel()
+	elapsed := time.Since(start)
 
 	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 		return mutator.TimedOut
@@ -210,11 +226,12 @@ func (m *mutantExecutor) runTests(pkg string) mutator.Status {
 	if errors.As(err, &exitErr) {
 		return getTestFailedStatus(exitErr.ExitCode())
 	}
+	m.timeout.SetTo(pkg, elapsed)
 
 	return mutator.Lived
 }
 
-func (m *mutantExecutor) getTestArgs(pkg string) []string {
+func (m *mutantExecutor) getTestArgs(pkg string, to time.Duration) []string {
 	args := []string{"test"}
 	if m.buildTags != "" {
 		args = append(args, "-tags", m.buildTags)
@@ -222,7 +239,11 @@ func (m *mutantExecutor) getTestArgs(pkg string) []string {
 	// Here we add some seconds to the timeout to be sure it's gremlins that catches the test
 	// timeout and not the test itself. The timeout on the test prevents the test.* processes
 	// from hanging forever.
-	args = append(args, "-timeout", (2*time.Second + m.testExecutionTime).String())
+	if to > 0 {
+		t := time.Duration(2.0 * float64(to))
+		args = append(args, "-timeout", t.String())
+	}
+	args = append(args, "-count=1")
 	args = append(args, "-failfast")
 
 	if m.testCPU != 0 {

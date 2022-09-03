@@ -37,7 +37,6 @@ import (
 // it took to generate the coverage report.
 type Result struct {
 	Profile Profile
-	Elapsed time.Duration
 }
 
 // Coverage is responsible for executing a Go test with coverage via the Run() method,
@@ -109,7 +108,7 @@ func (c *Coverage) Run() (Result, error) {
 		return Result{}, fmt.Errorf("an error occurred while generating coverage profile: %w", err)
 	}
 
-	return Result{Profile: profile, Elapsed: elapsed}, nil
+	return Result{Profile: profile}, nil
 }
 
 func (c *Coverage) profile() (Profile, error) {

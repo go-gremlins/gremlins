@@ -171,9 +171,6 @@ func TestCoverageParsesOutput(t *testing.T) {
 	if !cmp.Equal(got.Profile, want.Profile) {
 		t.Error(cmp.Diff(got, want))
 	}
-	if got.Elapsed == 0 {
-		t.Errorf("expected elapsed time to be greater than 0")
-	}
 }
 
 func TestParseOutputFail(t *testing.T) {

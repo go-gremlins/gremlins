@@ -193,8 +193,6 @@ func (mu *Engine) executeTests(ctx context.Context) report.Results {
 		for mut := range mu.mutantStream {
 			ok := checkDone(ctx)
 			if !ok {
-				pool.Stop()
-
 				break
 			}
 			wg.Add(1)
@@ -205,6 +203,7 @@ func (mu *Engine) executeTests(ctx context.Context) report.Results {
 	go func() {
 		wg.Wait()
 		close(outCh)
+		pool.Stop()
 	}()
 
 	for m := range outCh {
