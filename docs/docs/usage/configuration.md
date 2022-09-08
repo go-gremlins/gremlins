@@ -70,6 +70,8 @@ mutants:
     enabled: true
   invert-logical:
     enabled: false
+  invert-loopctrl:
+    enabled: true
 
 ```
 

@@ -199,6 +199,16 @@ Enables/disables the [INVERT LOGICAL](../../mutations/invert_logical.md) mutant 
 gremlins unleash --invert_logical=true
 ```
 
+### Invert loop control
+
+:material-flag: `--invert-loopctrl` · :material-sign-direction: Default: `true`
+
+Enables/disables the [INVERT LOOP](../../mutations/invert_loop.md) mutant type.
+
+```shell
+gremlins unleash --invert-loopctrl
+```
+
 ### Workers
 
 :material-flag: `--workers` · :material-sign-direction: Default: `0`

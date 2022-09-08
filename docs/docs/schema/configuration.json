@@ -145,6 +145,20 @@
               "default": true
             }
           }
+        },
+        "invert-loopctrl": {
+          "title": "The invert-loopctrl Schema",
+          "type": "object",
+          "required": [
+            "enabled"
+          ],
+          "properties": {
+            "enabled": {
+              "title": "The enabled Schema",
+              "type": "boolean",
+              "default": true
+            }
+          }
         }
       }
     }
