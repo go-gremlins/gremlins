@@ -75,6 +75,7 @@ const (
 	IncrementDecrement
 	InvertLogical
 	InvertNegatives
+	InvertLoopCtrl
 )
 
 // Types allows to iterate over Type.
@@ -85,6 +86,7 @@ var Types = []Type{
 	IncrementDecrement,
 	InvertLogical,
 	InvertNegatives,
+	InvertLoopCtrl,
 }
 
 func (mt Type) String() string {
@@ -101,6 +103,8 @@ func (mt Type) String() string {
 		return "INVERT_NEGATIVES"
 	case ArithmeticBase:
 		return "ARITHMETIC_BASE"
+	case InvertLoopCtrl:
+		return "INVERT_LOOPCTRL"
 	default:
 		panic("this should not happen")
 	}

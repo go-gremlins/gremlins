@@ -45,6 +45,9 @@ func NewTokenNode(n ast.Node) (*NodeToken, bool) {
 	case *ast.IncDecStmt:
 		tok = &n.Tok
 		pos = n.TokPos
+	case *ast.BranchStmt:
+		tok = &n.Tok
+		pos = n.TokPos
 	default:
 		return &NodeToken{}, false
 	}

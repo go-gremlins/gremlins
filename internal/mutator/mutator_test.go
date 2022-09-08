@@ -107,6 +107,11 @@ func TestTypeString(t *testing.T) {
 			expected:   "ARITHMETIC_BASE",
 			mutantType: mutator.ArithmeticBase,
 		},
+		{
+			name:       "INVERT_LOOPCTRL",
+			expected:   "INVERT_LOOPCTRL",
+			mutantType: mutator.InvertLoopCtrl,
+		},
 	}
 	for _, tc := range testCases {
 		tc := tc
