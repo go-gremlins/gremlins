@@ -156,7 +156,7 @@
             "enabled": {
               "title": "The enabled Schema",
               "type": "boolean",
-              "default": true
+              "default": false
             }
           }
         }

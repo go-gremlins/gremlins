@@ -71,7 +71,7 @@ mutants:
   invert-logical:
     enabled: false
   invert-loopctrl:
-    enabled: true
+    enabled: false
 
 ```
 

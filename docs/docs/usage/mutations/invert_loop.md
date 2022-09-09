@@ -4,7 +4,7 @@ title: Invert loop
 
 # Invert loop control
 
-_Invert loop control_ will perform inversions on control operations, which means a `continue` will become a `break`..
+_Invert loop control_ will perform inversions on control operations, which means a `continue` will become a `break`.
 
 ## Mutation table
 
