@@ -21,7 +21,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/go-gremlins/gremlins/internal/log"
@@ -45,56 +44,28 @@ type Dealer interface {
 // Gremlins not to work in the actual source directory messing up
 // with the source code files.
 type CachedDealer struct {
-	mutex            *sync.RWMutex
-	cache            map[string]string
-	workDir          string
-	srcDir           string
-	dockerRootFolder string
-	withinDocker     bool
+	mutex   *sync.RWMutex
+	cache   map[string]string
+	workDir string
+	srcDir  string
 }
-
-// Option for the CachedDealer initialization.
-type Option func(d *CachedDealer) *CachedDealer
 
 // NewCachedDealer instantiates a new Dealer that keeps a cache of the
 // instantiated folders. Every time a new working directory is requested
 // with the same identifier, the same folder reference is returned.
-// It also verifies whether it is running inside a Docker container or not,
-// and makes copies instead of hard links if it is.
-func NewCachedDealer(workDir, srcDir string, opts ...Option) *CachedDealer {
+func NewCachedDealer(workDir, srcDir string) *CachedDealer {
 	dealer := &CachedDealer{
-		mutex:            &sync.RWMutex{},
-		cache:            make(map[string]string),
-		workDir:          workDir,
-		srcDir:           srcDir,
-		dockerRootFolder: "/",
-	}
-
-	for _, opt := range opts {
-		dealer = opt(dealer)
-	}
-
-	if isRunningInDockerContainer(dealer.dockerRootFolder) {
-		dealer.withinDocker = true
-
-		return dealer
+		mutex:   &sync.RWMutex{},
+		cache:   make(map[string]string),
+		workDir: workDir,
+		srcDir:  srcDir,
 	}
 
 	return dealer
 }
 
-// WithDockerRootFolder overrides the default root folder where to look for .dockerenv file.
-func WithDockerRootFolder(rootFolder string) Option {
-	return func(d *CachedDealer) *CachedDealer {
-		d.dockerRootFolder = rootFolder
-
-		return d
-	}
-}
-
-// Get provides a working directory where all the files are hard links
-// to the original files in the source directory. It makes full copies
-// in case Gremlins is running inside a Docker container.
+// Get provides a working directory where all the files are full copies
+// to the original files in the source directory.
 func (cd *CachedDealer) Get(idf string) (string, error) {
 	dstDir, ok := cd.fromCache(idf)
 	if ok {
@@ -157,26 +128,19 @@ func (cd *CachedDealer) copyTo(dstDir string) func(srcPath string, info fs.FileI
 		}
 		dstPath := filepath.Join(dstDir, relPath)
 
-		return cd.copyPath(srcPath, dstPath, info)
+		return copyPath(srcPath, dstPath, info)
 	}
 }
 
-func (cd *CachedDealer) copyPath(srcPath, dstPath string, info fs.FileInfo) error {
+func copyPath(srcPath, dstPath string, info fs.FileInfo) error {
 	switch mode := info.Mode(); {
 	case mode.IsDir():
 		if err := os.Mkdir(dstPath, mode); err != nil && !os.IsExist(err) {
 			return err
 		}
 	case mode.IsRegular():
-		if cd.withinDocker {
-			// When gremlins is running within a docker container, hard link doesn't work, so we do a copy of the file
-			if err := doCopy(srcPath, dstPath, mode); err != nil {
-				return err
-			}
-		} else {
-			if err := os.Link(srcPath, dstPath); err != nil {
-				return err
-			}
+		if err := doCopy(srcPath, dstPath, mode); err != nil {
+			return err
 		}
 	}
 
@@ -199,13 +163,4 @@ func doCopy(srcPath, dstPath string, fileMode fs.FileMode) error {
 	}
 
 	return nil
-}
-
-func isRunningInDockerContainer(dockerRootFolder string) bool {
-	f := strings.TrimSuffix(dockerRootFolder, "/") + "/" + ".dockerenv"
-	if _, err := os.Stat(f); err == nil {
-		return true
-	}
-
-	return false
 }
