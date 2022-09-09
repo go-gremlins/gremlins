@@ -81,6 +81,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://gremlins.dev/next/usage/mutations/invert_loop/</loc>
+         <lastmod>2022-09-09</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://gremlins.dev/next/usage/mutations/invert_negatives/</loc>
          <lastmod>2022-09-09</lastmod>
          <changefreq>daily</changefreq>
