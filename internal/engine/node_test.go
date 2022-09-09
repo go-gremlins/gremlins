@@ -67,6 +67,16 @@ func TestNewTokenNode(t *testing.T) {
 			supported: true,
 		},
 		{
+			name: "BranchStmt",
+			node: &ast.BranchStmt{
+				TokPos: 123,
+				Tok:    token.CONTINUE,
+			},
+			wantTok:   token.CONTINUE,
+			wantPos:   123,
+			supported: true,
+		},
+		{
 			name: "not supported",
 			node: &ast.BasicLit{
 				ValuePos: 123,

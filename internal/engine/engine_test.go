@@ -226,6 +226,22 @@ func TestMutations(t *testing.T) {
 			covResult:  notCoveredPosition("testdata/fixtures/lor_go"),
 			mutStatus:  mutator.NotCovered,
 		},
+		{
+			name:       "it recognizes INVERT_LOOPCTRL with CONTINUE",
+			fixture:    "testdata/fixtures/loop_continue_go",
+			mutantType: mutator.InvertLoopCtrl,
+			token:      token.CONTINUE,
+			covResult:  notCoveredPosition("testdata/fixtures/loop_continue_go"),
+			mutStatus:  mutator.NotCovered,
+		},
+		{
+			name:       "it recognizes INVERT_LOOPCTRL with BREAK",
+			fixture:    "testdata/fixtures/loop_break_go",
+			mutantType: mutator.InvertLoopCtrl,
+			token:      token.BREAK,
+			covResult:  notCoveredPosition("testdata/fixtures/loop_break_go"),
+			mutStatus:  mutator.NotCovered,
+		},
 		// Common behaviours
 		{
 			name:       "it works with recursion",

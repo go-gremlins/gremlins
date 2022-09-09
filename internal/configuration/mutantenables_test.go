@@ -54,6 +54,10 @@ func TestMutantDefaultStatus(t *testing.T) {
 			mutantType: mutator.InvertNegatives,
 			expected:   true,
 		},
+		{
+			mutantType: mutator.InvertLoopCtrl,
+			expected:   false,
+		},
 	}
 
 	for _, tc := range testCases {
