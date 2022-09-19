@@ -60,7 +60,7 @@ func TestMutantDefaultStatus(t *testing.T) {
 		},
 		{
 			mutantType: mutator.InvertAssignments,
-			expected:   true,
+			expected:   false,
 		},
 	}
 

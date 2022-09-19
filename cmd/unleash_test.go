@@ -46,16 +46,73 @@ func TestUnleash(t *testing.T) {
 		defValue  string
 	}{
 		{
+			name:     "arithmetic-base",
+			flagType: "bool",
+			defValue: "true",
+		},
+		{
+			name:     "conditionals-boundary",
+			flagType: "bool",
+			defValue: "true",
+		},
+		{
+			name:     "conditionals_negation",
+			flagType: "bool",
+			defValue: "true",
+		},
+		{
 			name:      "dry-run",
 			shorthand: "d",
 			flagType:  "bool",
 			defValue:  "false",
 		},
 		{
+			name:     "increment-decrement",
+			flagType: "bool",
+			defValue: "true",
+		},
+		{
+			name:      "integration",
+			shorthand: "i",
+			flagType:  "bool",
+			defValue:  "false",
+		},
+		{
+			name:     "invert-assignments",
+			flagType: "bool",
+			defValue: "false",
+		},
+		{
+			name:     "invert-logical",
+			flagType: "bool",
+			defValue: "false",
+		},
+		{
+			name:     "invert-loopctrl",
+			flagType: "bool",
+			defValue: "false",
+		},
+		{
+			name:     "invert-negatives",
+			flagType: "bool",
+			defValue: "true",
+		},
+		{
+			name:      "output",
+			shorthand: "o",
+			flagType:  "string",
+			defValue:  "",
+		},
+		{
 			name:      "tags",
 			shorthand: "t",
 			flagType:  "string",
 			defValue:  "",
+		},
+		{
+			name:     "test-cpu",
+			flagType: "int",
+			defValue: "0",
 		},
 		{
 			name:     "threshold-efficacy",
@@ -68,29 +125,12 @@ func TestUnleash(t *testing.T) {
 			defValue: "0",
 		},
 		{
-			name:      "output",
-			shorthand: "o",
-			flagType:  "string",
-			defValue:  "",
-		},
-		{
-			name:      "integration",
-			shorthand: "i",
-			flagType:  "bool",
-			defValue:  "false",
-		},
-		{
-			name:     "test-cpu",
+			name:     "timeout-coefficient",
 			flagType: "int",
 			defValue: "0",
 		},
 		{
 			name:     "workers",
-			flagType: "int",
-			defValue: "0",
-		},
-		{
-			name:     "timeout-coefficient",
 			flagType: "int",
 			defValue: "0",
 		},

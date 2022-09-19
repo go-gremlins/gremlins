@@ -36,21 +36,21 @@ func NewTokenNode(n ast.Node) (*NodeToken, bool) {
 	var tok *token.Token
 	var pos token.Pos
 	switch n := n.(type) {
-	case *ast.UnaryExpr:
-		tok = &n.Op
-		pos = n.OpPos
-	case *ast.BinaryExpr:
-		tok = &n.Op
-		pos = n.OpPos
-	case *ast.IncDecStmt:
-		tok = &n.Tok
-		pos = n.TokPos
-	case *ast.BranchStmt:
-		tok = &n.Tok
-		pos = n.TokPos
 	case *ast.AssignStmt:
 		tok = &n.Tok
 		pos = n.TokPos
+	case *ast.BinaryExpr:
+		tok = &n.Op
+		pos = n.OpPos
+	case *ast.BranchStmt:
+		tok = &n.Tok
+		pos = n.TokPos
+	case *ast.IncDecStmt:
+		tok = &n.Tok
+		pos = n.TokPos
+	case *ast.UnaryExpr:
+		tok = &n.Op
+		pos = n.OpPos
 	default:
 		return &NodeToken{}, false
 	}

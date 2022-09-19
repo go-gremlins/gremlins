@@ -33,6 +33,18 @@ func TestNewTokenNode(t *testing.T) {
 		supported bool
 	}{
 		{
+			name: "AssignStmt",
+			node: &ast.AssignStmt{
+				Lhs:    nil,
+				TokPos: 123,
+				Tok:    token.ADD_ASSIGN,
+				Rhs:    nil,
+			},
+			wantTok:   token.ADD_ASSIGN,
+			wantPos:   123,
+			supported: true,
+		},
+		{
 			name: "BinaryExpr",
 			node: &ast.BinaryExpr{
 				X:     nil,
@@ -45,13 +57,12 @@ func TestNewTokenNode(t *testing.T) {
 			supported: true,
 		},
 		{
-			name: "UnaryExpr",
-			node: &ast.UnaryExpr{
-				X:     nil,
-				OpPos: 123,
-				Op:    token.ADD,
+			name: "BranchStmt",
+			node: &ast.BranchStmt{
+				TokPos: 123,
+				Tok:    token.CONTINUE,
 			},
-			wantTok:   token.ADD,
+			wantTok:   token.CONTINUE,
 			wantPos:   123,
 			supported: true,
 		},
@@ -67,24 +78,13 @@ func TestNewTokenNode(t *testing.T) {
 			supported: true,
 		},
 		{
-			name: "BranchStmt",
-			node: &ast.BranchStmt{
-				TokPos: 123,
-				Tok:    token.CONTINUE,
+			name: "UnaryExpr",
+			node: &ast.UnaryExpr{
+				X:     nil,
+				OpPos: 123,
+				Op:    token.ADD,
 			},
-			wantTok:   token.CONTINUE,
-			wantPos:   123,
-			supported: true,
-		},
-		{
-			name: "AssignStmt",
-			node: &ast.AssignStmt{
-				Lhs:    nil,
-				TokPos: 123,
-				Tok:    token.ADD_ASSIGN,
-				Rhs:    nil,
-			},
-			wantTok:   token.ADD_ASSIGN,
+			wantTok:   token.ADD,
 			wantPos:   123,
 			supported: true,
 		},
