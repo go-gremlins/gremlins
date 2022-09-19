@@ -159,6 +159,20 @@
               "default": false
             }
           }
+        },
+        "invert-assignments": {
+          "title": "The invert-assignments Schema",
+          "type": "object",
+          "required": [
+            "enabled"
+          ],
+          "properties": {
+            "enabled": {
+              "title": "The enabled Schema",
+              "type": "boolean",
+              "default": false
+            }
+          }
         }
       }
     }

@@ -25,23 +25,28 @@ import (
 // TokenMutantType is the mapping from each token.Token and all the
 // mutator.Type that can be applied to it.
 var TokenMutantType = map[token.Token][]mutator.Type{
-	token.SUB:      {mutator.InvertNegatives, mutator.ArithmeticBase},
-	token.ADD:      {mutator.ArithmeticBase},
-	token.MUL:      {mutator.ArithmeticBase},
-	token.QUO:      {mutator.ArithmeticBase},
-	token.REM:      {mutator.ArithmeticBase},
-	token.EQL:      {mutator.ConditionalsNegation},
-	token.NEQ:      {mutator.ConditionalsNegation},
-	token.GTR:      {mutator.ConditionalsBoundary, mutator.ConditionalsNegation},
-	token.LSS:      {mutator.ConditionalsBoundary, mutator.ConditionalsNegation},
-	token.GEQ:      {mutator.ConditionalsBoundary, mutator.ConditionalsNegation},
-	token.LEQ:      {mutator.ConditionalsBoundary, mutator.ConditionalsNegation},
-	token.INC:      {mutator.IncrementDecrement},
-	token.DEC:      {mutator.IncrementDecrement},
-	token.LAND:     {mutator.InvertLogical},
-	token.LOR:      {mutator.InvertLogical},
-	token.BREAK:    {mutator.InvertLoopCtrl},
-	token.CONTINUE: {mutator.InvertLoopCtrl},
+	token.SUB:        {mutator.InvertNegatives, mutator.ArithmeticBase},
+	token.ADD:        {mutator.ArithmeticBase},
+	token.MUL:        {mutator.ArithmeticBase},
+	token.QUO:        {mutator.ArithmeticBase},
+	token.REM:        {mutator.ArithmeticBase},
+	token.EQL:        {mutator.ConditionalsNegation},
+	token.NEQ:        {mutator.ConditionalsNegation},
+	token.GTR:        {mutator.ConditionalsBoundary, mutator.ConditionalsNegation},
+	token.LSS:        {mutator.ConditionalsBoundary, mutator.ConditionalsNegation},
+	token.GEQ:        {mutator.ConditionalsBoundary, mutator.ConditionalsNegation},
+	token.LEQ:        {mutator.ConditionalsBoundary, mutator.ConditionalsNegation},
+	token.INC:        {mutator.IncrementDecrement},
+	token.DEC:        {mutator.IncrementDecrement},
+	token.LAND:       {mutator.InvertLogical},
+	token.LOR:        {mutator.InvertLogical},
+	token.BREAK:      {mutator.InvertLoopCtrl},
+	token.CONTINUE:   {mutator.InvertLoopCtrl},
+	token.ADD_ASSIGN: {mutator.InvertAssignments},
+	token.SUB_ASSIGN: {mutator.InvertAssignments},
+	token.MUL_ASSIGN: {mutator.InvertAssignments},
+	token.QUO_ASSIGN: {mutator.InvertAssignments},
+	token.REM_ASSIGN: {mutator.InvertAssignments},
 }
 
 var tokenMutations = map[mutator.Type]map[token.Token]token.Token{
@@ -80,5 +85,12 @@ var tokenMutations = map[mutator.Type]map[token.Token]token.Token{
 	mutator.InvertLoopCtrl: {
 		token.BREAK:    token.CONTINUE,
 		token.CONTINUE: token.BREAK,
+	},
+	mutator.InvertAssignments: {
+		token.ADD_ASSIGN: token.SUB_ASSIGN,
+		token.SUB_ASSIGN: token.ADD_ASSIGN,
+		token.MUL_ASSIGN: token.QUO_ASSIGN,
+		token.QUO_ASSIGN: token.MUL_ASSIGN,
+		token.REM_ASSIGN: token.REM_ASSIGN,
 	},
 }

@@ -77,6 +77,18 @@ func TestNewTokenNode(t *testing.T) {
 			supported: true,
 		},
 		{
+			name: "AssignStmt",
+			node: &ast.AssignStmt{
+				Lhs:    nil,
+				TokPos: 123,
+				Tok:    token.ADD_ASSIGN,
+				Rhs:    nil,
+			},
+			wantTok:   token.ADD_ASSIGN,
+			wantPos:   123,
+			supported: true,
+		},
+		{
 			name: "not supported",
 			node: &ast.BasicLit{
 				ValuePos: 123,

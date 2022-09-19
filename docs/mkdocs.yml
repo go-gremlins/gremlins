@@ -58,6 +58,7 @@ nav:
           - usage/mutations/invert_negatives.md
           - usage/mutations/invert_logical.md
           - usage/mutations/invert_loop.md
+          - usage/mutations/invert_assignments.md
       - Continuous integration:
           - usage/ci/github-action.md
           - usage/ci/docker.md

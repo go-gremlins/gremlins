@@ -28,6 +28,7 @@ var mutationEnabled = map[mutator.Type]bool{
 	mutator.InvertLogical:        false,
 	mutator.InvertNegatives:      true,
 	mutator.InvertLoopCtrl:       false,
+	mutator.InvertAssignments:    true,
 }
 
 // IsDefaultEnabled returns the default enabled/disabled state of the mutation.
