@@ -28,6 +28,15 @@
             "tag1,tag2,tag4"
           ]
         },
+        "coverpkg": {
+          "title": "Cover packages",
+          "description": "Apply coverage analysis in each test to packages matching the patterns",
+          "type": "string",
+          "default": "",
+          "examples": [
+            "./internal/log,./pkg/..."
+          ]
+        },
         "output": {
           "title": "Output",
           "description": "The output file for machine readable results",

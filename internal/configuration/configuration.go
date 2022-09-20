@@ -36,6 +36,7 @@ const (
 	UnleashDryRunKey             = "unleash.dry-run"
 	UnleashOutputKey             = "unleash.output"
 	UnleashTagsKey               = "unleash.tags"
+	UnleashCoverPkgKey           = "unleash.coverpkg"
 	UnleashWorkersKey            = "unleash.workers"
 	UnleashTestCPUKey            = "unleash.test-cpu"
 	UnleashTimeoutCoefficientKey = "unleash.timeout-coefficient"

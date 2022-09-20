@@ -49,6 +49,17 @@ Enables/disables the [CONDITIONALS NEGATION](../../mutations/conditionals_negati
 gremlins unleash --conditionals_negation=false
 ```
 
+### Cover packages
+
+:material-flag: `--coverpkg` · :material-sign-direction: Default: empty
+
+Apply coverage analysis in each test to packages matching the patterns.
+The default is for each test to analyze only the package being tested.
+
+```shell
+gremlins unleash --coverpkg "./internal/...,./pkg/..."
+```
+
 ### Dry run
 
 :material-flag:`--dry-run`/`-d` · :material-sign-direction: Default: false
