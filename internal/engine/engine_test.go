@@ -50,216 +50,260 @@ func notCoveredPosition(fixture string) coverage.Result {
 	return coverage.Result{Profile: p, Elapsed: 10}
 }
 
+type mutationsTest struct {
+	name       string
+	fixture    string
+	covResult  coverage.Result
+	mutantType mutator.Type
+	token      token.Token
+	mutStatus  mutator.Status
+}
+
+var mutationsTests = []mutationsTest{
+	// CONDITIONAL BOUNDARIES
+	{
+		name:       "it recognizes CONDITIONAL_BOUNDARY with GTR",
+		fixture:    "testdata/fixtures/gtr_go",
+		mutantType: mutator.ConditionalsBoundary,
+		token:      token.GTR,
+		covResult:  coveredPosition("testdata/fixtures/gtr_go"),
+		mutStatus:  mutator.Runnable,
+	},
+	{
+		name:       "it recognizes CONDITIONAL_BOUNDARY with LSS",
+		fixture:    "testdata/fixtures/lss_go",
+		mutantType: mutator.ConditionalsBoundary,
+		token:      token.LSS,
+		covResult:  notCoveredPosition("testdata/fixtures/lss_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes CONDITIONAL_BOUNDARY with LEQ",
+		fixture:    "testdata/fixtures/leq_go",
+		mutantType: mutator.ConditionalsBoundary,
+		token:      token.LEQ,
+		covResult:  notCoveredPosition("testdata/fixtures/leq_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes CONDITIONAL_BOUNDARY with GEQ",
+		fixture:    "testdata/fixtures/geq_go",
+		mutantType: mutator.ConditionalsBoundary,
+		token:      token.GEQ,
+		covResult:  notCoveredPosition("testdata/fixtures/geq_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	// INCREMENT_DECREMENT
+	{
+		name:       "it recognizes INCREMENT_DECREMENT with INC",
+		fixture:    "testdata/fixtures/inc_go",
+		mutantType: mutator.IncrementDecrement,
+		token:      token.INC,
+		covResult:  notCoveredPosition("testdata/fixtures/inc_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes INCREMENT_DECREMENT with DEC",
+		fixture:    "testdata/fixtures/dec_go",
+		mutantType: mutator.IncrementDecrement,
+		token:      token.DEC,
+		covResult:  notCoveredPosition("testdata/fixtures/dec_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	// CONDITIONAL_NEGATION
+	{
+		name:       "it recognizes CONDITIONAL_NEGATION with EQL",
+		fixture:    "testdata/fixtures/eql_go",
+		mutantType: mutator.ConditionalsNegation,
+		token:      token.EQL,
+		covResult:  notCoveredPosition("testdata/fixtures/eql_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes CONDITIONAL_NEGATION with NEQ",
+		fixture:    "testdata/fixtures/neq_go",
+		mutantType: mutator.ConditionalsNegation,
+		token:      token.NEQ,
+		covResult:  notCoveredPosition("testdata/fixtures/neq_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes CONDITIONAL_NEGATION with LEQ",
+		fixture:    "testdata/fixtures/leq_go",
+		mutantType: mutator.ConditionalsNegation,
+		token:      token.LEQ,
+		covResult:  notCoveredPosition("testdata/fixtures/leq_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes CONDITIONAL_NEGATION with GTR",
+		fixture:    "testdata/fixtures/gtr_go",
+		mutantType: mutator.ConditionalsNegation,
+		token:      token.GTR,
+		covResult:  notCoveredPosition("testdata/fixtures/gtr_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes CONDITIONAL_NEGATION with GEQ",
+		fixture:    "testdata/fixtures/geq_go",
+		mutantType: mutator.ConditionalsNegation,
+		token:      token.GEQ,
+		covResult:  notCoveredPosition("testdata/fixtures/geq_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes CONDITIONAL_NEGATION with LSS",
+		fixture:    "testdata/fixtures/lss_go",
+		mutantType: mutator.ConditionalsNegation,
+		token:      token.LSS,
+		covResult:  notCoveredPosition("testdata/fixtures/lss_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	// INVERT_NEGATIVES
+	{
+		name:       "it recognizes INVERT_NEGATIVE with SUB",
+		fixture:    "testdata/fixtures/negative_sub_go",
+		mutantType: mutator.InvertNegatives,
+		token:      token.SUB,
+		covResult:  notCoveredPosition("testdata/fixtures/negative_sub_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	// ARITHMETIC_BASIC
+	{
+		name:       "it recognizes ARITHMETIC_BASIC with ADD",
+		fixture:    "testdata/fixtures/add_go",
+		mutantType: mutator.ArithmeticBase,
+		token:      token.ADD,
+		covResult:  notCoveredPosition("testdata/fixtures/add_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes ARITHMETIC_BASIC with SUB",
+		fixture:    "testdata/fixtures/sub_go",
+		mutantType: mutator.ArithmeticBase,
+		token:      token.SUB,
+		covResult:  notCoveredPosition("testdata/fixtures/sub_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes ARITHMETIC_BASIC with MUL",
+		fixture:    "testdata/fixtures/mul_go",
+		mutantType: mutator.ArithmeticBase,
+		token:      token.MUL,
+		covResult:  notCoveredPosition("testdata/fixtures/mul_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes ARITHMETIC_BASIC with QUO",
+		fixture:    "testdata/fixtures/quo_go",
+		mutantType: mutator.ArithmeticBase,
+		token:      token.QUO,
+		covResult:  notCoveredPosition("testdata/fixtures/quo_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes ARITHMETIC_BASIC with REM",
+		fixture:    "testdata/fixtures/rem_go",
+		mutantType: mutator.ArithmeticBase,
+		token:      token.REM,
+		covResult:  notCoveredPosition("testdata/fixtures/rem_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	// INVERT_LOGICAL
+	{
+		name:       "it recognizes INVERT_LOGICAL with LAND",
+		fixture:    "testdata/fixtures/land_go",
+		mutantType: mutator.InvertLogical,
+		token:      token.LAND,
+		covResult:  notCoveredPosition("testdata/fixtures/land_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes INVERT_LOGICAL with LOR",
+		fixture:    "testdata/fixtures/lor_go",
+		mutantType: mutator.InvertLogical,
+		token:      token.LOR,
+		covResult:  notCoveredPosition("testdata/fixtures/lor_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes INVERT_LOOPCTRL with CONTINUE",
+		fixture:    "testdata/fixtures/loop_continue_go",
+		mutantType: mutator.InvertLoopCtrl,
+		token:      token.CONTINUE,
+		covResult:  notCoveredPosition("testdata/fixtures/loop_continue_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes INVERT_LOOPCTRL with BREAK",
+		fixture:    "testdata/fixtures/loop_break_go",
+		mutantType: mutator.InvertLoopCtrl,
+		token:      token.BREAK,
+		covResult:  notCoveredPosition("testdata/fixtures/loop_break_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	// INVERT_ASSIGNMENTS
+	{
+		name:       "it recognizes INVERT_ASSIGNMENTS with ADD_ASSIGN",
+		fixture:    "testdata/fixtures/add_assign_go",
+		mutantType: mutator.InvertAssignments,
+		token:      token.ADD_ASSIGN,
+		covResult:  notCoveredPosition("testdata/fixtures/add_assign_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes INVERT_ASSIGNMENTS with SUB_ASSIGN",
+		fixture:    "testdata/fixtures/sub_assign_go",
+		mutantType: mutator.InvertAssignments,
+		token:      token.SUB_ASSIGN,
+		covResult:  notCoveredPosition("testdata/fixtures/sub_assign_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes INVERT_ASSIGNMENTS with MUL_ASSIGN",
+		fixture:    "testdata/fixtures/mul_assign_go",
+		mutantType: mutator.InvertAssignments,
+		token:      token.MUL_ASSIGN,
+		covResult:  notCoveredPosition("testdata/fixtures/mul_assign_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes INVERT_ASSIGNMENTS with QUO_ASSIGN",
+		fixture:    "testdata/fixtures/quo_assign_go",
+		mutantType: mutator.InvertAssignments,
+		token:      token.QUO_ASSIGN,
+		covResult:  notCoveredPosition("testdata/fixtures/quo_assign_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it recognizes INVERT_ASSIGNMENTS with REM_ASSIGN",
+		fixture:    "testdata/fixtures/rem_assign_go",
+		mutantType: mutator.InvertAssignments,
+		token:      token.REM_ASSIGN,
+		covResult:  notCoveredPosition("testdata/fixtures/rem_assign_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	// Common behaviours
+	{
+		name:       "it works with recursion",
+		fixture:    "testdata/fixtures/geq_land_true_go",
+		mutantType: mutator.ConditionalsBoundary,
+		token:      token.GEQ,
+		covResult:  notCoveredPosition("testdata/fixtures/geq_go"),
+		mutStatus:  mutator.NotCovered,
+	},
+	{
+		name:       "it skips illegal tokens",
+		fixture:    "testdata/fixtures/illegal_go",
+		mutantType: mutator.ConditionalsBoundary,
+		token:      token.ILLEGAL,
+		covResult:  notCoveredPosition("testdata/fixtures/illegal_go"),
+	},
+}
+
 func TestMutations(t *testing.T) {
 	t.Parallel()
-	testCases := []struct {
-		name       string
-		fixture    string
-		covResult  coverage.Result
-		mutantType mutator.Type
-		token      token.Token
-		mutStatus  mutator.Status
-	}{
-		// CONDITIONAL BOUNDARIES
-		{
-			name:       "it recognizes CONDITIONAL_BOUNDARY with GTR",
-			fixture:    "testdata/fixtures/gtr_go",
-			mutantType: mutator.ConditionalsBoundary,
-			token:      token.GTR,
-			covResult:  coveredPosition("testdata/fixtures/gtr_go"),
-			mutStatus:  mutator.Runnable,
-		},
-		{
-			name:       "it recognizes CONDITIONAL_BOUNDARY with LSS",
-			fixture:    "testdata/fixtures/lss_go",
-			mutantType: mutator.ConditionalsBoundary,
-			token:      token.LSS,
-			covResult:  notCoveredPosition("testdata/fixtures/lss_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		{
-			name:       "it recognizes CONDITIONAL_BOUNDARY with LEQ",
-			fixture:    "testdata/fixtures/leq_go",
-			mutantType: mutator.ConditionalsBoundary,
-			token:      token.LEQ,
-			covResult:  notCoveredPosition("testdata/fixtures/leq_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		{
-			name:       "it recognizes CONDITIONAL_BOUNDARY with GEQ",
-			fixture:    "testdata/fixtures/geq_go",
-			mutantType: mutator.ConditionalsBoundary,
-			token:      token.GEQ,
-			covResult:  notCoveredPosition("testdata/fixtures/geq_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		// INCREMENT_DECREMENT
-		{
-			name:       "it recognizes INCREMENT_DECREMENT with INC",
-			fixture:    "testdata/fixtures/inc_go",
-			mutantType: mutator.IncrementDecrement,
-			token:      token.INC,
-			covResult:  notCoveredPosition("testdata/fixtures/inc_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		{
-			name:       "it recognizes INCREMENT_DECREMENT with DEC",
-			fixture:    "testdata/fixtures/dec_go",
-			mutantType: mutator.IncrementDecrement,
-			token:      token.DEC,
-			covResult:  notCoveredPosition("testdata/fixtures/dec_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		// CONDITIONAL_NEGATION
-		{
-			name:       "it recognizes CONDITIONAL_NEGATION with EQL",
-			fixture:    "testdata/fixtures/eql_go",
-			mutantType: mutator.ConditionalsNegation,
-			token:      token.EQL,
-			covResult:  notCoveredPosition("testdata/fixtures/eql_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		{
-			name:       "it recognizes CONDITIONAL_NEGATION with NEQ",
-			fixture:    "testdata/fixtures/neq_go",
-			mutantType: mutator.ConditionalsNegation,
-			token:      token.NEQ,
-			covResult:  notCoveredPosition("testdata/fixtures/neq_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		{
-			name:       "it recognizes CONDITIONAL_NEGATION with LEQ",
-			fixture:    "testdata/fixtures/leq_go",
-			mutantType: mutator.ConditionalsNegation,
-			token:      token.LEQ,
-			covResult:  notCoveredPosition("testdata/fixtures/leq_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		{
-			name:       "it recognizes CONDITIONAL_NEGATION with GTR",
-			fixture:    "testdata/fixtures/gtr_go",
-			mutantType: mutator.ConditionalsNegation,
-			token:      token.GTR,
-			covResult:  notCoveredPosition("testdata/fixtures/gtr_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		{
-			name:       "it recognizes CONDITIONAL_NEGATION with GEQ",
-			fixture:    "testdata/fixtures/geq_go",
-			mutantType: mutator.ConditionalsNegation,
-			token:      token.GEQ,
-			covResult:  notCoveredPosition("testdata/fixtures/geq_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		{
-			name:       "it recognizes CONDITIONAL_NEGATION with LSS",
-			fixture:    "testdata/fixtures/lss_go",
-			mutantType: mutator.ConditionalsNegation,
-			token:      token.LSS,
-			covResult:  notCoveredPosition("testdata/fixtures/lss_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		// INVERT_NEGATIVES
-		{
-			name:       "it recognizes INVERT_NEGATIVE with SUB",
-			fixture:    "testdata/fixtures/negative_sub_go",
-			mutantType: mutator.InvertNegatives,
-			token:      token.SUB,
-			covResult:  notCoveredPosition("testdata/fixtures/negative_sub_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		// ARITHMETIC_BASIC
-		{
-			name:       "it recognizes ARITHMETIC_BASIC with ADD",
-			fixture:    "testdata/fixtures/add_go",
-			mutantType: mutator.ArithmeticBase,
-			token:      token.ADD,
-			covResult:  notCoveredPosition("testdata/fixtures/add_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		{
-			name:       "it recognizes ARITHMETIC_BASIC with SUB",
-			fixture:    "testdata/fixtures/sub_go",
-			mutantType: mutator.ArithmeticBase,
-			token:      token.SUB,
-			covResult:  notCoveredPosition("testdata/fixtures/sub_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		{
-			name:       "it recognizes ARITHMETIC_BASIC with MUL",
-			fixture:    "testdata/fixtures/mul_go",
-			mutantType: mutator.ArithmeticBase,
-			token:      token.MUL,
-			covResult:  notCoveredPosition("testdata/fixtures/mul_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		{
-			name:       "it recognizes ARITHMETIC_BASIC with QUO",
-			fixture:    "testdata/fixtures/quo_go",
-			mutantType: mutator.ArithmeticBase,
-			token:      token.QUO,
-			covResult:  notCoveredPosition("testdata/fixtures/quo_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		{
-			name:       "it recognizes ARITHMETIC_BASIC with REM",
-			fixture:    "testdata/fixtures/rem_go",
-			mutantType: mutator.ArithmeticBase,
-			token:      token.REM,
-			covResult:  notCoveredPosition("testdata/fixtures/rem_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		// INVERT_LOGICAL
-		{
-			name:       "it recognizes INVERT_LOGICAL with LAND",
-			fixture:    "testdata/fixtures/land_go",
-			mutantType: mutator.InvertLogical,
-			token:      token.LAND,
-			covResult:  notCoveredPosition("testdata/fixtures/land_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		{
-			name:       "it recognizes INVERT_LOGICAL with LOR",
-			fixture:    "testdata/fixtures/lor_go",
-			mutantType: mutator.InvertLogical,
-			token:      token.LOR,
-			covResult:  notCoveredPosition("testdata/fixtures/lor_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		{
-			name:       "it recognizes INVERT_LOOPCTRL with CONTINUE",
-			fixture:    "testdata/fixtures/loop_continue_go",
-			mutantType: mutator.InvertLoopCtrl,
-			token:      token.CONTINUE,
-			covResult:  notCoveredPosition("testdata/fixtures/loop_continue_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		{
-			name:       "it recognizes INVERT_LOOPCTRL with BREAK",
-			fixture:    "testdata/fixtures/loop_break_go",
-			mutantType: mutator.InvertLoopCtrl,
-			token:      token.BREAK,
-			covResult:  notCoveredPosition("testdata/fixtures/loop_break_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		// Common behaviours
-		{
-			name:       "it works with recursion",
-			fixture:    "testdata/fixtures/geq_land_true_go",
-			mutantType: mutator.ConditionalsBoundary,
-			token:      token.GEQ,
-			covResult:  notCoveredPosition("testdata/fixtures/geq_go"),
-			mutStatus:  mutator.NotCovered,
-		},
-		{
-			name:       "it skips illegal tokens",
-			fixture:    "testdata/fixtures/illegal_go",
-			mutantType: mutator.ConditionalsBoundary,
-			token:      token.ILLEGAL,
-			covResult:  notCoveredPosition("testdata/fixtures/illegal_go"),
-		},
-	}
-	for _, tc := range testCases {
+	for _, tc := range mutationsTests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
