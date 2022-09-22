@@ -61,6 +61,11 @@ func TestUnleash(t *testing.T) {
 			defValue: "true",
 		},
 		{
+			name:     "coverpkg",
+			flagType: "string",
+			defValue: "",
+		},
+		{
 			name:      "dry-run",
 			shorthand: "d",
 			flagType:  "bool",
