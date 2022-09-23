@@ -50,6 +50,7 @@ type Coverage struct {
 	mod        gomodule.GoModule
 
 	buildTags       string
+	coverPkg        string
 	integrationMode bool
 }
 
@@ -67,6 +68,7 @@ func New(workdir string, mod gomodule.GoModule, opts ...Option) *Coverage {
 // NewWithCmd instantiates a Coverage element given a custom execContext.
 func NewWithCmd(cmdContext execContext, workdir string, mod gomodule.GoModule, opts ...Option) *Coverage {
 	buildTags := configuration.Get[string](configuration.UnleashTagsKey)
+	coverPkg := configuration.Get[string](configuration.UnleashCoverPkgKey)
 	integrationMode := configuration.Get[bool](configuration.UnleashIntegrationMode)
 
 	c := &Coverage{
@@ -76,6 +78,7 @@ func NewWithCmd(cmdContext execContext, workdir string, mod gomodule.GoModule, o
 		fileName:        "coverage",
 		mod:             mod,
 		buildTags:       buildTags,
+		coverPkg:        coverPkg,
 		integrationMode: integrationMode,
 	}
 	for _, opt := range opts {
@@ -141,6 +144,9 @@ func (c *Coverage) executeCoverage() (time.Duration, error) {
 	args := []string{"test"}
 	if c.buildTags != "" {
 		args = append(args, "-tags", c.buildTags)
+	}
+	if c.coverPkg != "" {
+		args = append(args, "-coverpkg", c.coverPkg)
 	}
 
 	args = append(args, "-cover", "-coverprofile", c.filePath(), c.scanPath())

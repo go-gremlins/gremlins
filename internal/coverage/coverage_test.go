@@ -71,10 +71,12 @@ func TestCoverageRun(t *testing.T) {
 			intMode:  true,
 		},
 	}
+	coverpkg := "./internal/log,./pkg/..."
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			viper.Set(configuration.UnleashTagsKey, "tag1 tag2")
+			viper.Set(configuration.UnleashCoverPkgKey, coverpkg)
 			viper.Set(configuration.UnleashIntegrationMode, tc.intMode)
 			defer viper.Reset()
 
@@ -92,7 +94,8 @@ func TestCoverageRun(t *testing.T) {
 			_, _ = cov.Run()
 
 			firstWant := "go mod download"
-			secondWant := fmt.Sprintf("go test -tags tag1 tag2 -cover -coverprofile %v %s", wantFilePath, tc.wantPath)
+			secondWant := fmt.Sprintf("go test -tags tag1 tag2 -coverpkg %s -cover -coverprofile %v %s",
+				coverpkg, wantFilePath, tc.wantPath)
 
 			if len(holder.events) != 2 {
 				t.Fatal("expected two commands to be executed")
