@@ -72,6 +72,8 @@ mutants:
     enabled: false
   invert-loopctrl:
     enabled: false
+  invert-bitwise:
+    enabled: false
 
 ```
 
