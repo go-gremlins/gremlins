@@ -27,6 +27,8 @@ import (
 var TokenMutantType = map[token.Token][]mutator.Type{
 	token.ADD:        {mutator.ArithmeticBase},
 	token.ADD_ASSIGN: {mutator.InvertAssignments},
+	token.AND:        {mutator.InvertBitwise},
+	token.AND_NOT:    {mutator.InvertBitwise},
 	token.BREAK:      {mutator.InvertLoopCtrl},
 	token.CONTINUE:   {mutator.InvertLoopCtrl},
 	token.DEC:        {mutator.IncrementDecrement},
@@ -41,12 +43,16 @@ var TokenMutantType = map[token.Token][]mutator.Type{
 	token.MUL:        {mutator.ArithmeticBase},
 	token.MUL_ASSIGN: {mutator.InvertAssignments},
 	token.NEQ:        {mutator.ConditionalsNegation},
+	token.OR:         {mutator.InvertBitwise},
 	token.QUO:        {mutator.ArithmeticBase},
 	token.QUO_ASSIGN: {mutator.InvertAssignments},
 	token.REM:        {mutator.ArithmeticBase},
 	token.REM_ASSIGN: {mutator.InvertAssignments},
+	token.SHL:        {mutator.InvertBitwise},
+	token.SHR:        {mutator.InvertBitwise},
 	token.SUB:        {mutator.InvertNegatives, mutator.ArithmeticBase},
 	token.SUB_ASSIGN: {mutator.InvertAssignments},
+	token.XOR:        {mutator.InvertBitwise},
 }
 
 var tokenMutations = map[mutator.Type]map[token.Token]token.Token{
@@ -92,5 +98,13 @@ var tokenMutations = map[mutator.Type]map[token.Token]token.Token{
 	},
 	mutator.InvertNegatives: {
 		token.SUB: token.ADD,
+	},
+	mutator.InvertBitwise: {
+		token.AND:     token.OR,
+		token.OR:      token.AND,
+		token.XOR:     token.AND,
+		token.AND_NOT: token.AND,
+		token.SHL:     token.SHR,
+		token.SHR:     token.SHL,
 	},
 }

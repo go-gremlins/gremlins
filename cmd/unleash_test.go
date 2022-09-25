@@ -88,6 +88,11 @@ func TestUnleash(t *testing.T) {
 			defValue: "false",
 		},
 		{
+			name:     "invert-bitwise",
+			flagType: "bool",
+			defValue: "false",
+		},
+		{
 			name:     "invert-logical",
 			flagType: "bool",
 			defValue: "false",
