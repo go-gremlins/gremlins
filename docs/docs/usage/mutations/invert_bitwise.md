@@ -2,7 +2,7 @@
 title: Invert bitwise
 ---
 
-# Invert bitwise <small>:material-sign-direction: default</small>
+# Invert bitwise
 
 _Invert bitwise_ will perform inversions on basic bit operations.
 
