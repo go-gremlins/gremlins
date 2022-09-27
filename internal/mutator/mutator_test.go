@@ -117,6 +117,11 @@ func TestTypeString(t *testing.T) {
 			expected:   "INVERT_ASSIGNMENTS",
 			mutantType: mutator.InvertAssignments,
 		},
+		{
+			name:       "INVERT_BITWISE",
+			expected:   "INVERT_BITWISE",
+			mutantType: mutator.InvertBitwise,
+		},
 	}
 	for _, tc := range testCases {
 		tc := tc

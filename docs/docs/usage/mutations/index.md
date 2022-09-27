@@ -22,3 +22,4 @@ Each _mutant type_ can be enabled or disabled, and only a subset of mutations is
 | [INVERT LOGICAL ](invert_logical.md)              |  FALSE  |
 | [INVERT LOOP CTRL ](invert_loop.md)               |  FALSE  |
 | [INVERT ASSIGNMENTS ](invert_assignments.md)      |  FALSE  |
+| [INVERT BITWISE ](invert_bitwise.md)              |  FALSE  |
