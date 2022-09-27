@@ -205,8 +205,17 @@ The output file in JSON format and has the following structure:
 [//]: # (@formatter:off)
 !!! warning
 The JSON output file is not _pretty printed_; it is optimised for machine reading.
-
 [//]: # (@formatter:on)
+
+### Remove self-assignments
+
+:material-flag: `--remove-self-assignments` · :material-sign-direction: Default: `false`
+
+Enables/disables the [REMOVE_SELF ASSIGNMENTS](../../mutations/remove_self_assignments.md) mutant type.
+
+```shell
+gremlins unleash --remove-self-assignments
+```
 
 ### Tags
 

@@ -196,6 +196,20 @@
               "default": false
             }
           }
+        },
+        "remove-self-assignments": {
+          "title": "The remove-self-assignments Schema",
+          "type": "object",
+          "required": [
+            "enabled"
+          ],
+          "properties": {
+            "enabled": {
+              "title": "The enabled Schema",
+              "type": "boolean",
+              "default": false
+            }
+          }
         }
       }
     }

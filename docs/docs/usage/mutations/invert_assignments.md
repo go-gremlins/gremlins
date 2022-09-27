@@ -2,7 +2,7 @@
 title: Invert assignments
 ---
 
-# Invert assignments <small>:material-sign-direction: default</small>
+# Invert assignments
 
 _Invert assignments_ will perform inversions on basic arithmetic operations, and it assigns the result of the two left
 and right operands to the left operand.
