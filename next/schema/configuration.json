@@ -182,6 +182,20 @@
               "default": false
             }
           }
+        },
+        "invert-bitwise": {
+          "title": "The invert-bitwise Schema",
+          "type": "object",
+          "required": [
+            "enabled"
+          ],
+          "properties": {
+            "enabled": {
+              "title": "The enabled Schema",
+              "type": "boolean",
+              "default": false
+            }
+          }
         }
       }
     }
