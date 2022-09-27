@@ -148,6 +148,9 @@ type Mutator interface {
 	// which the Mutator will apply its mutations.
 	SetWorkdir(p string)
 
+	// Workdir returns the current working dir in which the Mutator will apply its mutations
+	Workdir() string
+
 	// Apply applies the mutation on the actual source code.
 	Apply() error
 

@@ -166,6 +166,10 @@ func (m *mutantStub) SetWorkdir(w string) {
 	m.worDir = w
 }
 
+func (m *mutantStub) Workdir() string {
+	return m.worDir
+}
+
 func (m *mutantStub) Apply() error {
 	m.applyCalled = true
 	if m.hasApplyError {
