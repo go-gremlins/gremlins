@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -202,6 +201,7 @@ func TestMutatorTestExecution(t *testing.T) {
 const expectedTimeout = 10 * time.Second
 
 type commandHolder struct {
+	cmd     *exec.Cmd
 	command string
 	args    []string
 	timeout time.Duration
@@ -455,11 +455,8 @@ func TestMutatorRunInTheCorrectFolder(t *testing.T) {
 		executor.Start(w)
 		wg.Wait()
 
-		workerName := fmt.Sprintf("%s-%d", w.Name, w.ID)
-		rootDir, _ := wdDealer.Get(workerName)
-		execDir := filepath.Join(rootDir, callingDir)
-		if mut.Workdir() != execDir {
-			t.Errorf("expected working dir to be %s, got %s", execDir, mut.Workdir())
+		if mut.Workdir() != holder.cmd.Dir {
+			t.Errorf("expected working dir to be %s, got %s", holder.cmd.Dir, mut.Workdir())
 		}
 	})
 }
@@ -479,15 +476,17 @@ func fakeExecCommandSuccessWithHolder(got *commandHolder) execContext {
 		dl, _ := ctx.Deadline()
 		got.m.Lock()
 		defer got.m.Unlock()
-		if got != nil {
-			got.command = command
-			got.args = args
-			got.timeout = time.Until(dl)
-		}
+
 		cs := []string{"-test.run=TestCoverageProcessSuccess", "--", command}
 		cs = append(cs, args...)
+		cmd := getCmd(ctx, cs)
 
-		return getCmd(ctx, cs)
+		got.cmd = cmd
+		got.command = command
+		got.args = args
+		got.timeout = time.Until(dl)
+
+		return cmd
 	}
 }
 
