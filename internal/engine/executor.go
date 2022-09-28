@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"sync"
@@ -162,15 +161,10 @@ type mutantExecutor struct {
 func (m *mutantExecutor) Start(w *workerpool.Worker) {
 	defer m.wg.Done()
 	workerName := fmt.Sprintf("%s-%d", w.Name, w.ID)
-	currDir, _ := os.Getwd()
 	rootDir, err := m.wdDealer.Get(workerName)
 	if err != nil {
 		panic("error, this is temporary")
 	}
-	defer func(d string) {
-		_ = os.Chdir(d)
-	}(currDir)
-	_ = os.Chdir(rootDir)
 
 	workingDir := filepath.Join(rootDir, m.module.CallingDir)
 	m.mutant.SetWorkdir(workingDir)
@@ -202,7 +196,9 @@ func (m *mutantExecutor) Start(w *workerpool.Worker) {
 func (m *mutantExecutor) runTests(pkg string) mutator.Status {
 	ctx, cancel := context.WithTimeout(context.Background(), m.testExecutionTime)
 	defer cancel()
+
 	cmd := m.execContext(ctx, "go", m.getTestArgs(pkg)...)
+	cmd.Dir = m.mutant.Workdir()
 
 	rel, err := run(cmd)
 	defer rel()

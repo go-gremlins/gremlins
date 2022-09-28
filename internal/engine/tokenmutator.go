@@ -191,6 +191,11 @@ func (m *TokenMutator) SetWorkdir(path string) {
 	m.workDir = path
 }
 
+// Workdir returns the current working dir in which the Mutator will apply its mutations.
+func (m *TokenMutator) Workdir() string {
+	return m.workDir
+}
+
 func (m *TokenMutator) resetOrigFile() {
 	var zeroByte []byte
 	m.origFile = zeroByte
