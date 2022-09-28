@@ -423,6 +423,10 @@ func (stubMutant) SetWorkdir(_ string) {
 	panic("implement me")
 }
 
+func (stubMutant) Workdir() string {
+	panic("implement me")
+}
+
 func (stubMutant) Apply() error {
 	panic("implement me")
 }

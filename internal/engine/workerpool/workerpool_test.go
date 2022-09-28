@@ -192,6 +192,10 @@ func (fakeMutant) SetWorkdir(_ string) {
 	panic("not used in test")
 }
 
+func (fakeMutant) Workdir() string {
+	panic("not used in test")
+}
+
 func (fakeMutant) Apply() error {
 	panic("not used in test")
 }
