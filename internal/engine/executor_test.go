@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -420,6 +421,47 @@ func TestProcessBuildFailure(_ *testing.T) {
 		return
 	}
 	os.Exit(2) // skipcq: RVV-A0003
+}
+
+func TestMutatorRunInTheCorrectFolder(t *testing.T) {
+	t.Run("mutation should run in the correct folder", func(t *testing.T) {
+		callingDir := "test/dir"
+		mod := gomodule.GoModule{
+			Name:       "example.com",
+			Root:       ".",
+			CallingDir: callingDir,
+		}
+		wdDealer := newWdDealerStub(t)
+		holder := &commandHolder{}
+		mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout,
+			engine.WithExecContext(fakeExecCommandSuccessWithHolder(holder)))
+		mut := &mutantStub{
+			status:  mutator.Runnable,
+			mutType: mutator.ConditionalsBoundary,
+			pkg:     "example.com/my/package",
+		}
+		outCh := make(chan mutator.Mutator)
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		executor := mjd.NewExecutor(mut, outCh, &wg)
+		w := &workerpool.Worker{
+			Name: "test",
+			ID:   1,
+		}
+		go func() {
+			<-outCh
+			close(outCh)
+		}()
+		executor.Start(w)
+		wg.Wait()
+
+		workerName := fmt.Sprintf("%s-%d", w.Name, w.ID)
+		rootDir, _ := wdDealer.Get(workerName)
+		execDir := filepath.Join(rootDir, callingDir)
+		if mut.Workdir() != execDir {
+			t.Errorf("expected working dir to be %s, got %s", execDir, mut.Workdir())
+		}
+	})
 }
 
 func fakeExecCommandSuccess(ctx context.Context, command string, args ...string) *exec.Cmd {

@@ -77,19 +77,49 @@ func filenameFromFixture(fix string) string {
 
 type dealerStub struct {
 	t *testing.T
+
+	mutex     *sync.RWMutex
+	cacheDirs map[string]string
 }
 
-func newWdDealerStub(t *testing.T) dealerStub {
+func newWdDealerStub(t *testing.T) *dealerStub {
 	t.Helper()
 
-	return dealerStub{t: t}
+	return &dealerStub{
+		t:         t,
+		mutex:     &sync.RWMutex{},
+		cacheDirs: make(map[string]string),
+	}
 }
 
-func (d dealerStub) Get(_ string) (string, error) {
-	return d.t.TempDir(), nil
+func (d *dealerStub) Get(idf string) (string, error) {
+	dir, ok := d.fromCache(idf)
+	if ok {
+		return dir, nil
+	}
+
+	tmpDir := d.t.TempDir()
+	d.setCache(idf, tmpDir)
+
+	return tmpDir, nil
+
 }
 
-func (dealerStub) Clean() {}
+func (d *dealerStub) fromCache(key string) (string, bool) {
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
+	dir, ok := d.cacheDirs[key]
+
+	return dir, ok
+}
+
+func (d *dealerStub) setCache(key, value string) {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+	d.cacheDirs[key] = value
+}
+
+func (*dealerStub) Clean() {}
 
 type executorDealerStub struct {
 	gotMutants []mutator.Mutator
