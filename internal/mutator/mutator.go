@@ -72,12 +72,13 @@ const (
 	ArithmeticBase Type = iota
 	ConditionalsBoundary
 	ConditionalsNegation
-	IncrementDecrement
-	InvertLogical
-	InvertNegatives
-	InvertLoopCtrl
 	InvertAssignments
 	InvertBitwise
+	IncrementDecrement
+	InvertLogical
+	InvertLoopCtrl
+	InvertNegatives
+	RemoveSelfAssignments
 )
 
 // Types allows to iterate over Type.
@@ -85,12 +86,13 @@ var Types = []Type{
 	ArithmeticBase,
 	ConditionalsBoundary,
 	ConditionalsNegation,
-	IncrementDecrement,
-	InvertLogical,
-	InvertNegatives,
-	InvertLoopCtrl,
 	InvertAssignments,
 	InvertBitwise,
+	IncrementDecrement,
+	InvertLogical,
+	InvertLoopCtrl,
+	InvertNegatives,
+	RemoveSelfAssignments,
 }
 
 func (mt Type) String() string {
@@ -113,6 +115,8 @@ func (mt Type) String() string {
 		return "INVERT_ASSIGNMENTS"
 	case InvertBitwise:
 		return "INVERT_BITWISE"
+	case RemoveSelfAssignments:
+		return "REMOVE_SELF_ASSIGNMENTS"
 
 	default:
 		panic("this should not happen")

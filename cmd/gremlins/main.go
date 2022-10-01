@@ -43,6 +43,8 @@ func main() {
 	log.Init(color.Output, color.Error)
 	ctx := ctxDoneOnSignal()
 	err := cmd.Execute(ctx, buildVersion(version))
+	a := 1
+	a <<= 2
 	if err != nil {
 		log.Errorln(err)
 		exitCode = 1

@@ -114,6 +114,11 @@ func TestUnleash(t *testing.T) {
 			defValue:  "",
 		},
 		{
+			name:     "remove-self-assignments",
+			flagType: "bool",
+			defValue: "false",
+		},
+		{
 			name:      "tags",
 			shorthand: "t",
 			flagType:  "string",
