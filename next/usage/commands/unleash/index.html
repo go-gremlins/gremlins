@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://gremlins.dev/next/usage/commands/unleash/">
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.5">
     
     
       
@@ -21,7 +21,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.7a952b86.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.80dcb947.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.cbb835fc.min.css">
@@ -492,6 +492,8 @@
         
           
         
+          
+        
       
       
         
@@ -576,8 +578,22 @@
   
   
     <li class="md-nav__item">
-      <a href="../../mutations/invert_negatives/" class="md-nav__link">
-        Invert negatives
+      <a href="../../mutations/invert_assignments/" class="md-nav__link">
+        Invert assignments
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../mutations/invert_bitwise/" class="md-nav__link">
+        Invert bitwise
       </a>
     </li>
   
@@ -618,8 +634,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../mutations/invert_assignments/" class="md-nav__link">
-        Invert assignments
+      <a href="../../mutations/invert_negatives/" class="md-nav__link">
+        Invert negatives
       </a>
     </li>
   
@@ -632,8 +648,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../mutations/invert_bitwise/" class="md-nav__link">
-        Invert bitwise
+      <a href="../../mutations/remove_self_assignments/" class="md-nav__link">
+        Remove self-assignments
       </a>
     </li>
   
@@ -861,6 +877,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#remove-self-assignments" class="md-nav__link">
+    Remove self-assignments
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#tags" class="md-nav__link">
     Tags
   </a>
@@ -1052,6 +1075,11 @@ slightly different results depending on your test suite.</p>
 <p class="admonition-title">Warning</p>
 </div>
 <p>The JSON output file is not <em>pretty printed</em>; it is optimised for machine reading.</p>
+<h3 id="remove-self-assignments">Remove self-assignments<a class="headerlink" href="#remove-self-assignments" title="Permanent link">&para;</a></h3>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--remove-self-assignments</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: <code>false</code></p>
+<p>Enables/disables the <a href="../../mutations/remove_self_assignments/">REMOVE_SELF ASSIGNMENTS</a> mutant type.</p>
+<div class="highlight"><pre><span></span><code>gremlins unleash --remove-self-assignments
+</code></pre></div>
 <h3 id="tags">Tags<a class="headerlink" href="#tags" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--tags</code>/<code>-t</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: empty</p>
 <p>Sets the <code>go</code> command build tags.</p>
@@ -1204,7 +1232,7 @@ available CPU cores.</p>
     <script id="__config" type="application/json">{"base": "../../..", "features": ["search.suggest", "search.highlight", "search.share", "content.code.annotate", "content.tabs.link", "navigation.indexes"], "search": "../../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.37e9125f.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.078830c0.min.js"></script>
       
     
   </body>
