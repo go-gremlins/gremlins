@@ -21,15 +21,16 @@ import (
 )
 
 var mutationEnabled = map[mutator.Type]bool{
-	mutator.ArithmeticBase:       true,
-	mutator.ConditionalsBoundary: true,
-	mutator.ConditionalsNegation: true,
-	mutator.IncrementDecrement:   true,
-	mutator.InvertAssignments:    false,
-	mutator.InvertBitwise:        false,
-	mutator.InvertLogical:        false,
-	mutator.InvertLoopCtrl:       false,
-	mutator.InvertNegatives:      true,
+	mutator.ArithmeticBase:        true,
+	mutator.ConditionalsBoundary:  true,
+	mutator.ConditionalsNegation:  true,
+	mutator.IncrementDecrement:    true,
+	mutator.InvertAssignments:     false,
+	mutator.InvertBitwise:         false,
+	mutator.InvertLogical:         false,
+	mutator.InvertLoopCtrl:        false,
+	mutator.InvertNegatives:       true,
+	mutator.RemoveSelfAssignments: false,
 }
 
 // IsDefaultEnabled returns the default enabled/disabled state of the mutation.

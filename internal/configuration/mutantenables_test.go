@@ -66,6 +66,10 @@ func TestMutantDefaultStatus(t *testing.T) {
 			mutantType: mutator.InvertAssignments,
 			expected:   false,
 		},
+		{
+			mutantType: mutator.RemoveSelfAssignments,
+			expected:   false,
+		},
 	}
 
 	for _, tc := range testCases {

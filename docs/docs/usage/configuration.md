@@ -66,13 +66,17 @@ mutants:
     enabled: true
   increment-decrement:
     enabled: true
+  invert-assignments:
+    enabled: false
+  invert-bitwise:
+    enabled: false
   invert-negatives:
     enabled: true
   invert-logical:
     enabled: false
   invert-loopctrl:
     enabled: false
-  invert-bitwise:
+  remove-self-assignments:
     enabled: false
 
 ```

@@ -55,11 +55,12 @@ nav:
           - usage/mutations/conditionals_boundary.md
           - usage/mutations/conditionals_negation.md
           - usage/mutations/increment_decrement.md
-          - usage/mutations/invert_negatives.md
-          - usage/mutations/invert_logical.md
-          - usage/mutations/invert_loop.md
           - usage/mutations/invert_assignments.md
           - usage/mutations/invert_bitwise.md
+          - usage/mutations/invert_logical.md
+          - usage/mutations/invert_loop.md
+          - usage/mutations/invert_negatives.md
+          - usage/mutations/remove_self_assignments.md
       - Continuous integration:
           - usage/ci/github-action.md
           - usage/ci/docker.md
