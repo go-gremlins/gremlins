@@ -120,6 +120,16 @@ Enables/disables the [INVERT BITWISE](../../mutations/invert_bitwise.md) mutant 
 gremlins unleash --invert-bitwise
 ```
 
+### Invert bitwise assignments
+
+:material-flag: `--invert-bwassign` · :material-sign-direction: Default: `false`
+
+Enables/disables the [INVERT BWASSIGN](../../mutations/invert_bitwise_assignments.md) mutant type.
+
+```shell
+gremlins unleash --invert-bwassign
+```
+
 ### Invert logical operators
 
 :material-flag: `--invert-logical` · :material-sign-direction: Default: `false`

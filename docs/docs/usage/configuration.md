@@ -70,6 +70,8 @@ mutants:
     enabled: false
   invert-bitwise:
     enabled: false
+  invert-bwassign:
+    enabled: false
   invert-negatives:
     enabled: true
   invert-logical:
