@@ -72,9 +72,10 @@ const (
 	ArithmeticBase Type = iota
 	ConditionalsBoundary
 	ConditionalsNegation
+	IncrementDecrement
 	InvertAssignments
 	InvertBitwise
-	IncrementDecrement
+	InvertBitwiseAssignments
 	InvertLogical
 	InvertLoopCtrl
 	InvertNegatives
@@ -88,6 +89,7 @@ var Types = []Type{
 	ConditionalsNegation,
 	InvertAssignments,
 	InvertBitwise,
+	InvertBitwiseAssignments,
 	IncrementDecrement,
 	InvertLogical,
 	InvertLoopCtrl,
@@ -115,6 +117,8 @@ func (mt Type) String() string {
 		return "INVERT_ASSIGNMENTS"
 	case InvertBitwise:
 		return "INVERT_BITWISE"
+	case InvertBitwiseAssignments:
+		return "INVERT_BWASSIGN"
 	case RemoveSelfAssignments:
 		return "REMOVE_SELF_ASSIGNMENTS"
 

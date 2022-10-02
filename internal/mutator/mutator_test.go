@@ -123,6 +123,11 @@ func TestTypeString(t *testing.T) {
 			mutantType: mutator.InvertBitwise,
 		},
 		{
+			name:       "INVERT_BWASSIGN",
+			expected:   "INVERT_BWASSIGN",
+			mutantType: mutator.InvertBitwiseAssignments,
+		},
+		{
 			name:       "REMOVE_SELF_ASSIGNMENTS",
 			expected:   "REMOVE_SELF_ASSIGNMENTS",
 			mutantType: mutator.RemoveSelfAssignments,

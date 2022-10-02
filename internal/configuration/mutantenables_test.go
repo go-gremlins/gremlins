@@ -51,6 +51,10 @@ func TestMutantDefaultStatus(t *testing.T) {
 			expected:   false,
 		},
 		{
+			mutantType: mutator.InvertBitwiseAssignments,
+			expected:   false,
+		},
+		{
 			mutantType: mutator.InvertLogical,
 			expected:   false,
 		},
