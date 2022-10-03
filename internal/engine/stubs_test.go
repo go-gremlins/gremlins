@@ -91,6 +91,8 @@ func (d dealerStub) Get(_ string) (string, error) {
 
 func (dealerStub) Clean() {}
 
+func (dealerStub) WorkDir() string { return "/tmp" }
+
 type executorDealerStub struct {
 	gotMutants []mutator.Mutator
 }

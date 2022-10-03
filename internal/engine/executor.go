@@ -147,7 +147,6 @@ type mutantExecutor struct {
 	dryRun            bool
 	integrationMode   bool
 	testCPU           int
-	goTmpDirEnv       string
 }
 
 // Start is the implementation of the workerpool.Executor definition and is the
@@ -167,8 +166,6 @@ func (m *mutantExecutor) Start(w *workerpool.Worker) {
 	if err != nil {
 		panic("error, this is temporary")
 	}
-
-	m.goTmpDirEnv = fmt.Sprintf("GOTMPDIR=" + filepath.Dir(rootDir))
 
 	workingDir := filepath.Join(rootDir, m.module.CallingDir)
 	m.mutant.SetWorkdir(workingDir)
@@ -204,7 +201,7 @@ func (m *mutantExecutor) runTests(pkg string) mutator.Status {
 	cmd := m.execContext(ctx, "go", m.getTestArgs(pkg)...)
 	cmd.Dir = m.mutant.Workdir()
 	cmd.Env = append(cmd.Env, os.Environ()...)
-	cmd.Env = append(cmd.Env, m.goTmpDirEnv)
+	cmd.Env = append(cmd.Env, fmt.Sprintf("GOTMPDIR=%s", m.wdDealer.WorkDir()))
 
 	rel, err := run(cmd)
 	defer rel()

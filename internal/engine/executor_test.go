@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -494,7 +493,7 @@ func TestMutatorRunWithCorrectEnvs(t *testing.T) {
 		executor.Start(w)
 		wg.Wait()
 
-		goTmpDirEnv := fmt.Sprintf("GOTMPDIR=%s", filepath.Dir(mut.Workdir()))
+		goTmpDirEnv := fmt.Sprintf("GOTMPDIR=%s", wdDealer.WorkDir())
 		actualGoTmpDir := ""
 		for _, v := range holder.cmd.Env {
 			if strings.HasPrefix(v, "GOTMPDIR=") {
