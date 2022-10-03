@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -457,6 +458,53 @@ func TestMutatorRunInTheCorrectFolder(t *testing.T) {
 
 		if mut.Workdir() != holder.cmd.Dir {
 			t.Errorf("expected working dir to be %s, got %s", holder.cmd.Dir, mut.Workdir())
+		}
+	})
+}
+
+func TestMutatorRunWithCorrectEnvs(t *testing.T) {
+	t.Run("mutation should run with correct GOTMPDIR env", func(t *testing.T) {
+		callingDir := "."
+		mod := gomodule.GoModule{
+			Name:       "example.com",
+			Root:       ".",
+			CallingDir: callingDir,
+		}
+		wdDealer := newWdDealerStub(t)
+		holder := &commandHolder{}
+		mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout,
+			engine.WithExecContext(fakeExecCommandSuccessWithHolder(holder)))
+		mut := &mutantStub{
+			status:  mutator.Runnable,
+			mutType: mutator.ConditionalsBoundary,
+			pkg:     "example.com/my/package",
+		}
+		outCh := make(chan mutator.Mutator)
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		executor := mjd.NewExecutor(mut, outCh, &wg)
+		w := &workerpool.Worker{
+			Name: "test",
+			ID:   1,
+		}
+		go func() {
+			<-outCh
+			close(outCh)
+		}()
+		executor.Start(w)
+		wg.Wait()
+
+		goTmpDirEnv := fmt.Sprintf("GOTMPDIR=%s", filepath.Dir(mut.Workdir()))
+		actualGoTmpDir := ""
+		for _, v := range holder.cmd.Env {
+			if strings.HasPrefix(v, "GOTMPDIR=") {
+				actualGoTmpDir = v
+
+				break
+			}
+		}
+		if goTmpDirEnv != actualGoTmpDir {
+			t.Errorf("expected GOTMPDIR to be %s, got %s", goTmpDirEnv, actualGoTmpDir)
 		}
 	})
 }
