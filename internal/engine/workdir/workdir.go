@@ -87,6 +87,7 @@ func (cd *CachedDealer) Get(idf string) (string, error) {
 	return dstDir, nil
 }
 
+// WorkDir provides the root working directory.
 func (cd *CachedDealer) WorkDir() string {
 	return cd.workDir
 }
