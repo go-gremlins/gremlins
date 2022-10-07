@@ -158,12 +158,15 @@ func TestMutatorTestExecution(t *testing.T) {
 			viperSet(map[string]any{configuration.UnleashDryRunKey: false})
 			defer viperReset()
 			wdDealer := newWdDealerStub(t)
+			holder := &commandHolder{}
 			mod := gomodule.GoModule{
 				Name:       "example.com",
 				Root:       ".",
 				CallingDir: ".",
 			}
-			mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout, engine.WithExecContext(tc.testResult))
+			mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout,
+				engine.WithExecContext(fakeExecCommandWithHolder(holder, tc.testResult)),
+			)
 			mut := &mutantStub{
 				status:  tc.mutantStatus,
 				mutType: mutator.ConditionalsBoundary,
@@ -191,8 +194,24 @@ func TestMutatorTestExecution(t *testing.T) {
 
 			mutex.RLock()
 			defer mutex.RUnlock()
+
 			if got.Status() != tc.wantMutStatus {
 				t.Errorf("expected mutation to be %v, but got: %v", tc.wantMutStatus, got.Status())
+			}
+
+			if tc.mutantStatus != mutator.NotCovered {
+				goTmpDirEnv := fmt.Sprintf("GOTMPDIR=%s", wdDealer.WorkDir())
+				actualGoTmpDir := ""
+				for _, v := range holder.cmd.Env {
+					if strings.HasPrefix(v, "GOTMPDIR=") {
+						actualGoTmpDir = v
+
+						break
+					}
+				}
+				if goTmpDirEnv != actualGoTmpDir {
+					t.Errorf("expected GOTMPDIR to be %s, got %s", goTmpDirEnv, actualGoTmpDir)
+				}
 			}
 		})
 	}
@@ -461,53 +480,6 @@ func TestMutatorRunInTheCorrectFolder(t *testing.T) {
 	})
 }
 
-func TestMutatorRunWithCorrectEnvs(t *testing.T) {
-	t.Run("mutation should run with correct GOTMPDIR env", func(t *testing.T) {
-		callingDir := "."
-		mod := gomodule.GoModule{
-			Name:       "example.com",
-			Root:       ".",
-			CallingDir: callingDir,
-		}
-		wdDealer := newWdDealerStub(t)
-		holder := &commandHolder{}
-		mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout,
-			engine.WithExecContext(fakeExecCommandSuccessWithHolder(holder)))
-		mut := &mutantStub{
-			status:  mutator.Runnable,
-			mutType: mutator.ConditionalsBoundary,
-			pkg:     "example.com/my/package",
-		}
-		outCh := make(chan mutator.Mutator)
-		wg := sync.WaitGroup{}
-		wg.Add(1)
-		executor := mjd.NewExecutor(mut, outCh, &wg)
-		w := &workerpool.Worker{
-			Name: "test",
-			ID:   1,
-		}
-		go func() {
-			<-outCh
-			close(outCh)
-		}()
-		executor.Start(w)
-		wg.Wait()
-
-		goTmpDirEnv := fmt.Sprintf("GOTMPDIR=%s", wdDealer.WorkDir())
-		actualGoTmpDir := ""
-		for _, v := range holder.cmd.Env {
-			if strings.HasPrefix(v, "GOTMPDIR=") {
-				actualGoTmpDir = v
-
-				break
-			}
-		}
-		if goTmpDirEnv != actualGoTmpDir {
-			t.Errorf("expected GOTMPDIR to be %s, got %s", goTmpDirEnv, actualGoTmpDir)
-		}
-	})
-}
-
 func fakeExecCommandSuccess(ctx context.Context, command string, args ...string) *exec.Cmd {
 	cs := []string{"-test.run=TestCoverageProcessSuccess", "--", command}
 	cs = append(cs, args...)
@@ -528,6 +500,22 @@ func fakeExecCommandSuccessWithHolder(got *commandHolder) execContext {
 		cs = append(cs, args...)
 		cmd := getCmd(ctx, cs)
 
+		got.cmd = cmd
+		got.command = command
+		got.args = args
+		got.timeout = time.Until(dl)
+
+		return cmd
+	}
+}
+
+func fakeExecCommandWithHolder(got *commandHolder, fakeCmd func(ctx context.Context, command string, args ...string) *exec.Cmd) execContext {
+	return func(ctx context.Context, command string, args ...string) *exec.Cmd {
+		dl, _ := ctx.Deadline()
+		got.m.Lock()
+		defer got.m.Unlock()
+
+		cmd := fakeCmd(ctx, command, args...)
 		got.cmd = cmd
 		got.command = command
 		got.args = args
