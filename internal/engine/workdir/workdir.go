@@ -37,6 +37,7 @@ import (
 type Dealer interface {
 	Get(idf string) (string, error)
 	Clean()
+	WorkDir() string
 }
 
 // CachedDealer is the implementation of the Dealer interface, responsible
@@ -84,6 +85,11 @@ func (cd *CachedDealer) Get(idf string) (string, error) {
 	cd.setCache(idf, dstDir)
 
 	return dstDir, nil
+}
+
+// WorkDir provides the root working directory.
+func (cd *CachedDealer) WorkDir() string {
+	return cd.workDir
 }
 
 // Clean frees all the cached folders and removes all of them from disk.

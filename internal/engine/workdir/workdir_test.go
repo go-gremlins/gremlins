@@ -245,6 +245,20 @@ func TestErrors(t *testing.T) {
 	})
 }
 
+func TestWorkDirReturnsTheRootWorkingDir(t *testing.T) {
+	srcDir := t.TempDir()
+	populateSrcDir(t, srcDir, 0)
+	wdDir := t.TempDir()
+
+	dealer := workdir.NewCachedDealer(wdDir, srcDir)
+	defer dealer.Clean()
+
+	rootWorkingDir := dealer.WorkDir()
+	if rootWorkingDir != wdDir {
+		t.Errorf("expected working dir to be %s, got: %s", wdDir, rootWorkingDir)
+	}
+}
+
 func BenchmarkDealerGet(b *testing.B) {
 	srcDir := b.TempDir()
 	populateSrcDir(b, srcDir, 5)

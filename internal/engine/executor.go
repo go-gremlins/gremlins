@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"sync"
@@ -199,6 +200,8 @@ func (m *mutantExecutor) runTests(pkg string) mutator.Status {
 
 	cmd := m.execContext(ctx, "go", m.getTestArgs(pkg)...)
 	cmd.Dir = m.mutant.Workdir()
+	cmd.Env = append(cmd.Env, os.Environ()...)
+	cmd.Env = append(cmd.Env, fmt.Sprintf("GOTMPDIR=%s", m.wdDealer.WorkDir()))
 
 	rel, err := run(cmd)
 	defer rel()
