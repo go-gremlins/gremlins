@@ -18,16 +18,27 @@ package internal
 
 // OutputResult is the data structure for the Gremlins file output format.
 type OutputResult struct {
-	GoModule          string       `json:"go_module"`
-	Files             []OutputFile `json:"files"`
-	TestEfficacy      float64      `json:"test_efficacy"`
-	MutationsCoverage float64      `json:"mutations_coverage"`
-	MutantsTotal      int          `json:"mutants_total"`
-	MutantsKilled     int          `json:"mutants_killed"`
-	MutantsLived      int          `json:"mutants_lived"`
-	MutantsNotViable  int          `json:"mutants_not_viable"`
-	MutantsNotCovered int          `json:"mutants_not_covered"`
-	ElapsedTime       float64      `json:"elapsed_time"`
+	GoModule                 string       `json:"go_module"`
+	Files                    []OutputFile `json:"files"`
+	TestEfficacy             float64      `json:"test_efficacy"`
+	MutationsCoverage        float64      `json:"mutations_coverage"`
+	MutantsTotal             int          `json:"mutants_total"`
+	MutantsKilled            int          `json:"mutants_killed"`
+	MutantsLived             int          `json:"mutants_lived"`
+	MutantsNotViable         int          `json:"mutants_not_viable"`
+	MutantsNotCovered        int          `json:"mutants_not_covered"`
+	ArithmeticBase           int          `json:"arithmetic_base,omitempty"`
+	ConditionalsNegation     int          `json:"conditionals_negation,omitempty"`
+	ConditionalsBoundary     int          `json:"conditionals_boundary,omitempty"`
+	IncrementDecrement       int          `json:"increment_decrement,omitempty"`
+	InvertAssignments        int          `json:"invert_assignments,omitempty"`
+	InvertBitwise            int          `json:"invert_bitwise,omitempty"`
+	InvertBitwiseAssignments int          `json:"invert_bitwise_assignments,omitempty"`
+	InvertLogical            int          `json:"invert_logical,omitempty"`
+	InvertLoopCtrl           int          `json:"invert_loop_ctrl,omitempty"`
+	InvertNegatives          int          `json:"invert_negatives,omitempty"`
+	RemoveSelfAssignments    int          `json:"remove_self_assignments,omitempty"`
+	ElapsedTime              float64      `json:"elapsed_time"`
 }
 
 // OutputFile represents a single file in the OutputResult data structure.

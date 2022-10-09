@@ -284,9 +284,16 @@ func TestReportToFile(t *testing.T) {
 	mutants := []mutator.Mutator{
 		stubMutant{status: mutator.Killed, mutantType: mutator.ConditionalsNegation, position: newPosition("file1.go", 3, 10)},
 		stubMutant{status: mutator.Lived, mutantType: mutator.ArithmeticBase, position: newPosition("file1.go", 8, 20)},
-		stubMutant{status: mutator.NotCovered, mutantType: mutator.IncrementDecrement, position: newPosition("file2.go", 3, 20)},
+		stubMutant{status: mutator.NotCovered, mutantType: mutator.IncrementDecrement, position: newPosition("file1.go", 7, 40)},
+		stubMutant{status: mutator.NotViable, mutantType: mutator.InvertAssignments, position: newPosition("file1.go", 8, 10)},
+		stubMutant{status: mutator.NotCovered, mutantType: mutator.InvertLoopCtrl, position: newPosition("file2.go", 3, 20)},
+		stubMutant{status: mutator.Killed, mutantType: mutator.IncrementDecrement, position: newPosition("file2.go", 17, 44)},
 		stubMutant{status: mutator.NotCovered, mutantType: mutator.ConditionalsBoundary, position: newPosition("file2.go", 3, 500)},
+		stubMutant{status: mutator.Lived, mutantType: mutator.InvertBitwise, position: newPosition("file2.go", 3, 100)},
+		stubMutant{status: mutator.Killed, mutantType: mutator.InvertBitwiseAssignments, position: newPosition("file2.go", 4, 10)},
+		stubMutant{status: mutator.Lived, mutantType: mutator.InvertLogical, position: newPosition("file2.go", 4, 11)},
 		stubMutant{status: mutator.NotViable, mutantType: mutator.InvertNegatives, position: newPosition("file3.go", 4, 200)},
+		stubMutant{status: mutator.Killed, mutantType: mutator.RemoveSelfAssignments, position: newPosition("file3.go", 4, 100)},
 	}
 	data := report.Results{
 		Module:  "example.com/go/module",
