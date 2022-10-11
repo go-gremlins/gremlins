@@ -61,17 +61,7 @@ type reportStatus struct {
 	notViable  int
 	runnable   int
 
-	arithmeticBase           int
-	conditionalsNegation     int
-	conditionalsBoundary     int
-	incrementDecrement       int
-	invertAssignments        int
-	invertBitwise            int
-	invertBitwiseAssignments int
-	invertLogical            int
-	invertLoopCtrl           int
-	invertNegatives          int
-	removeSelfAssignments    int
+	mutatorStatistics internal.MutatorType
 
 	tEfficacy float64
 	mCovered  float64
@@ -95,45 +85,8 @@ func newReport(results Results) (*reportStatus, bool) {
 			Status: m.Status().String(),
 		})
 
-		switch m.Status() {
-		case mutator.Killed:
-			rep.killed++
-		case mutator.Lived:
-			rep.lived++
-		case mutator.NotCovered:
-			rep.notCovered++
-		case mutator.TimedOut:
-			rep.timedOut++
-		case mutator.NotViable:
-			rep.notViable++
-		case mutator.Runnable:
-			rep.runnable++
-		}
-
-		switch m.Type() {
-		case mutator.ArithmeticBase:
-			rep.arithmeticBase++
-		case mutator.ConditionalsNegation:
-			rep.conditionalsNegation++
-		case mutator.ConditionalsBoundary:
-			rep.conditionalsBoundary++
-		case mutator.IncrementDecrement:
-			rep.incrementDecrement++
-		case mutator.InvertAssignments:
-			rep.invertAssignments++
-		case mutator.InvertBitwiseAssignments:
-			rep.invertBitwiseAssignments++
-		case mutator.InvertBitwise:
-			rep.invertBitwise++
-		case mutator.InvertLogical:
-			rep.invertLogical++
-		case mutator.InvertLoopCtrl:
-			rep.invertLoopCtrl++
-		case mutator.InvertNegatives:
-			rep.invertNegatives++
-		case mutator.RemoveSelfAssignments:
-			rep.removeSelfAssignments++
-		}
+		reportMutationStatus(m, rep)
+		reportMutatorType(m, rep)
 	}
 	if !rep.isDryRun() {
 		rep.tEfficacy = float64(rep.killed) / float64(rep.killed+rep.lived) * 100
@@ -143,6 +96,50 @@ func newReport(results Results) (*reportStatus, bool) {
 	}
 
 	return rep, true
+}
+
+func reportMutationStatus(m mutator.Mutator, rep *reportStatus) {
+	switch m.Status() {
+	case mutator.Killed:
+		rep.killed++
+	case mutator.Lived:
+		rep.lived++
+	case mutator.NotCovered:
+		rep.notCovered++
+	case mutator.TimedOut:
+		rep.timedOut++
+	case mutator.NotViable:
+		rep.notViable++
+	case mutator.Runnable:
+		rep.runnable++
+	}
+}
+
+func reportMutatorType(m mutator.Mutator, rep *reportStatus) {
+	switch m.Type() {
+	case mutator.ArithmeticBase:
+		rep.mutatorStatistics.ArithmeticBase++
+	case mutator.ConditionalsNegation:
+		rep.mutatorStatistics.ConditionalsNegation++
+	case mutator.ConditionalsBoundary:
+		rep.mutatorStatistics.ConditionalsBoundary++
+	case mutator.IncrementDecrement:
+		rep.mutatorStatistics.IncrementDecrement++
+	case mutator.InvertAssignments:
+		rep.mutatorStatistics.InvertAssignments++
+	case mutator.InvertBitwiseAssignments:
+		rep.mutatorStatistics.InvertBitwiseAssignments++
+	case mutator.InvertBitwise:
+		rep.mutatorStatistics.InvertBitwise++
+	case mutator.InvertLogical:
+		rep.mutatorStatistics.InvertLogical++
+	case mutator.InvertLoopCtrl:
+		rep.mutatorStatistics.InvertLoopCtrl++
+	case mutator.InvertNegatives:
+		rep.mutatorStatistics.InvertNegatives++
+	case mutator.RemoveSelfAssignments:
+		rep.mutatorStatistics.RemoveSelfAssignments++
+	}
 }
 
 func (*reportStatus) isDryRun() bool {
@@ -168,27 +165,17 @@ func (r *reportStatus) fileReport() {
 		}
 
 		result := internal.OutputResult{
-			GoModule:                 r.module,
-			TestEfficacy:             r.tEfficacy,
-			MutationsCoverage:        r.mCovered,
-			MutantsTotal:             r.lived + r.killed + r.notViable,
-			MutantsKilled:            r.killed,
-			MutantsLived:             r.lived,
-			MutantsNotViable:         r.notViable,
-			MutantsNotCovered:        r.notCovered,
-			ArithmeticBase:           r.arithmeticBase,
-			ConditionalsNegation:     r.conditionalsNegation,
-			ConditionalsBoundary:     r.conditionalsBoundary,
-			InvertNegatives:          r.invertNegatives,
-			InvertBitwise:            r.invertBitwise,
-			InvertLoopCtrl:           r.invertLoopCtrl,
-			InvertBitwiseAssignments: r.invertBitwiseAssignments,
-			InvertLogical:            r.invertLogical,
-			InvertAssignments:        r.invertAssignments,
-			IncrementDecrement:       r.incrementDecrement,
-			RemoveSelfAssignments:    r.removeSelfAssignments,
-			ElapsedTime:              r.elapsed.Duration().Seconds(),
-			Files:                    files,
+			GoModule:          r.module,
+			TestEfficacy:      r.tEfficacy,
+			MutationsCoverage: r.mCovered,
+			MutantsTotal:      r.lived + r.killed + r.notViable,
+			MutantsKilled:     r.killed,
+			MutantsLived:      r.lived,
+			MutantsNotViable:  r.notViable,
+			MutantsNotCovered: r.notCovered,
+			ElapsedTime:       r.elapsed.Duration().Seconds(),
+			MutatorStatistics: r.mutatorStatistics,
+			Files:             files,
 		}
 
 		jsonResult, _ := json.Marshal(result)
