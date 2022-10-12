@@ -28,6 +28,7 @@ type OutputResult struct {
 	MutantsNotViable  int          `json:"mutants_not_viable"`
 	MutantsNotCovered int          `json:"mutants_not_covered"`
 	ElapsedTime       float64      `json:"elapsed_time"`
+	MutatorStatistics MutatorType  `json:"mutator_statistics"`
 }
 
 // OutputFile represents a single file in the OutputResult data structure.
@@ -42,4 +43,19 @@ type Mutation struct {
 	Status string `json:"status"`
 	Line   int    `json:"line"`
 	Column int    `json:"column"`
+}
+
+// MutatorType contains the list of all supported mutator types.
+type MutatorType struct {
+	ArithmeticBase           int `json:"arithmetic_base,omitempty"`
+	ConditionalsNegation     int `json:"conditionals_negation,omitempty"`
+	ConditionalsBoundary     int `json:"conditionals_boundary,omitempty"`
+	IncrementDecrement       int `json:"increment_decrement,omitempty"`
+	InvertAssignments        int `json:"invert_assignments,omitempty"`
+	InvertBitwise            int `json:"invert_bitwise,omitempty"`
+	InvertBitwiseAssignments int `json:"invert_bitwise_assignments,omitempty"`
+	InvertLogical            int `json:"invert_logical,omitempty"`
+	InvertLoopCtrl           int `json:"invert_loop_ctrl,omitempty"`
+	InvertNegatives          int `json:"invert_negatives,omitempty"`
+	RemoveSelfAssignments    int `json:"remove_self_assignments,omitempty"`
 }
