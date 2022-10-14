@@ -44,7 +44,7 @@ import (
 var fakePosition = newPosition("aFolder/aFile.go", 3, 12)
 
 func TestReport(t *testing.T) {
-	testCases := []struct {
+	nrTestCases := []struct {
 		name    string
 		mutants []mutator.Mutator
 		want    string
@@ -100,7 +100,7 @@ func TestReport(t *testing.T) {
 				"No results to report.\n",
 		},
 	}
-	for _, tc := range testCases {
+	for _, tc := range nrTestCases {
 		t.Run(tc.name, func(t *testing.T) {
 			out := &bytes.Buffer{}
 			log.Init(out, &bytes.Buffer{})
@@ -121,38 +121,59 @@ func TestReport(t *testing.T) {
 		})
 	}
 
-	t.Run("it reports findings in dry-run", func(t *testing.T) {
-		viper.Set(configuration.UnleashDryRunKey, true)
-		defer viper.Reset()
+	drTestCases := []struct {
+		name    string
+		mutants []mutator.Mutator
+		want    string
+	}{
+		{
+			name: "reports findings in dry-run",
+			mutants: []mutator.Mutator{
+				stubMutant{status: mutator.Runnable, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+				stubMutant{status: mutator.Runnable, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+				stubMutant{status: mutator.NotCovered, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+			},
+			want: "\n" +
+				// Limit the time reporting to the first two units (millis are excluded)
+				"Dry run completed in 2 minutes 22 seconds\n" +
+				"Runnable: 2, Not covered: 1\n" +
+				"Mutator coverage: 66.67%\n",
+		},
+		{
+			name: "reports coverage zero in dry-run with timeout",
+			mutants: []mutator.Mutator{
+				stubMutant{status: mutator.TimedOut, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+			},
+			want: "\n" +
+				// Limit the time reporting to the first two units (millis are excluded)
+				"Dry run completed in 2 minutes 22 seconds\n" +
+				"Runnable: 0, Not covered: 0\n" +
+				"Mutator coverage: 0.00%\n",
+		},
+	}
+	for _, tc := range drTestCases {
+		t.Run(tc.name, func(t *testing.T) {
+			viper.Set(configuration.UnleashDryRunKey, true)
+			defer viper.Reset()
 
-		out := &bytes.Buffer{}
-		log.Init(out, &bytes.Buffer{})
-		defer log.Reset()
+			out := &bytes.Buffer{}
+			log.Init(out, &bytes.Buffer{})
+			defer log.Reset()
 
-		mutants := []mutator.Mutator{
-			stubMutant{status: mutator.Runnable, mutantType: mutator.ConditionalsNegation, position: fakePosition},
-			stubMutant{status: mutator.Runnable, mutantType: mutator.ConditionalsNegation, position: fakePosition},
-			stubMutant{status: mutator.NotCovered, mutantType: mutator.ConditionalsNegation, position: fakePosition},
-		}
-		data := report.Results{
-			Mutants: mutants,
-			Elapsed: (2 * time.Minute) + (22 * time.Second) + (123 * time.Millisecond),
-		}
+			data := report.Results{
+				Mutants: tc.mutants,
+				Elapsed: (2 * time.Minute) + (22 * time.Second) + (123 * time.Millisecond),
+			}
 
-		_ = report.Do(data)
+			_ = report.Do(data)
 
-		got := out.String()
+			got := out.String()
 
-		want := "\n" +
-			// Limit the time reporting to the first two units (millis are excluded)
-			"Dry run completed in 2 minutes 22 seconds\n" +
-			"Runnable: 2, Not covered: 1\n" +
-			"Mutator coverage: 66.67%\n"
-
-		if !cmp.Equal(got, want) {
-			t.Errorf(cmp.Diff(want, got))
-		}
-	})
+			if !cmp.Equal(got, tc.want) {
+				t.Errorf(cmp.Diff(tc.want, got))
+			}
+		})
+	}
 }
 
 func newPosition(filename string, col, line int) token.Position {

@@ -95,7 +95,7 @@ func newReport(results Results) (*reportStatus, bool) {
 		if rep.killed+rep.lived > 0 {
 			rep.mCovered = float64(rep.killed+rep.lived) / float64(rep.killed+rep.lived+rep.notCovered) * 100
 		}
-	} else {
+	} else if rep.runnable > 0 {
 		rep.mCovered = float64(rep.runnable) / float64(rep.runnable+rep.notCovered) * 100
 	}
 
