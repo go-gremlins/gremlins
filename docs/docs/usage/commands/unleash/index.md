@@ -214,7 +214,7 @@ The output file in JSON format and has the following structure:
 
 [//]: # (@formatter:off)
 !!! warning
-The JSON output file is not _pretty printed_; it is optimised for machine reading.
+    The JSON output file is not _pretty printed_; it is optimised for machine reading.
 [//]: # (@formatter:on)
 
 ### Remove self-assignments
@@ -243,7 +243,7 @@ gremlins unleash --tags "tag1,tag2"
 
 [//]: # (@formatter:off)
 !!! tip
-To understand better the use of these flag, check [workers](workers.md)
+    To understand better the use of these flag, check [workers](workers.md)
 [//]: # (@formatter:on)
 
 This flag overrides the number of CPUs the Go test tool will utilize. By default, Gremlins doesn't set this value.
@@ -286,7 +286,7 @@ gremlins unleash --threshold-mcover 80
 
 [//]: # (@formatter:off)
 !!! tip
-To understand better the use of these flag, check [workers](workers.md)
+    To understand better the use of these flag, check [workers](workers.md)
 [//]: # (@formatter:on)
 
 Gremlins determines the timeout for each Go test run by multiplying by a coefficient the time it took to perform the
