@@ -76,17 +76,20 @@ func filenameFromFixture(fix string) string {
 }
 
 type dealerStub struct {
-	t *testing.T
+	t     *testing.T
+	fnGet func(idf string) (string, error)
 }
 
 func newWdDealerStub(t *testing.T) *dealerStub {
 	t.Helper()
 
-	return &dealerStub{t: t}
+	return &dealerStub{t: t, fnGet: func(_ string) (string, error) {
+		return t.TempDir(), nil
+	}}
 }
 
-func (d dealerStub) Get(_ string) (string, error) {
-	return d.t.TempDir(), nil
+func (d dealerStub) Get(idf string) (string, error) {
+	return d.fnGet(idf)
 }
 
 func (dealerStub) Clean() {}

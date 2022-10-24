@@ -251,7 +251,7 @@ func TestMutatorRun(t *testing.T) {
 			pkg:      "example.com/my/package",
 			callDir:  "test/dir",
 			tags:     "tag1,t1g2",
-			wantPath: "./test/dir/...",
+			wantPath: "./...",
 		},
 		{
 			name:               "it can override timeout coefficient",
@@ -476,6 +476,52 @@ func TestMutatorRunInTheCorrectFolder(t *testing.T) {
 
 		if mut.Workdir() != holder.cmd.Dir {
 			t.Errorf("expected working dir to be %s, got %s", holder.cmd.Dir, mut.Workdir())
+		}
+	})
+	t.Run("integration mode: mutation should run in the wd root folder", func(t *testing.T) {
+		viperSet(map[string]any{
+			configuration.UnleashIntegrationMode: true,
+		})
+		defer viperReset()
+		callingDir := "test/dir"
+		mod := gomodule.GoModule{
+			Name:       "example.com",
+			Root:       ".",
+			CallingDir: callingDir,
+		}
+		wantRootDir := "/tmp/static"
+		wdDealer := &dealerStub{
+			t: nil,
+			fnGet: func(idf string) (string, error) {
+				return wantRootDir, nil
+			},
+		}
+
+		holder := &commandHolder{}
+		mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout,
+			engine.WithExecContext(fakeExecCommandSuccessWithHolder(holder)))
+		mut := &mutantStub{
+			status:  mutator.Runnable,
+			mutType: mutator.ConditionalsBoundary,
+			pkg:     "example.com/my/package",
+		}
+		outCh := make(chan mutator.Mutator)
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		executor := mjd.NewExecutor(mut, outCh, &wg)
+		w := &workerpool.Worker{
+			Name: "test",
+			ID:   1,
+		}
+		go func() {
+			<-outCh
+			close(outCh)
+		}()
+		executor.Start(w)
+		wg.Wait()
+
+		if wantRootDir != holder.cmd.Dir {
+			t.Errorf("expected working dir to be %q, got %q", wantRootDir, holder.cmd.Dir)
 		}
 	})
 }

@@ -183,7 +183,7 @@ func (m *mutantExecutor) Start(w *workerpool.Worker) {
 		return
 	}
 
-	m.mutant.SetStatus(m.runTests(m.mutant.Pkg()))
+	m.mutant.SetStatus(m.runTests(rootDir, m.mutant.Pkg()))
 
 	if err := m.mutant.Rollback(); err != nil {
 		// What should we do now?
@@ -194,12 +194,15 @@ func (m *mutantExecutor) Start(w *workerpool.Worker) {
 	report.Mutant(m.mutant)
 }
 
-func (m *mutantExecutor) runTests(pkg string) mutator.Status {
+func (m *mutantExecutor) runTests(rootDir, pkg string) mutator.Status {
 	ctx, cancel := context.WithTimeout(context.Background(), m.testExecutionTime)
 	defer cancel()
 
 	cmd := m.execContext(ctx, "go", m.getTestArgs(pkg)...)
 	cmd.Dir = m.mutant.Workdir()
+	if m.integrationMode {
+		cmd.Dir = rootDir
+	}
 	cmd.Env = append(cmd.Env, os.Environ()...)
 	cmd.Env = append(cmd.Env, fmt.Sprintf("GOTMPDIR=%s", m.wdDealer.WorkDir()))
 
@@ -235,9 +238,6 @@ func (m *mutantExecutor) getTestArgs(pkg string) []string {
 	path := pkg
 	if m.integrationMode {
 		path = "./..."
-		if m.module.CallingDir != "." {
-			path = fmt.Sprintf("./%s/...", m.module.CallingDir)
-		}
 	}
 	args = append(args, path)
 
