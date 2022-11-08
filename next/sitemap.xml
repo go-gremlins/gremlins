@@ -2,112 +2,112 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://gremlins.dev/next/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/CONTRIBUTING/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/install/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/quick-start/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/usage/configuration/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/usage/ci/docker/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/usage/ci/github-action/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/usage/commands/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/usage/commands/unleash/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/usage/commands/unleash/workers/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/usage/mutations/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/usage/mutations/arithmetic_base/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/usage/mutations/conditionals_boundary/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/usage/mutations/conditionals_negation/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/usage/mutations/increment_decrement/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/usage/mutations/invert_assignments/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/usage/mutations/invert_bitwise/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/usage/mutations/invert_bitwise_assignments/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/usage/mutations/invert_logical/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/usage/mutations/invert_loop/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/usage/mutations/invert_negatives/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gremlins.dev/next/usage/mutations/remove_self_assignments/</loc>
-         <lastmod>2022-10-26</lastmod>
+         <lastmod>2022-11-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
