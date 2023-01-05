@@ -12,8 +12,14 @@
       
         <link rel="canonical" href="https://gremlins.dev/next/install/">
       
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../quick-start/">
+      
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.2">
     
     
       
@@ -21,15 +27,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.975780f9.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.f56500e0.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.2505c338.min.css">
-        
-          
-          
-          <meta name="theme-color" content="#00bdd6">
-        
       
       
 
@@ -985,10 +986,9 @@
                 
                   
 
-  <a href="https://github.com/go-gremlins/gremlins/edit/main/docs/docs/install.md" title="Edit this page" class="md-content__button md-icon">
-    
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
-  </a>
+  
+  
+
 
 
 <h1 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h1>
@@ -1002,13 +1002,13 @@ and install it "manually".</p>
 <div class="tabbed-block">
 <p>Download a <code>.deb</code> file appropriate for your ARCH from
 the <a href="https://github.com/go-gremlins/gremlins/releases/latest">release page</a>, then install with:</p>
-<div class="highlight"><pre><span></span><code>dpkg -i gremlins_X.Y.Z_linux_amd64.deb
+<div class="highlight"><pre><span></span><code>dpkg<span class="w"> </span>-i<span class="w"> </span>gremlins_X.Y.Z_linux_amd64.deb
 </code></pre></div>
 </div>
 <div class="tabbed-block">
 <p>Download a <code>.rpm</code> file appropriate for your ARCH from
 the <a href="https://github.com/go-gremlins/gremlins/releases/latest">release page</a>, then install with:</p>
-<div class="highlight"><pre><span></span><code>rpm -i gremlins_X.Y.Z_linux_amd64.rpm
+<div class="highlight"><pre><span></span><code>rpm<span class="w"> </span>-i<span class="w"> </span>gremlins_X.Y.Z_linux_amd64.rpm
 </code></pre></div>
 </div>
 </div>
@@ -1016,16 +1016,16 @@ the <a href="https://github.com/go-gremlins/gremlins/releases/latest">release pa
 <h3 id="macos"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11Z"/></svg></span> MacOS<a class="headerlink" href="#macos" title="Permanent link">&para;</a></h3>
 <p>On macOS, you can use <a href="https://brew.sh/">Homebrew</a>. As of now, Gremlins uses only an Homebrew <em>tap</em>.</p>
 <p>To install, you have to first <em>tap</em> Gremlins' repository:</p>
-<div class="highlight"><pre><span></span><code>brew tap go-gremlins/tap <span class="c1">#(1)</span>
+<div class="highlight"><pre><span></span><code>brew<span class="w"> </span>tap<span class="w"> </span>go-gremlins/tap<span class="w"> </span><span class="c1">#(1)</span>
 </code></pre></div>
 <ol>
 <li>Doing this, your tap will refer directly to the Gremlins' <em>tap formula</em> on GitHub. You can delete the <em>tap</em> by
    "untapping" it:
-   <div class="highlight"><pre><span></span><code>brew untap go-gremlins/tap
+   <div class="highlight"><pre><span></span><code>brew<span class="w"> </span>untap<span class="w"> </span>go-gremlins/tap
 </code></pre></div></li>
 </ol>
 <p>Then you can install it:</p>
-<div class="highlight"><pre><span></span><code>brew install gremlins
+<div class="highlight"><pre><span></span><code>brew<span class="w"> </span>install<span class="w"> </span>gremlins
 </code></pre></div>
 <h3 id="windows"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 12V6.75l6-1.32v6.48L3 12m17-9v8.75l-10 .15V5.21L20 3M3 13l6 .09v6.81l-6-1.15V13m17 .25V22l-10-1.91V13.1l10 .15Z"/></svg></span> Windows<a class="headerlink" href="#windows" title="Permanent link">&para;</a></h3>
 <p>As of now, only manual installation is supported.
@@ -1034,29 +1034,29 @@ the <a href="https://github.com/go-gremlins/gremlins/releases/latest">release pa
 extract the zip archive and copy the <code>.exe</code> file somewhere in your execution <code>PATH</code>.</p>
 <h3 id="docker"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.81 10.25c-.06-.04-.56-.43-1.64-.43-.28 0-.56.03-.84.08-.21-1.4-1.38-2.11-1.43-2.14l-.29-.17-.18.27c-.24.36-.43.77-.51 1.19-.2.8-.08 1.56.33 2.21-.49.28-1.29.35-1.46.35H2.62c-.34 0-.62.28-.62.63 0 1.15.18 2.3.58 3.38.45 1.19 1.13 2.07 2 2.61.98.6 2.59.94 4.42.94.79 0 1.61-.07 2.42-.22 1.12-.2 2.2-.59 3.19-1.16A8.3 8.3 0 0 0 16.78 16c1.05-1.17 1.67-2.5 2.12-3.65h.19c1.14 0 1.85-.46 2.24-.85.26-.24.45-.53.59-.87l.08-.24-.19-.14m-17.96.99h1.76c.08 0 .16-.07.16-.16V9.5c0-.08-.07-.16-.16-.16H3.85c-.09 0-.16.07-.16.16v1.58c.01.09.07.16.16.16m2.43 0h1.76c.08 0 .16-.07.16-.16V9.5c0-.08-.07-.16-.16-.16H6.28c-.09 0-.16.07-.16.16v1.58c.01.09.07.16.16.16m2.47 0h1.75c.1 0 .17-.07.17-.16V9.5c0-.08-.06-.16-.17-.16H8.75c-.08 0-.15.07-.15.16v1.58c0 .09.06.16.15.16m2.44 0h1.77c.08 0 .15-.07.15-.16V9.5c0-.08-.06-.16-.15-.16h-1.77c-.08 0-.15.07-.15.16v1.58c0 .09.07.16.15.16M6.28 9h1.76c.08 0 .16-.09.16-.18V7.25c0-.09-.07-.16-.16-.16H6.28c-.09 0-.16.06-.16.16v1.57c.01.09.07.18.16.18m2.47 0h1.75c.1 0 .17-.09.17-.18V7.25c0-.09-.06-.16-.17-.16H8.75c-.08 0-.15.06-.15.16v1.57c0 .09.06.18.15.18m2.44 0h1.77c.08 0 .15-.09.15-.18V7.25c0-.09-.07-.16-.15-.16h-1.77c-.08 0-.15.06-.15.16v1.57c0 .09.07.18.15.18m0-2.28h1.77c.08 0 .15-.07.15-.16V5c0-.1-.07-.17-.15-.17h-1.77c-.08 0-.15.06-.15.17v1.56c0 .08.07.16.15.16m2.46 4.52h1.76c.09 0 .16-.07.16-.16V9.5c0-.08-.07-.16-.16-.16h-1.76c-.08 0-.15.07-.15.16v1.58c0 .09.07.16.15.16"/></svg></span> Docker<a class="headerlink" href="#docker" title="Permanent link">&para;</a></h3>
 <p>You can also run Gremlins using the official Docker image:</p>
-<div class="highlight"><pre><span></span><code>docker run --rm -v <span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/app -w /app gogremlins/gremlins gremlins unleash .
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/app<span class="w"> </span>-w<span class="w"> </span>/app<span class="w"> </span>gogremlins/gremlins<span class="w"> </span>gremlins<span class="w"> </span>unleash<span class="w"> </span>.
 </code></pre></div>
 <h3 id="manual-install"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 9h2.31l.32-3h2l-.32 3h2l.32-3h2l-.32 3H15v2h-1.9l-.2 2H15v2h-2.31l-.32 3h-2l.32-3h-2l-.32 3h-2l.32-3H5v-2h1.9l.2-2H5V9m4.1 2-.2 2h2l.2-2M19 6h-2v8h2m0 2h-2v2h2Z"/></svg></span> Manual install<a class="headerlink" href="#manual-install" title="Permanent link">&para;</a></h3>
 <p>Alternatively, you can download the binary for your OS/ARCH, <em>untar</em> it.</p>
 <p>For example, on GNU/Linux it could be:</p>
-<div class="highlight"><pre><span></span><code>tar -xvf gremlins_X.Y.Z_linux_amd64.tar.gz
+<div class="highlight"><pre><span></span><code>tar<span class="w"> </span>-xvf<span class="w"> </span>gremlins_X.Y.Z_linux_amd64.tar.gz
 </code></pre></div>
 <p>then copy it somewhere in <code>PATH</code>:</p>
-<div class="highlight"><pre><span></span><code>sudo cp gremlins_X.Y.Z_linux_amd64/gremlins /usr/bin
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>cp<span class="w"> </span>gremlins_X.Y.Z_linux_amd64/gremlins<span class="w"> </span>/usr/bin
 </code></pre></div>
 <h2 id="from-source">From source<a class="headerlink" href="#from-source" title="Permanent link">&para;</a></h2>
 <h3 id="go-install"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M400.1 194.8c-10.9 2.8-19.9 4.3-29.1 7.6-7.3 1.9-14.7 3.9-23.2 6.1l-.6.1c-4.2 1.2-4.6 1.3-8.5-3.2-4.7-5.3-8.1-8.7-14.6-11.9-19.7-9.6-38.7-6.8-56.4 4.7-21.2 13.7-32.1 34-31.8 59.2.3 25 17.4 45.5 41.2 48.9 22 2.8 39.8-4.6 53.8-20.5 2.1-2.6 4-5.3 6.1-8.3.8-1 1.5-2.1 2.3-3.3h-60.1c-6.5 0-8.1-4-5.9-9.3 4-9.7 11.5-25.9 15.9-34 .9-1.8 3.1-5.8 6.9-5.8h101.1c4.5-13.4 11.8-26.9 21.6-39.7 22.7-29.9 49.3-45.5 87.2-52 31.8-5.6 61.7-2.5 88.9 15.9 24.6 16.8 39.8 39.6 43.9 69.5 5.3 42.1-6.9 76.3-36.7 105.6-19.7 20.9-44.9 34-73.9 39.9-5.6 1-11.1 1.5-16.5 2-2.9.2-5.7.5-8.5.8-28.3-.6-54.2-8.7-76-27.4-15.3-13.3-25.9-29.6-31.1-48.5-3.7 7.3-8 14.4-14 21.1-21.6 29.6-50.9 48-87.9 52.9-30.6 4.1-58.9-1.8-83.9-20.5-23-17.5-36.1-40.5-39.5-69.2-4.1-34 5.9-65.4 26.4-91.3 22.2-29 51.5-47.4 87.3-53.9 29.3-6.2 57.3-1.9 82.6 15.3 16.5 10.9 28.3 25.8 36.1 43.9 1.9 2.8.6 4.4-3.1 5.3zm-351.8 5.6c-1.25 0-1.56-.6-.94-1.6l6.55-8.4c.62-.9 2.18-1.5 3.43-1.5H168.6c1.2 0 1.5.9.9 1.8l-5.3 8.1c-.6 1-2.2 1.9-3.1 1.9l-112.8-.3zM1.246 229.1c-1.246 0-1.558-.7-.934-1.6l6.543-8.4c.624-.9 2.182-1.6 3.425-1.6H152.4c1.2 0 1.8 1 1.5 1.9l-2.5 7.5c-.3 1.2-1.5 1.9-2.8 1.9l-147.354.3zm74.474 26.8c-.62.9-.31 1.8.93 1.8l67.95.3c.9 0 2.2-.9 2.2-2.1l.6-7.5c0-1.3-.6-2.2-1.9-2.2H83.2c-1.25 0-2.49.9-3.12 1.9l-4.36 7.8zm501.48-18c-.2-2.6-.3-4.8-.7-7-5.6-30.8-34-48.3-63.6-41.4-29 6.5-47.7 24.9-54.5 54.2-5.6 24.3 6.2 48.9 28.6 58.9 17.2 7.5 34.3 6.6 50.8-1.9 24.6-13.6 38-32.7 39.6-59.5-.1-1.2-.1-2.3-.2-3.3z"/></svg></span> Go install<a class="headerlink" href="#go-install" title="Permanent link">&para;</a></h3>
 <p>Gremlins can be installed with the Go install command. Only the <a href="https://go.dev">Go compiler</a> is needed.</p>
-<div class="highlight"><pre><span></span><code>go install github.com/go-gremlins/gremlins/cmd/gremlins@vX.Y.Z
+<div class="highlight"><pre><span></span><code>go<span class="w"> </span>install<span class="w"> </span>github.com/go-gremlins/gremlins/cmd/gremlins@vX.Y.Z
 </code></pre></div>
 <h3 id="ninja-style"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.75 13c-.01-.35.15-.69.42-.92.75.16 1.45.47 2.08.92 0 .68-.56 1.24-1.25 1.24S7.76 13.69 7.75 13m6 0c.63-.44 1.33-.75 2.08-.91.27.23.43.57.42.91 0 .7-.56 1.26-1.25 1.26s-1.25-.56-1.25-1.26M12 9c-2.77-.04-5.5.65-7.93 2L4 12c0 1.23.29 2.44.84 3.54a47.642 47.642 0 0 1 14.32 0c.55-1.1.84-2.31.84-3.54l-.07-1A15.849 15.849 0 0 0 12 9m0-7a10 10 0 0 1 10 10 10 10 0 0 1-10 10A10 10 0 0 1 2 12 10 10 0 0 1 12 2Z"/></svg></span> Ninja style<a class="headerlink" href="#ninja-style" title="Permanent link">&para;</a></h3>
 <p>To build Gremlins you need the <a href="https://go.dev">Go compiler</a>, <code>make</code> and <a href="https://golangci-lint.run">golangci-lint</a> for
 linting. You can clone download the source tarball from
 the <a href="https://github.com/go-gremlins/gremlins/releases/latest">release page</a>, then:</p>
-<div class="highlight"><pre><span></span><code>tar -xvf gremlins-X.Y.Z.tar.gz
+<div class="highlight"><pre><span></span><code>tar<span class="w"> </span>-xvf<span class="w"> </span>gremlins-X.Y.Z.tar.gz
 </code></pre></div>
 <p>Ad then:</p>
-<div class="highlight"><pre><span></span><code><span class="nb">cd</span> gremlins-X.Y.Z
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>gremlins-X.Y.Z
 </code></pre></div>
 <div class="highlight"><pre><span></span><code>make
 </code></pre></div>
@@ -1078,42 +1078,6 @@ the <a href="https://github.com/go-gremlins/gremlins/releases/latest">release pa
       </main>
       
         <footer class="md-footer">
-  
-    
-    <nav class="md-footer__inner md-grid" aria-label="Footer" >
-      
-        
-        <a href=".." class="md-footer__link md-footer__link--prev" aria-label="Previous: Home" rel="prev">
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
-          </div>
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Previous
-              </span>
-              Home
-            </div>
-          </div>
-        </a>
-      
-      
-        
-        <a href="../quick-start/" class="md-footer__link md-footer__link--next" aria-label="Next: Quick start" rel="next">
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              Quick start
-            </div>
-          </div>
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
-          </div>
-        </a>
-      
-    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -1156,12 +1120,11 @@ the <a href="https://github.com/go-gremlins/gremlins/releases/latest">release pa
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["search.suggest", "search.highlight", "search.share", "content.code.annotate", "content.tabs.link", "navigation.indexes"], "search": "../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["search.suggest", "search.highlight", "search.share", "content.code.annotate", "content.tabs.link", "navigation.indexes"], "search": "../assets/javascripts/workers/search.12658920.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
+      <script src="../assets/javascripts/bundle.5cf534bf.min.js"></script>
       
-    
     
   </body>
 </html>

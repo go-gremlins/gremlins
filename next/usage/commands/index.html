@@ -12,8 +12,14 @@
       
         <link rel="canonical" href="https://gremlins.dev/next/usage/commands/">
       
+      
+        <link rel="prev" href="../../quick-start/">
+      
+      
+        <link rel="next" href="unleash/">
+      
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.2">
     
     
       
@@ -21,15 +27,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.975780f9.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.f56500e0.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.2505c338.min.css">
-        
-          
-          
-          <meta name="theme-color" content="#00bdd6">
-        
       
       
 
@@ -832,29 +833,28 @@
                 
                   
 
-  <a href="https://github.com/go-gremlins/gremlins/edit/main/docs/docs/usage/commands/index.md" title="Edit this page" class="md-content__button md-icon">
-    
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
-  </a>
+  
+  
+
 
 
 <h1 id="gremlins">Gremlins<a class="headerlink" href="#gremlins" title="Permanent link">&para;</a></h1>
 <p>The <code>gremlins</code> command works with command and flags. Think of commands as verbs and flags as adjectives.</p>
-<div class="highlight"><pre><span></span><code>gremlins &lt;command&gt; <span class="o">[</span>flags<span class="o">]</span>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>&lt;command&gt;<span class="w"> </span><span class="o">[</span>flags<span class="o">]</span>
 </code></pre></div>
 <p>If you type</p>
 <div class="highlight"><pre><span></span><code>gremlins
 </code></pre></div>
 <p>a short usage summary will be printed.</p>
 <p>At any time, you can get further help writing</p>
-<div class="highlight"><pre><span></span><code>gremlins <span class="nb">help</span> &lt;command&gt;
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span><span class="nb">help</span><span class="w"> </span>&lt;command&gt;
 </code></pre></div>
 <h2 id="global-flags">Global flags<a class="headerlink" href="#global-flags" title="Permanent link">&para;</a></h2>
 <p>Global flags are not command specific.</p>
 <h3 id="config">Config<a class="headerlink" href="#config" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span><code>--config</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: empty</p>
 <p>Overrides the configuration file.</p>
-<div class="highlight"><pre><span></span><code>gremlins &lt;command&gt; --config<span class="o">=</span>config.yml
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>&lt;command&gt;<span class="w"> </span>--config<span class="o">=</span>config.yml
 </code></pre></div>
 <h3 id="silent">Silent<a class="headerlink" href="#silent" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span><code>--silent</code>/<code>-s</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: false</p>
@@ -865,7 +865,7 @@ combination with a threshold configuration.</p>
 <p class="admonition-title">Warning</p>
 <p>Note that Gremlins will be completely silent if there aren't errors, it doesn't mean it is unresponsive.</p>
 </div>
-<div class="highlight"><pre><span></span><code>gremlins &lt;command&gt; --silent
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>&lt;command&gt;<span class="w"> </span>--silent
 </code></pre></div>
 
 
@@ -884,42 +884,6 @@ combination with a threshold configuration.</p>
       </main>
       
         <footer class="md-footer">
-  
-    
-    <nav class="md-footer__inner md-grid" aria-label="Footer" >
-      
-        
-        <a href="../../quick-start/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Quick start" rel="prev">
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
-          </div>
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Previous
-              </span>
-              Quick start
-            </div>
-          </div>
-        </a>
-      
-      
-        
-        <a href="unleash/" class="md-footer__link md-footer__link--next" aria-label="Next: Unleash" rel="next">
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              Unleash
-            </div>
-          </div>
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
-          </div>
-        </a>
-      
-    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -962,12 +926,11 @@ combination with a threshold configuration.</p>
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["search.suggest", "search.highlight", "search.share", "content.code.annotate", "content.tabs.link", "navigation.indexes"], "search": "../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["search.suggest", "search.highlight", "search.share", "content.code.annotate", "content.tabs.link", "navigation.indexes"], "search": "../../assets/javascripts/workers/search.12658920.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
+      <script src="../../assets/javascripts/bundle.5cf534bf.min.js"></script>
       
-    
     
   </body>
 </html>

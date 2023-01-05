@@ -12,8 +12,14 @@
       
         <link rel="canonical" href="https://gremlins.dev/next/usage/commands/unleash/">
       
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="workers/">
+      
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.2">
     
     
       
@@ -21,15 +27,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.975780f9.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.f56500e0.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.2505c338.min.css">
-        
-          
-          
-          <meta name="theme-color" content="#00bdd6">
-        
       
       
 
@@ -967,53 +968,52 @@
                 
                   
 
-  <a href="https://github.com/go-gremlins/gremlins/edit/main/docs/docs/usage/commands/unleash/index.md" title="Edit this page" class="md-content__button md-icon">
-    
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
-  </a>
+  
+  
+
 
 
 <h1 id="unleash">Unleash<a class="headerlink" href="#unleash" title="Permanent link">&para;</a></h1>
 <p>The main command used in Gremlins is <code>unleash</code>, that <em>unleashes</em> the <em>gremlins</em> and starts a mutation test of your code.
 If <code>unleash</code> is too long to type for you, you can use its aliases <code>run</code> and <code>r</code>.</p>
 <p>To execute a mutation testing run just type</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash
 </code></pre></div>
 <p>If the module build requires tags</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --tags <span class="s2">&quot;tag1,tag2&quot;</span>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--tags<span class="w"> </span><span class="s2">&quot;tag1,tag2&quot;</span>
 </code></pre></div>
 <h2 id="flags">Flags<a class="headerlink" href="#flags" title="Permanent link">&para;</a></h2>
 <p><code>unleash</code> supports several flags to fine tune its behaviour.</p>
 <h3 id="arithmetic-base">Arithmetic base<a class="headerlink" href="#arithmetic-base" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--arithmetic-base</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: <code>true</code></p>
 <p>Enables/disables the <a href="../../mutations/arithmetic_base/">ARITHMETIC BASE</a> mutant type.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --arithmetic-base<span class="o">=</span><span class="nb">false</span>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--arithmetic-base<span class="o">=</span><span class="nb">false</span>
 </code></pre></div>
 <h3 id="conditionals-boundary">Conditionals-boundary<a class="headerlink" href="#conditionals-boundary" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--conditionals-boundary</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: <code>true</code></p>
 <p>Enables/disables the <a href="../../mutations/conditionals_boundary/">CONDITIONALS BOUNDARY</a> mutant type.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --conditionals_boundary<span class="o">=</span><span class="nb">false</span>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--conditionals_boundary<span class="o">=</span><span class="nb">false</span>
 </code></pre></div>
 <h3 id="conditionals-negation">Conditionals negation<a class="headerlink" href="#conditionals-negation" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--conditionals-negation</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: <code>true</code></p>
 <p>Enables/disables the <a href="../../mutations/conditionals_negation/">CONDITIONALS NEGATION</a> mutant type.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --conditionals_negation<span class="o">=</span><span class="nb">false</span>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--conditionals_negation<span class="o">=</span><span class="nb">false</span>
 </code></pre></div>
 <h3 id="cover-packages">Cover packages<a class="headerlink" href="#cover-packages" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--coverpkg</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: empty</p>
 <p>Apply coverage analysis in each test to packages matching the patterns.
 The default is for each test to analyze only the package being tested.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --coverpkg <span class="s2">&quot;./internal/...,./pkg/...&quot;</span>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--coverpkg<span class="w"> </span><span class="s2">&quot;./internal/...,./pkg/...&quot;</span>
 </code></pre></div>
 <h3 id="dry-run">Dry run<a class="headerlink" href="#dry-run" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span><code>--dry-run</code>/<code>-d</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: false</p>
 <p>Just performs the analysis but not the mutation testing.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --dry-run
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--dry-run
 </code></pre></div>
 <h3 id="increment-decrement">Increment decrement<a class="headerlink" href="#increment-decrement" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--increment-decrement</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: <code>true</code></p>
 <p>Enables/disables the <a href="../../mutations/increment_decrement/">INCREMENT DECREMENT</a> mutant type.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --increment-decrement<span class="o">=</span><span class="nb">false</span>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--increment-decrement<span class="o">=</span><span class="nb">false</span>
 </code></pre></div>
 <h3 id="integration-mode">Integration mode<a class="headerlink" href="#integration-mode" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span><code>--integration</code>/<code>-i</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: false</p>
@@ -1026,72 +1026,72 @@ because packages should rely on their own tests, not on the tests of other packa
 example if you are analysing integration or E2E tests. In this scenario, you can enable <em>integration mode</em>.
 However, you should be aware that integration mode is generally much slower, and you can also get
 slightly different results depending on your test suite.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --integration
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--integration
 </code></pre></div>
 <h3 id="invert-assignments">Invert assignments<a class="headerlink" href="#invert-assignments" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--invert-assignments</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: <code>false</code></p>
 <p>Enables/disables the <a href="../../mutations/invert_assignments/">INVERT ASSIGNMENTS</a> mutant type.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --invert-assignments
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--invert-assignments
 </code></pre></div>
 <h3 id="invert-bitwise">Invert bitwise<a class="headerlink" href="#invert-bitwise" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--invert-bitwise</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: <code>false</code></p>
 <p>Enables/disables the <a href="../../mutations/invert_bitwise/">INVERT BITWISE</a> mutant type.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --invert-bitwise
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--invert-bitwise
 </code></pre></div>
 <h3 id="invert-bitwise-assignments">Invert bitwise assignments<a class="headerlink" href="#invert-bitwise-assignments" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--invert-bwassign</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: <code>false</code></p>
 <p>Enables/disables the <a href="../../mutations/invert_bitwise_assignments/">INVERT BWASSIGN</a> mutant type.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --invert-bwassign
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--invert-bwassign
 </code></pre></div>
 <h3 id="invert-logical-operators">Invert logical operators<a class="headerlink" href="#invert-logical-operators" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--invert-logical</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: <code>false</code></p>
 <p>Enables/disables the <a href="../../mutations/invert_logical/">INVERT LOGICAL</a> mutant type.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --invert_logical
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--invert_logical
 </code></pre></div>
 <h3 id="invert-loop-control">Invert loop control<a class="headerlink" href="#invert-loop-control" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--invert-loopctrl</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: <code>false</code></p>
 <p>Enables/disables the <a href="../../mutations/invert_loop/">INVERT LOOP</a> mutant type.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --invert-loopctrl
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--invert-loopctrl
 </code></pre></div>
 <h3 id="invert-negatives">Invert negatives<a class="headerlink" href="#invert-negatives" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--invert-negatives</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: <code>true</code></p>
 <p>Enables/disables the <a href="../../mutations/invert_negatives/">INVERT NEGATIVES</a> mutant type.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --invert_negatives<span class="o">=</span><span class="nb">false</span>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--invert_negatives<span class="o">=</span><span class="nb">false</span>
 </code></pre></div>
 <h3 id="output">Output<a class="headerlink" href="#output" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--output</code>/<code>-o</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: empty</p>
 <p>When set, Gremlins will write the give output file with machine readable results.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --output<span class="o">=</span>output.json
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--output<span class="o">=</span>output.json
 </code></pre></div>
 <p>The output file in JSON format and has the following structure:</p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="w"></span>
-<span class="w">  </span><span class="nt">&quot;go_module&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;github.com/go-gremlins/gremlins&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="nt">&quot;test_efficacy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">82.00</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="c1">//(1)</span><span class="w"></span>
-<span class="w">  </span><span class="nt">&quot;mutations_coverage&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">80.00</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="c1">//(2)</span><span class="w"></span>
-<span class="w">  </span><span class="nt">&quot;mutants_total&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="nt">&quot;mutants_killed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">82</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="nt">&quot;mutants_lived&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="nt">&quot;mutants_not_viable&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="c1">//(3)</span><span class="w"></span>
-<span class="w">  </span><span class="nt">&quot;mutants_not_covered&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="nt">&quot;elapsed_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">123.456</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="c1">//(4)</span><span class="w"></span>
-<span class="w">  </span><span class="nt">&quot;files&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">      </span><span class="nt">&quot;file_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;myFile.go&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">      </span><span class="nt">&quot;mutations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
-<span class="w">        </span><span class="p">{</span><span class="w"></span>
-<span class="w">          </span><span class="nt">&quot;line&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"></span>
-<span class="w">          </span><span class="nt">&quot;column&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"></span>
-<span class="w">          </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CONDITIONALS_NEGATION&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">          </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;KILLED&quot;</span><span class="w"></span>
-<span class="w">        </span><span class="p">}</span><span class="w"></span>
-<span class="w">      </span><span class="p">]</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="w">  </span><span class="p">]</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;go_module&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;github.com/go-gremlins/gremlins&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;test_efficacy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">82.00</span><span class="p">,</span>
+<span class="w">  </span><span class="c1">//(1)</span>
+<span class="w">  </span><span class="nt">&quot;mutations_coverage&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">80.00</span><span class="p">,</span>
+<span class="w">  </span><span class="c1">//(2)</span>
+<span class="w">  </span><span class="nt">&quot;mutants_total&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;mutants_killed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">82</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;mutants_lived&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;mutants_not_viable&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">  </span><span class="c1">//(3)</span>
+<span class="w">  </span><span class="nt">&quot;mutants_not_covered&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;elapsed_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">123.456</span><span class="p">,</span>
+<span class="w">  </span><span class="c1">//(4)</span>
+<span class="w">  </span><span class="nt">&quot;files&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;file_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;myFile.go&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;mutations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">&quot;line&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;column&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CONDITIONALS_NEGATION&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;KILLED&quot;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
 </code></pre></div>
 <ol>
 <li>This is a percentage expressed as floating point number.</li>
@@ -1106,12 +1106,12 @@ slightly different results depending on your test suite.</p>
 <h3 id="remove-self-assignments">Remove self-assignments<a class="headerlink" href="#remove-self-assignments" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--remove-self-assignments</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: <code>false</code></p>
 <p>Enables/disables the <a href="../../mutations/remove_self_assignments/">REMOVE_SELF ASSIGNMENTS</a> mutant type.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --remove-self-assignments
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--remove-self-assignments
 </code></pre></div>
 <h3 id="tags">Tags<a class="headerlink" href="#tags" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--tags</code>/<code>-t</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: empty</p>
 <p>Sets the <code>go</code> command build tags.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --tags <span class="s2">&quot;tag1,tag2&quot;</span>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--tags<span class="w"> </span><span class="s2">&quot;tag1,tag2&quot;</span>
 </code></pre></div>
 <h3 id="test-cpu">Test CPU<a class="headerlink" href="#test-cpu" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--test-cpu</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: <code>0</code></p>
@@ -1120,7 +1120,7 @@ slightly different results depending on your test suite.</p>
 <p>To understand better the use of these flag, check <a href="workers/">workers</a></p>
 </div>
 <p>This flag overrides the number of CPUs the Go test tool will utilize. By default, Gremlins doesn't set this value.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --test-cpu<span class="o">=</span><span class="m">1</span>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--test-cpu<span class="o">=</span><span class="m">1</span>
 </code></pre></div>
 <h3 id="threshold-efficacy">Threshold efficacy<a class="headerlink" href="#threshold-efficacy" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--threshold-efficacy</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: 0</p>
@@ -1128,7 +1128,7 @@ slightly different results depending on your test suite.</p>
 zero, which
 means Gremlins never exits with an error.</p>
 <p>The <em>test efficacy</em> is calculated as <code>KILLED / (KILLED + LIVED)</code> and assesses how effective are the tests.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --threshold-efficacy <span class="m">80</span>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--threshold-efficacy<span class="w"> </span><span class="m">80</span>
 </code></pre></div>
 <h3 id="threshold-mutant-coverage">Threshold mutant coverage<a class="headerlink" href="#threshold-mutant-coverage" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--threshold-mcover</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: 0</p>
@@ -1136,7 +1136,7 @@ means Gremlins never exits with an error.</p>
 it is zero, which means Gremlins never exits with an error.</p>
 <p>The <em>mutant coverage</em> is calculated as <code>(KILLED + LIVED) / (KILLED + LIVED + NOT_COVERED)</code> and assesses how many mutants
 are covered by tests.</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --threshold-mcover <span class="m">80</span>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--threshold-mcover<span class="w"> </span><span class="m">80</span>
 </code></pre></div>
 <h3 id="timeout-coefficient">Timeout coefficient<a class="headerlink" href="#timeout-coefficient" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--timeout-coefficient</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: <code>0</code></p>
@@ -1147,7 +1147,7 @@ are covered by tests.</p>
 <p>Gremlins determines the timeout for each Go test run by multiplying by a coefficient the time it took to perform the
 coverage run.
 It is possible to override this coefficient (<code>0</code> means use the default).</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --timeout-coefficient<span class="o">=</span><span class="m">3</span>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--timeout-coefficient<span class="o">=</span><span class="m">3</span>
 </code></pre></div>
 <h3 id="workers">Workers<a class="headerlink" href="#workers" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--workers</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: <code>0</code></p>
@@ -1160,7 +1160,7 @@ CPU cores available.</p>
 <p>By default, Gremlins will use all the available CPU cores of, and , in <em>integration mode</em>, it will use half of the
 available CPU cores.</p>
 <p>The <code>--workers</code> flag allows to override the number of CPUs to use (<code>0</code> means use the default).</p>
-<div class="highlight"><pre><span></span><code>gremlins unleash --workers<span class="o">=</span><span class="m">4</span>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--workers<span class="o">=</span><span class="m">4</span>
 </code></pre></div>
 
 
@@ -1179,42 +1179,6 @@ available CPU cores.</p>
       </main>
       
         <footer class="md-footer">
-  
-    
-    <nav class="md-footer__inner md-grid" aria-label="Footer" >
-      
-        
-        <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: The gremlins command" rel="prev">
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
-          </div>
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Previous
-              </span>
-              The gremlins command
-            </div>
-          </div>
-        </a>
-      
-      
-        
-        <a href="workers/" class="md-footer__link md-footer__link--next" aria-label="Next: Workers" rel="next">
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              Workers
-            </div>
-          </div>
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
-          </div>
-        </a>
-      
-    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -1257,12 +1221,11 @@ available CPU cores.</p>
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["search.suggest", "search.highlight", "search.share", "content.code.annotate", "content.tabs.link", "navigation.indexes"], "search": "../../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["search.suggest", "search.highlight", "search.share", "content.code.annotate", "content.tabs.link", "navigation.indexes"], "search": "../../../assets/javascripts/workers/search.12658920.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.5cf534bf.min.js"></script>
       
-    
     
   </body>
 </html>
