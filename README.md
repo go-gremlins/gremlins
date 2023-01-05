@@ -4,8 +4,8 @@
   <p align="center" style="text-align: center">A mutation testing tool for Go</p>
 </p>
 
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/go-gremlins/gremlins/ci.yml?logo=github)](https://github.com/go-gremlins/gremlins/actions/workflows/ci.yml)
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/go-gremlins/gremlins/gremlins.yml?label=gremlins&logo=github)](https://github.com/go-gremlins/gremlins/actions/workflows/gremlins.yml)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/go-gremlins/gremlins/ci.yml?logo=github)](https://github.com/go-gremlins/gremlins/actions/workflows/ci.yml)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/go-gremlins/gremlins/gremlins.yml?label=gremlins&logo=github)](https://github.com/go-gremlins/gremlins/actions/workflows/gremlins.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/go-gremlins/gremlins)](https://goreportcard.com/report/github.com/go-gremlins/gremlins)
 [![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/go-gremlins/gremlins?logo=codeclimate)](https://codeclimate.com/github/go-gremlins/gremlins/maintainability)
 [![DeepSource](https://deepsource.io/gh/go-gremlins/gremlins.svg/?label=active+issues&token=posNnh5FHpZG9DhM23YH7h6d)](https://deepsource.io/gh/go-gremlins/gremlins/?ref=repository-badge)
