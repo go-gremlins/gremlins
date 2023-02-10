@@ -65,7 +65,7 @@ func TestCoverageRun(t *testing.T) {
 			intMode:  true,
 		},
 		{
-			name:     "from root, integration mode",
+			name:     "from folder, integration mode",
 			callPath: "test/dir",
 			wantPath: "./...",
 			intMode:  true,
