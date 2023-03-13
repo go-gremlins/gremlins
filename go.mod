@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
-	github.com/fatih/color v1.14.1
+	github.com/fatih/color v1.15.0
 	github.com/google/go-cmp v0.5.9
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
@@ -28,7 +28,7 @@ require (
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
-	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/text v0.5.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
