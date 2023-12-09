@@ -30,6 +30,7 @@ import (
 	"time"
 
 	"github.com/go-gremlins/gremlins/internal/coverage"
+	"github.com/go-gremlins/gremlins/internal/diff"
 	"github.com/go-gremlins/gremlins/internal/engine/workerpool"
 	"github.com/go-gremlins/gremlins/internal/mutator"
 	"github.com/go-gremlins/gremlins/internal/report"
@@ -46,6 +47,7 @@ type Engine struct {
 	fs           fs.FS
 	jDealer      ExecutorDealer
 	covProfile   coverage.Profile
+	filesDiff    diff.Diff
 	mutantStream chan mutator.Mutator
 	module       gomodule.GoModule
 }
@@ -57,12 +59,13 @@ type Option func(m Engine) Engine
 //
 // It gets a fs.FS on which to perform the analysis, a coverage.Profile to
 // check if the mutants are covered and a sets of Option.
-func New(mod gomodule.GoModule, r coverage.Result, jDealer ExecutorDealer, opts ...Option) Engine {
+func New(mod gomodule.GoModule, r coverage.Result, d diff.Diff, jDealer ExecutorDealer, opts ...Option) Engine {
 	dirFS := os.DirFS(filepath.Join(mod.Root, mod.CallingDir))
 	mut := Engine{
 		module:     mod,
 		jDealer:    jDealer,
 		covProfile: r.Profile,
+		filesDiff:  d,
 		fs:         dirFS,
 	}
 	for _, opt := range opts {
@@ -173,8 +176,13 @@ func normalisePkgPath(pkg string) string {
 
 func (mu *Engine) mutationStatus(pos token.Position) mutator.Status {
 	var status mutator.Status
+
 	if mu.covProfile.IsCovered(pos) {
 		status = mutator.Runnable
+	}
+
+	if !mu.filesDiff.IsChanged(pos) {
+		status = mutator.Skipped
 	}
 
 	return status

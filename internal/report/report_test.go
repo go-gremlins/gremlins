@@ -57,12 +57,13 @@ func TestReport(t *testing.T) {
 				stubMutant{status: mutator.NotCovered, mutantType: mutator.ConditionalsNegation, position: fakePosition},
 				stubMutant{status: mutator.NotViable, mutantType: mutator.ConditionalsBoundary, position: fakePosition},
 				stubMutant{status: mutator.TimedOut, mutantType: mutator.ConditionalsBoundary, position: fakePosition},
+				stubMutant{status: mutator.Skipped, mutantType: mutator.ConditionalsBoundary, position: fakePosition},
 			},
 			want: "\n" +
 				// Limit the time reporting to the first two units (millis are excluded)
 				"Mutation testing completed in 2 minutes 22 seconds\n" +
 				"Killed: 1, Lived: 1, Not covered: 1\n" +
-				"Timed out: 1, Not viable: 1\n" +
+				"Timed out: 1, Not viable: 1, Skipped: 1\n" +
 				"Test efficacy: 50.00%\n" +
 				"Mutator coverage: 66.67%\n",
 		},
@@ -75,7 +76,7 @@ func TestReport(t *testing.T) {
 				// Limit the time reporting to the first two units (millis are excluded)
 				"Mutation testing completed in 2 minutes 22 seconds\n" +
 				"Killed: 0, Lived: 0, Not covered: 1\n" +
-				"Timed out: 0, Not viable: 0\n" +
+				"Timed out: 0, Not viable: 0, Skipped: 0\n" +
 				"Test efficacy: 0.00%\n" +
 				"Mutator coverage: 0.00%\n",
 		},
@@ -89,7 +90,7 @@ func TestReport(t *testing.T) {
 				// Limit the time reporting to the first two units (millis are excluded)
 				"Mutation testing completed in 2 minutes 22 seconds\n" +
 				"Killed: 0, Lived: 0, Not covered: 0\n" +
-				"Timed out: 2, Not viable: 0\n" +
+				"Timed out: 2, Not viable: 0, Skipped: 0\n" +
 				"Test efficacy: 0.00%\n" +
 				"Mutator coverage: 0.00%\n",
 		},
