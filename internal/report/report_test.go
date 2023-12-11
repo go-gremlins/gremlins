@@ -44,6 +44,11 @@ import (
 var fakePosition = newPosition("aFolder/aFile.go", 3, 12)
 
 func TestReport(t *testing.T) {
+	const (
+		testingLine  = "Mutation testing completed in 2 minutes 22 seconds\n"
+		coverageLine = "Mutator coverage: 0.00%\n"
+	)
+
 	nrTestCases := []struct {
 		name    string
 		mutants []mutator.Mutator
@@ -61,7 +66,7 @@ func TestReport(t *testing.T) {
 			},
 			want: "\n" +
 				// Limit the time reporting to the first two units (millis are excluded)
-				"Mutation testing completed in 2 minutes 22 seconds\n" +
+				testingLine +
 				"Killed: 1, Lived: 1, Not covered: 1\n" +
 				"Timed out: 1, Not viable: 1, Skipped: 1\n" +
 				"Test efficacy: 50.00%\n" +
@@ -74,11 +79,11 @@ func TestReport(t *testing.T) {
 			},
 			want: "\n" +
 				// Limit the time reporting to the first two units (millis are excluded)
-				"Mutation testing completed in 2 minutes 22 seconds\n" +
+				testingLine +
 				"Killed: 0, Lived: 0, Not covered: 1\n" +
 				"Timed out: 0, Not viable: 0, Skipped: 0\n" +
 				"Test efficacy: 0.00%\n" +
-				"Mutator coverage: 0.00%\n",
+				coverageLine,
 		},
 		{
 			name: "reports findings with timeouts",
@@ -88,11 +93,11 @@ func TestReport(t *testing.T) {
 			},
 			want: "\n" +
 				// Limit the time reporting to the first two units (millis are excluded)
-				"Mutation testing completed in 2 minutes 22 seconds\n" +
+				testingLine +
 				"Killed: 0, Lived: 0, Not covered: 0\n" +
 				"Timed out: 2, Not viable: 0, Skipped: 0\n" +
 				"Test efficacy: 0.00%\n" +
-				"Mutator coverage: 0.00%\n",
+				coverageLine,
 		},
 		{
 			name:    "reports nothing if no result",
@@ -149,7 +154,7 @@ func TestReport(t *testing.T) {
 				// Limit the time reporting to the first two units (millis are excluded)
 				"Dry run completed in 2 minutes 22 seconds\n" +
 				"Runnable: 0, Not covered: 0\n" +
-				"Mutator coverage: 0.00%\n",
+				coverageLine,
 		},
 	}
 	for _, tc := range drTestCases {
