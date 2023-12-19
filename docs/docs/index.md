@@ -33,6 +33,7 @@ catch their damage?
 
 - Discovers mutant candidates and tests them
 - Only tests mutants covered by tests
+- Can test mutants only in PR changes
 - Supports five mutant types
 - Yaml-based configuration
 - Can run as quality gate on CI

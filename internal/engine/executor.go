@@ -170,7 +170,7 @@ func (m *mutantExecutor) Start(w *workerpool.Worker) {
 	workingDir := filepath.Join(rootDir, m.module.CallingDir)
 	m.mutant.SetWorkdir(workingDir)
 
-	if m.mutant.Status() == mutator.NotCovered || m.dryRun {
+	if m.mutant.Status() == mutator.NotCovered || m.mutant.Status() == mutator.Skipped || m.dryRun {
 		m.outCh <- m.mutant
 		report.Mutant(m.mutant)
 

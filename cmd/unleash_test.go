@@ -66,6 +66,12 @@ func TestUnleash(t *testing.T) {
 			defValue: "",
 		},
 		{
+			name:      "diff",
+			shorthand: "D",
+			flagType:  "string",
+			defValue:  "",
+		},
+		{
 			name:      "dry-run",
 			shorthand: "d",
 			flagType:  "bool",

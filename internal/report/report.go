@@ -58,6 +58,7 @@ type reportStatus struct {
 	lived      int
 	timedOut   int
 	notCovered int
+	skipped    int
 	notViable  int
 	runnable   int
 
@@ -110,6 +111,8 @@ func reportMutationStatus(m mutator.Mutator, rep *reportStatus) {
 		rep.lived++
 	case mutator.NotCovered:
 		rep.notCovered++
+	case mutator.Skipped:
+		rep.skipped++
 	case mutator.TimedOut:
 		rep.timedOut++
 	case mutator.NotViable:
@@ -211,11 +214,12 @@ func (r *reportStatus) fullRunReport() {
 	lived := fgRed(r.lived)
 	timedOut := fgGreen(r.timedOut)
 	notViable := fgHiBlack(r.notViable)
+	skipped := fgHiBlack(r.skipped)
 	notCovered := fgHiYellow(r.notCovered)
 	log.Infoln("")
 	log.Infof("Mutation testing completed in %s\n", r.elapsed.String())
 	log.Infof("Killed: %s, Lived: %s, Not covered: %s\n", killed, lived, notCovered)
-	log.Infof("Timed out: %s, Not viable: %s\n", timedOut, notViable)
+	log.Infof("Timed out: %s, Not viable: %s, Skipped: %s\n", timedOut, notViable, skipped)
 	log.Infof("Test efficacy: %.2f%%\n", r.tEfficacy)
 	log.Infof("Mutator coverage: %.2f%%\n", r.mCovered)
 }
@@ -275,7 +279,7 @@ func Mutant(m mutator.Mutator) {
 		status = fgHiYellow(m.Status())
 	case mutator.TimedOut:
 		status = fgGreen(m.Status())
-	case mutator.NotViable:
+	case mutator.NotViable, mutator.Skipped:
 		status = fgHiBlack(m.Status())
 	}
 	log.Infof("%s%s %s at %s\n", padding(m.Status()), status, m.Type(), m.Position())
