@@ -36,6 +36,8 @@ const (
 	expectedModule = "example.com"
 )
 
+var testCodeData = engine.CodeData{Cov: coveredPosition(defaultFixture).Profile}
+
 func coveredPosition(fixture string) coverage.Result {
 	fn := filenameFromFixture(fixture)
 	p := coverage.Profile{fn: {{StartLine: 6, EndLine: 7, StartCol: 8, EndCol: 9}}}
@@ -500,7 +502,7 @@ func TestMutations(t *testing.T) {
 			mapFS, mod, c := loadFixture(tc.fixture, ".")
 			defer c()
 
-			mut := engine.New(mod, tc.covResult, nil, newJobDealerStub(t), engine.WithDirFs(mapFS))
+			mut := engine.New(mod, engine.CodeData{Cov: tc.covResult.Profile}, newJobDealerStub(t), engine.WithDirFs(mapFS))
 			res := mut.Run(context.Background())
 			got := res.Mutants
 
@@ -544,7 +546,7 @@ func TestMutantSkipDisabled(t *testing.T) {
 			})
 			defer viperReset()
 
-			mut := engine.New(mod, coveredPosition(defaultFixture), nil, newJobDealerStub(t), engine.WithDirFs(mapFS))
+			mut := engine.New(mod, testCodeData, newJobDealerStub(t), engine.WithDirFs(mapFS))
 			res := mut.Run(context.Background())
 			got := res.Mutants
 
@@ -573,7 +575,7 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 	}
 	viperSet(map[string]any{configuration.UnleashDryRunKey: true})
 	defer viperReset()
-	mut := engine.New(mod, coverage.Result{}, nil, newJobDealerStub(t), engine.WithDirFs(sys))
+	mut := engine.New(mod, engine.CodeData{}, newJobDealerStub(t), engine.WithDirFs(sys))
 	res := mut.Run(context.Background())
 
 	if got := res.Mutants; len(got) != 0 {
@@ -585,7 +587,7 @@ func TestStopsOnCancel(t *testing.T) {
 	mapFS, mod, c := loadFixture(defaultFixture, ".")
 	defer c()
 
-	mut := engine.New(mod, coveredPosition(defaultFixture), nil, newJobDealerStub(t), engine.WithDirFs(mapFS))
+	mut := engine.New(mod, testCodeData, newJobDealerStub(t), engine.WithDirFs(mapFS))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -628,7 +630,7 @@ func TestPackageDiscovery(t *testing.T) {
 			defer c()
 
 			jds := newJobDealerStub(t)
-			mut := engine.New(mod, coveredPosition(defaultFixture), nil, jds, engine.WithDirFs(mapFS))
+			mut := engine.New(mod, testCodeData, jds, engine.WithDirFs(mapFS))
 
 			_ = mut.Run(context.Background())
 

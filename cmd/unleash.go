@@ -173,7 +173,12 @@ func run(ctx context.Context, mod gomodule.GoModule, workDir string) (report.Res
 
 	jDealer := engine.NewExecutorDealer(mod, wdDealer, cProfile.Elapsed)
 
-	mut := engine.New(mod, cProfile, fDiff, jDealer)
+	codeData := engine.CodeData{
+		Cov:  cProfile.Profile,
+		Diff: fDiff,
+	}
+
+	mut := engine.New(mod, codeData, jDealer)
 	results := mut.Run(ctx)
 
 	return results, nil
