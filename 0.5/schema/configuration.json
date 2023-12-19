@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "$id": "https://gremlins.dev/schema/configuration.json",
+  "title": "The Gremlins configuration schema",
+  "type": "object",
+  "properties": {
+    "unleash": {
+      "type": "object",
+      "properties": {
+        "silent": {
+          "title": "Silent mode",
+          "description": "All the STDOUT output is suppressed",
+          "type": "boolean",
+          "default": false
+        },
+        "dry-run": {
+          "title": "Dry-run mode",
+          "description": "Searches for mutants but doesn't execute the tests",
+          "type": "boolean",
+          "default": false
+        },
+        "tags": {
+          "title": "Tags",
+          "description": "The build tags for the Go module to be tested",
+          "type": "string",
+          "default": "",
+          "examples": [
+            "tag1,tag2,tag4"
+          ]
+        },
+        "coverpkg": {
+          "title": "Cover packages",
+          "description": "Apply coverage analysis in each test to packages matching the patterns",
+          "type": "string",
+          "default": "",
+          "examples": [
+            "./internal/log,./pkg/..."
+          ]
+        },
+        "output": {
+          "title": "Output",
+          "description": "The output file for machine readable results",
+          "type": "string",
+          "default": "",
+          "examples": [
+            "output.json"
+          ]
+        },
+        "threshold": {
+          "title": "Thresholds",
+          "description": "The thresholds under which Gremlins exits with an error",
+          "type": "object",
+          "default": {},
+          "required": [],
+          "properties": {
+            "efficacy": {
+              "title": "Test efficacy",
+              "description": "Test efficacy threshold",
+              "type": "number",
+              "default": 0,
+              "minimum": 0,
+              "maximum": 100,
+              "examples": [
+                81.2,
+                10
+              ]
+            },
+            "mutant-coverage": {
+              "title": "Mutant-coverage",
+              "description": "Mutant coverage threshold",
+              "type": "number",
+              "default": 0,
+              "minimum": 0,
+              "maximum": 100,
+              "examples": [
+                81.2,
+                10
+              ]
+            }
+          }
+        }
+      }
+    },
+    "mutants": {
+      "title": "Supported mutants",
+      "type": "object",
+      "properties": {
+        "arithmetic-base": {
+          "title": "The arithmetic-base Schema",
+          "type": "object",
+          "required": [
+            "enabled"
+          ],
+          "properties": {
+            "enabled": {
+              "title": "The enabled Schema",
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
+        "conditionals-boundary": {
+          "title": "The conditionals-boundary Schema",
+          "type": "object",
+          "required": [
+            "enabled"
+          ],
+          "properties": {
+            "enabled": {
+              "title": "The enabled Schema",
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
+        "conditionals-negation": {
+          "title": "The conditionals-negation Schema",
+          "type": "object",
+          "required": [
+            "enabled"
+          ],
+          "properties": {
+            "enabled": {
+              "title": "The enabled Schema",
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
+        "increment-decrement": {
+          "title": "The increment-decrement Schema",
+          "type": "object",
+          "required": [
+            "enabled"
+          ],
+          "properties": {
+            "enabled": {
+              "title": "The enabled Schema",
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
+        "invert-negatives": {
+          "title": "The invert-negatives Schema",
+          "type": "object",
+          "required": [
+            "enabled"
+          ],
+          "properties": {
+            "enabled": {
+              "title": "The enabled Schema",
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
+        "invert-loopctrl": {
+          "title": "The invert-loopctrl Schema",
+          "type": "object",
+          "required": [
+            "enabled"
+          ],
+          "properties": {
+            "enabled": {
+              "title": "The enabled Schema",
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
+        "invert-assignments": {
+          "title": "The invert-assignments Schema",
+          "type": "object",
+          "required": [
+            "enabled"
+          ],
+          "properties": {
+            "enabled": {
+              "title": "The enabled Schema",
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
+        "invert-bitwise": {
+          "title": "The invert-bitwise Schema",
+          "type": "object",
+          "required": [
+            "enabled"
+          ],
+          "properties": {
+            "enabled": {
+              "title": "The enabled Schema",
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
+        "invert-bwassign": {
+          "title": "The invert-bwassign Schema",
+          "type": "object",
+          "required": [
+            "enabled"
+          ],
+          "properties": {
+            "enabled": {
+              "title": "The enabled Schema",
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
+        "remove-self-assignments": {
+          "title": "The remove-self-assignments Schema",
+          "type": "object",
+          "required": [
+            "enabled"
+          ],
+          "properties": {
+            "enabled": {
+              "title": "The enabled Schema",
+              "type": "boolean",
+              "default": false
+            }
+          }
+        }
+      }
+    }
+  }
+}
