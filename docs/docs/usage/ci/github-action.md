@@ -20,7 +20,7 @@ jobs:
   gremlins:
     - uses: actions/checkout@v3
     - uses: actions/setup-go@v3
-    - uses: actions/gremlins-action@v1
+    - uses: go-gremlins/gremlins-action@v1
       with:
         version: latest
         args: --tags="tag1,tag2"

@@ -30,6 +30,7 @@ import (
 	"time"
 
 	"github.com/go-gremlins/gremlins/internal/coverage"
+	"github.com/go-gremlins/gremlins/internal/diff"
 	"github.com/go-gremlins/gremlins/internal/engine/workerpool"
 	"github.com/go-gremlins/gremlins/internal/mutator"
 	"github.com/go-gremlins/gremlins/internal/report"
@@ -45,25 +46,31 @@ import (
 type Engine struct {
 	fs           fs.FS
 	jDealer      ExecutorDealer
-	covProfile   coverage.Profile
+	codeData     CodeData
 	mutantStream chan mutator.Mutator
 	module       gomodule.GoModule
+}
+
+// CodeData is used to check if the mutant should be executed.
+type CodeData struct {
+	Cov  coverage.Profile
+	Diff diff.Diff
 }
 
 // Option for the Engine initialization.
 type Option func(m Engine) Engine
 
-// New instantiates a Engine.
+// New instantiates an Engine.
 //
-// It gets a fs.FS on which to perform the analysis, a coverage.Profile to
-// check if the mutants are covered and a sets of Option.
-func New(mod gomodule.GoModule, r coverage.Result, jDealer ExecutorDealer, opts ...Option) Engine {
+// It gets a fs.FS on which to perform the analysis, a CodeData to
+// check if the mutants are executable and a sets of Option.
+func New(mod gomodule.GoModule, codeData CodeData, jDealer ExecutorDealer, opts ...Option) Engine {
 	dirFS := os.DirFS(filepath.Join(mod.Root, mod.CallingDir))
 	mut := Engine{
-		module:     mod,
-		jDealer:    jDealer,
-		covProfile: r.Profile,
-		fs:         dirFS,
+		module:   mod,
+		jDealer:  jDealer,
+		codeData: codeData,
+		fs:       dirFS,
 	}
 	for _, opt := range opts {
 		mut = opt(mut)
@@ -173,8 +180,13 @@ func normalisePkgPath(pkg string) string {
 
 func (mu *Engine) mutationStatus(pos token.Position) mutator.Status {
 	var status mutator.Status
-	if mu.covProfile.IsCovered(pos) {
+
+	if mu.codeData.Cov.IsCovered(pos) {
 		status = mutator.Runnable
+	}
+
+	if !mu.codeData.Diff.IsChanged(pos) {
+		status = mutator.Skipped
 	}
 
 	return status

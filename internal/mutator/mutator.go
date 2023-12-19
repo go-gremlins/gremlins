@@ -34,6 +34,7 @@ type Status int
 const (
 	NotCovered Status = iota
 	Runnable
+	Skipped
 	Lived
 	Killed
 	NotViable
@@ -46,6 +47,8 @@ func (ms Status) String() string {
 		return "NOT COVERED"
 	case Runnable:
 		return "RUNNABLE"
+	case Skipped:
+		return "SKIPPED"
 	case Lived:
 		return "LIVED"
 	case Killed:
