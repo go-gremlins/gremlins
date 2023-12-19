@@ -1045,6 +1045,57 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#diff" class="md-nav__link">
+    <span class="md-ellipsis">
+      Diff
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Diff">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#branch-merge-base" class="md-nav__link">
+    <span class="md-ellipsis">
+      Branch merge base
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commit" class="md-nav__link">
+    <span class="md-ellipsis">
+      Commit
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      PR
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#dry-run" class="md-nav__link">
     <span class="md-ellipsis">
       Dry run
@@ -1252,6 +1303,21 @@ If <code>unleash</code> is too long to type for you, you can use its aliases <co
 The default is for each test to analyze only the package being tested.</p>
 <div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--coverpkg<span class="w"> </span><span class="s2">&quot;./internal/...,./pkg/...&quot;</span>
 </code></pre></div>
+<h3 id="diff">Diff<a class="headerlink" href="#diff" title="Permanent link">&para;</a></h3>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--diff</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: empty</p>
+<p>Run tests only for mutants inside code changes between current state and git reference (branch or commit).
+The default is each mutant covered by tests.</p>
+<h4 id="branch-merge-base">Branch merge base<a class="headerlink" href="#branch-merge-base" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--diff<span class="w"> </span><span class="s2">&quot;origin/main&quot;</span>
+</code></pre></div>
+<h4 id="commit">Commit<a class="headerlink" href="#commit" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--diff<span class="w"> </span><span class="s2">&quot;b62af323&quot;</span>
+</code></pre></div>
+<h4 id="pr">PR<a class="headerlink" href="#pr" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--diff<span class="w"> </span><span class="s2">&quot;origin/</span><span class="nv">$GITHUB_BASE_REF</span><span class="s2">&quot;</span>
+</code></pre></div>
+<p>Use <code>actions/checkout@v4</code> with <code>fetch-depth: 0</code> to fetch all history.</p>
+<h4 id="using">Using<a class="headerlink" href="#using" title="Permanent link">&para;</a></h4>
 <h3 id="dry-run">Dry run<a class="headerlink" href="#dry-run" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span><code>--dry-run</code>/<code>-d</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: false</p>
 <p>Just performs the analysis but not the mutation testing.</p>
