@@ -60,6 +60,35 @@ The default is for each test to analyze only the package being tested.
 gremlins unleash --coverpkg "./internal/...,./pkg/..."
 ```
 
+### Diff
+
+:material-flag: `--diff` · :material-sign-direction: Default: empty
+
+Run tests only for mutants inside code changes between current state and git reference (branch or commit).
+The default is each mutant covered by tests.
+
+#### Branch merge base
+
+```shell
+gremlins unleash --diff "origin/main"
+```
+
+#### Commit
+
+```shell
+gremlins unleash --diff "b62af323"
+```
+
+#### PR
+
+```shell
+gremlins unleash --diff "origin/$GITHUB_BASE_REF"
+```
+
+Use `actions/checkout@v4` with `fetch-depth: 0` to fetch all history.
+
+#### Using
+
 ### Dry run
 
 :material-flag:`--dry-run`/`-d` · :material-sign-direction: Default: false

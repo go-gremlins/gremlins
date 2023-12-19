@@ -28,6 +28,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/go-gremlins/gremlins/internal/coverage"
+	"github.com/go-gremlins/gremlins/internal/diff"
 	"github.com/go-gremlins/gremlins/internal/engine"
 	"github.com/go-gremlins/gremlins/internal/engine/workdir"
 	"github.com/go-gremlins/gremlins/internal/log"
@@ -46,6 +47,7 @@ type unleashCmd struct {
 const (
 	commandName = "unleash"
 
+	paramDiff               = "diff"
 	paramBuildTags          = "tags"
 	paramCoverPackages      = "coverpkg"
 	paramDryRun             = "dry-run"
@@ -154,6 +156,11 @@ func cleanUp(wd string) {
 }
 
 func run(ctx context.Context, mod gomodule.GoModule, workDir string) (report.Results, error) {
+	fDiff, err := diff.New()
+	if err != nil {
+		return report.Results{}, err
+	}
+
 	c := coverage.New(workDir, mod)
 
 	cProfile, err := c.Run()
@@ -166,7 +173,12 @@ func run(ctx context.Context, mod gomodule.GoModule, workDir string) (report.Res
 
 	jDealer := engine.NewExecutorDealer(mod, wdDealer, cProfile.Elapsed)
 
-	mut := engine.New(mod, cProfile, jDealer)
+	codeData := engine.CodeData{
+		Cov:  cProfile.Profile,
+		Diff: fDiff,
+	}
+
+	mut := engine.New(mod, codeData, jDealer)
 	results := mut.Run(ctx)
 
 	return results, nil
@@ -188,6 +200,7 @@ func setFlagsOnCmd(cmd *cobra.Command) error {
 		{Name: paramDryRun, CfgKey: configuration.UnleashDryRunKey, Shorthand: "d", DefaultV: false, Usage: "find mutations but do not executes tests"},
 		{Name: paramBuildTags, CfgKey: configuration.UnleashTagsKey, Shorthand: "t", DefaultV: "", Usage: "a comma-separated list of build tags"},
 		{Name: paramCoverPackages, CfgKey: configuration.UnleashCoverPkgKey, DefaultV: "", Usage: "a comma-separated list of package patterns"},
+		{Name: paramDiff, CfgKey: configuration.UnleashDiffRef, Shorthand: "D", DefaultV: "", Usage: "diff branch or commit"},
 		{Name: paramOutput, CfgKey: configuration.UnleashOutputKey, Shorthand: "o", DefaultV: "", Usage: "set the output file for machine readable results"},
 		{Name: paramIntegrationMode, CfgKey: configuration.UnleashIntegrationMode, Shorthand: "i", DefaultV: false, Usage: "makes Gremlins run the complete test suite for each mutation"},
 		{Name: paramThresholdEfficacy, CfgKey: configuration.UnleashThresholdEfficacyKey, DefaultV: float64(0), Usage: "threshold for code-efficacy percent"},
