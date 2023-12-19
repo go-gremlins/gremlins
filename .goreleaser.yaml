@@ -87,7 +87,7 @@ nfpms:
       - deb
       - rpm
 brews:
-  - tap:
+  - repository:
       owner: go-gremlins
       name: homebrew-tap
       branch: main

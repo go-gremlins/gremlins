@@ -49,7 +49,7 @@ fieldalignment:
 
 .PHONY: snapshot
 snapshot:
-	${RELEASE} --snapshot --rm-dist
+	${RELEASE} --snapshot --clean
 
 .PHONY: clean
 clean:
