@@ -49,6 +49,7 @@ type Engine struct {
 	codeData     CodeData
 	mutantStream chan mutator.Mutator
 	module       gomodule.GoModule
+	logger       report.MutantLogger
 }
 
 // CodeData is used to check if the mutant should be executed.
@@ -71,6 +72,7 @@ func New(mod gomodule.GoModule, codeData CodeData, jDealer ExecutorDealer, opts 
 		jDealer:  jDealer,
 		codeData: codeData,
 		fs:       dirFS,
+		logger:   report.NewLogger(),
 	}
 	for _, opt := range opts {
 		mut = opt(mut)
@@ -220,6 +222,7 @@ func (mu *Engine) executeTests(ctx context.Context) report.Results {
 	}()
 
 	for m := range outCh {
+		mu.logger.Mutant(m)
 		mutants = append(mutants, m)
 	}
 
