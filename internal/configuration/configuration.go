@@ -34,6 +34,7 @@ import (
 const (
 	GremlinsSilentKey            = "silent"
 	UnleashDryRunKey             = "unleash.dry-run"
+	UnleashOutputStatusesKey     = "unleash.output-statuses"
 	UnleashOutputKey             = "unleash.output"
 	UnleashTagsKey               = "unleash.tags"
 	UnleashCoverPkgKey           = "unleash.coverpkg"
