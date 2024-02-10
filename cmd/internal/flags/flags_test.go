@@ -105,6 +105,24 @@ func TestSet(t *testing.T) {
 		},
 		{
 			flag: Flag{
+				Name:      "[]string-flag-no-sh",
+				CfgKey:    "test.cfg",
+				Shorthand: "",
+				DefaultV:  []string{},
+				Usage:     "test usage",
+			},
+		},
+		{
+			flag: Flag{
+				Name:      "[]string-flag-sh",
+				CfgKey:    "test.cfg",
+				Shorthand: "t",
+				DefaultV:  []string{},
+				Usage:     "test usage",
+			},
+		},
+		{
+			flag: Flag{
 				Name:      "not-supported-type",
 				CfgKey:    "test.cfg",
 				Shorthand: "t",
@@ -127,8 +145,14 @@ func TestSet(t *testing.T) {
 				t.Fatal("error not expected")
 			}
 			if !tc.expectError {
-				if cmd.Flags().Lookup(tc.flag.Name) == nil {
+				flag := cmd.Flags().Lookup(tc.flag.Name)
+
+				if flag == nil {
 					t.Errorf("expected flag to be present")
+				}
+
+				if flag != nil && tc.flag.Shorthand != flag.Shorthand {
+					t.Errorf("expected configured shorthand")
 				}
 			}
 
