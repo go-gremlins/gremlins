@@ -32,6 +32,7 @@ import (
 	"github.com/go-gremlins/gremlins/internal/coverage"
 	"github.com/go-gremlins/gremlins/internal/diff"
 	"github.com/go-gremlins/gremlins/internal/engine/workerpool"
+	"github.com/go-gremlins/gremlins/internal/exclusion"
 	"github.com/go-gremlins/gremlins/internal/mutator"
 	"github.com/go-gremlins/gremlins/internal/report"
 
@@ -53,8 +54,9 @@ type Engine struct {
 
 // CodeData is used to check if the mutant should be executed.
 type CodeData struct {
-	Cov  coverage.Profile
-	Diff diff.Diff
+	Cov       coverage.Profile
+	Diff      diff.Diff
+	Exclusion exclusion.Rules
 }
 
 // Option for the Engine initialization.
@@ -97,7 +99,9 @@ func (mu *Engine) Run(ctx context.Context) report.Results {
 	go func() {
 		defer close(mu.mutantStream)
 		_ = fs.WalkDir(mu.fs, ".", func(path string, d fs.DirEntry, err error) error {
-			if filepath.Ext(path) == ".go" && !strings.HasSuffix(path, "_test.go") {
+			isGoCode := filepath.Ext(path) == ".go" && !strings.HasSuffix(path, "_test.go")
+
+			if isGoCode && !mu.codeData.Exclusion.IsFileExcluded(path) {
 				mu.runOnFile(path)
 			}
 

@@ -31,6 +31,7 @@ import (
 	"github.com/go-gremlins/gremlins/internal/diff"
 	"github.com/go-gremlins/gremlins/internal/engine"
 	"github.com/go-gremlins/gremlins/internal/engine/workdir"
+	"github.com/go-gremlins/gremlins/internal/exclusion"
 	"github.com/go-gremlins/gremlins/internal/log"
 	"github.com/go-gremlins/gremlins/internal/mutator"
 	"github.com/go-gremlins/gremlins/internal/report"
@@ -53,6 +54,7 @@ const (
 	paramDryRun             = "dry-run"
 	paramOutput             = "output"
 	paramIntegrationMode    = "integration"
+	paramExcludeFiles       = "exclude-files"
 	paramTestCPU            = "test-cpu"
 	paramWorkers            = "workers"
 	paramTimeoutCoefficient = "timeout-coefficient"
@@ -163,6 +165,11 @@ func run(ctx context.Context, mod gomodule.GoModule, workDir string) (report.Res
 
 	c := coverage.New(workDir, mod)
 
+	exclude, err := exclusion.New()
+	if err != nil {
+		return report.Results{}, err
+	}
+
 	cProfile, err := c.Run()
 	if err != nil {
 		return report.Results{}, fmt.Errorf("failed to gather coverage: %w", err)
@@ -174,8 +181,9 @@ func run(ctx context.Context, mod gomodule.GoModule, workDir string) (report.Res
 	jDealer := engine.NewExecutorDealer(mod, wdDealer, cProfile.Elapsed)
 
 	codeData := engine.CodeData{
-		Cov:  cProfile.Profile,
-		Diff: fDiff,
+		Cov:       cProfile.Profile,
+		Diff:      fDiff,
+		Exclusion: exclude,
 	}
 
 	mut := engine.New(mod, codeData, jDealer)
@@ -203,6 +211,7 @@ func setFlagsOnCmd(cmd *cobra.Command) error {
 		{Name: paramDiff, CfgKey: configuration.UnleashDiffRef, Shorthand: "D", DefaultV: "", Usage: "diff branch or commit"},
 		{Name: paramOutput, CfgKey: configuration.UnleashOutputKey, Shorthand: "o", DefaultV: "", Usage: "set the output file for machine readable results"},
 		{Name: paramIntegrationMode, CfgKey: configuration.UnleashIntegrationMode, Shorthand: "i", DefaultV: false, Usage: "makes Gremlins run the complete test suite for each mutation"},
+		{Name: paramExcludeFiles, CfgKey: configuration.UnleashExcludeFiles, Shorthand: "E", DefaultV: []string{}, Usage: "bibibibibibibibibibibibibbibibibi"},
 		{Name: paramThresholdEfficacy, CfgKey: configuration.UnleashThresholdEfficacyKey, DefaultV: float64(0), Usage: "threshold for code-efficacy percent"},
 		{Name: paramThresholdMCoverage, CfgKey: configuration.UnleashThresholdMCoverageKey, DefaultV: float64(0), Usage: "threshold for mutant-coverage percent"},
 		{Name: paramWorkers, CfgKey: configuration.UnleashWorkersKey, DefaultV: 0, Usage: "the number of workers to use in mutation testing"},
