@@ -101,7 +101,7 @@ func longExplainer() string {
 }
 
 func runUnleash(ctx context.Context) func(cmd *cobra.Command, args []string) error {
-	return func(cmd *cobra.Command, args []string) error {
+	return func(_ *cobra.Command, args []string) error {
 		log.Infoln("Starting...")
 		path, _ := os.Getwd()
 		if len(args) > 0 {
@@ -194,7 +194,7 @@ func run(ctx context.Context, mod gomodule.GoModule, workDir string) (report.Res
 
 func setFlagsOnCmd(cmd *cobra.Command) error {
 	cmd.Flags().SortFlags = false
-	cmd.Flags().SetNormalizeFunc(func(f *pflag.FlagSet, name string) pflag.NormalizedName {
+	cmd.Flags().SetNormalizeFunc(func(_ *pflag.FlagSet, name string) pflag.NormalizedName {
 		from := []string{".", "_"}
 		to := "-"
 		for _, sep := range from {
