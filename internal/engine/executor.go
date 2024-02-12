@@ -195,9 +195,8 @@ func (m *mutantExecutor) Start(w *workerpool.Worker) {
 }
 
 func (m *mutantExecutor) runTests(rootDir, pkg string) mutator.Status {
-	ctx, cancel := context.WithTimeout(context.Background(), m.testExecutionTime)
-	defer cancel()
-
+	ctx := context.WithoutCancel(context.Background())
+	
 	cmd := m.execContext(ctx, "go", m.getTestArgs(pkg)...)
 	cmd.Dir = m.mutant.Workdir()
 	if m.integrationMode {
