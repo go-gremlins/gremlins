@@ -18,6 +18,7 @@ package coverage
 
 import (
 	"go/token"
+	"path/filepath"
 )
 
 // Profile is implemented as a map holding a slice of Block per each filename.
@@ -25,7 +26,7 @@ type Profile map[string][]Block
 
 // IsCovered checks if the given token.Position is covered by the coverage Profile.
 func (p Profile) IsCovered(pos token.Position) bool {
-	blocks, ok := p[pos.Filename]
+	blocks, ok := p[filepath.FromSlash(pos.Filename)]
 	if !ok {
 		return false
 	}
