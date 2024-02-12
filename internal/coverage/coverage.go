@@ -99,10 +99,7 @@ func (c *Coverage) Run() (Result, error) {
 	if err := c.downloadModules(); err != nil {
 		return Result{}, fmt.Errorf("impossible to download modules: %w", err)
 	}
-	elapsed, err := c.executeCoverage()
-	if err != nil {
-		return Result{}, fmt.Errorf("impossible to executeCoverage coverage: %w", err)
-	}
+	elapsed, _ := c.executeCoverage()
 	log.Infof("done in %s\n", elapsed)
 	profile, err := c.profile()
 	if err != nil {
