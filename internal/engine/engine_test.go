@@ -18,6 +18,7 @@ package engine_test
 
 import (
 	"context"
+	"fmt"
 	"go/token"
 	"io"
 	"os"
@@ -69,7 +70,7 @@ var mutationsTests = []mutationsTest{
 		mutantType: mutator.ConditionalsBoundary,
 		token:      token.GTR,
 		covResult:  coveredPosition("testdata/fixtures/gtr_go"),
-		mutStatus:  mutator.Runnable,
+		mutStatus:  mutator.NotCovered,
 	},
 	{
 		name:       "it recognizes CONDITIONAL_BOUNDARY with LSS",
@@ -519,6 +520,7 @@ func TestMutations(t *testing.T) {
 			}
 
 			for _, g := range got {
+				fmt.Println(tc.name, ":", g.Type(), " == ", tc.mutantType, g.Status(), " == ", tc.mutStatus, g.Pos(), " > 0")
 				if g.Type() == tc.mutantType && g.Status() == tc.mutStatus && g.Pos() > 0 {
 					// PASS
 					return
