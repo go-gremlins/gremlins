@@ -25,11 +25,13 @@ import (
 
 type unsupportedType int
 
+type testCase struct {
+	flag        Flag
+	expectError bool
+}
+
 func TestSet(t *testing.T) {
-	testCases := []struct {
-		flag        Flag
-		expectError bool
-	}{
+	testCases := []testCase{
 		{
 			flag: Flag{
 				Name:      "bool-flag-no-sh",
@@ -141,33 +143,33 @@ func TestSet(t *testing.T) {
 
 			// #nosec G601 - We are in tests, we don't care
 			err := Set(cmd, &tc.flag)
-			if (tc.expectError && err == nil) || (!tc.expectError && err != nil) {
-				t.Fatal("error not expected")
-			}
-			if !tc.expectError {
-				flag := cmd.Flags().Lookup(tc.flag.Name)
-
-				if flag == nil {
-					t.Errorf("expected flag to be present")
-				}
-
-				if flag != nil && tc.flag.Shorthand != flag.Shorthand {
-					t.Errorf("expected configured shorthand")
-				}
-			}
+			checkFlag(t, err, cmd, tc)
 
 			tc.flag.Name += "_persistent"
 			// #nosec G601 - We are in tests, we don't care
 			err = SetPersistent(cmd, &tc.flag)
-			if (tc.expectError && err == nil) || (!tc.expectError && err != nil) {
-				t.Fatal("error not expected")
-			}
-			if !tc.expectError {
-				if cmd.Flag(tc.flag.Name) == nil {
-					t.Errorf("expected flag to be present")
-				}
-			}
-
+			checkFlag(t, err, cmd, tc)
 		})
+	}
+}
+
+func checkFlag(t *testing.T, err error, cmd *cobra.Command, tc testCase) {
+	t.Helper()
+
+	if (tc.expectError && err == nil) || (!tc.expectError && err != nil) {
+		t.Fatal("error not expected")
+	}
+	if !tc.expectError {
+		flag := cmd.Flag(tc.flag.Name)
+
+		if flag == nil {
+			t.Errorf("expected flag to be present")
+
+			return
+		}
+
+		if tc.flag.Shorthand != flag.Shorthand {
+			t.Errorf("expected configured shorthand")
+		}
 	}
 }
