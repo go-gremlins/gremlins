@@ -311,6 +311,8 @@ func TestMutantLog(t *testing.T) {
 	report.Mutant(m)
 	m = stubMutant{status: mutator.TimedOut, mutantType: mutator.ConditionalsBoundary, position: fakePosition}
 	report.Mutant(m)
+	m = stubMutant{status: mutator.Skipped, mutantType: mutator.ConditionalsBoundary, position: fakePosition}
+	report.Mutant(m)
 
 	got := out.String()
 
@@ -320,7 +322,8 @@ func TestMutantLog(t *testing.T) {
 		" NOT COVERED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
 		"    RUNNABLE CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
 		"  NOT VIABLE CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
-		"   TIMED OUT CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
+		"   TIMED OUT CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"     SKIPPED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
 
 	if !cmp.Equal(got, want) {
 		t.Errorf(cmp.Diff(got, want))

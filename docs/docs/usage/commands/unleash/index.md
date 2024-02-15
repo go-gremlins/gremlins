@@ -82,7 +82,7 @@ gremlins unleash -E "_(gen|wrap).go$" -E "^(generate|wrap)/" -E "internal/super_
 
 ### Diff
 
-:material-flag: `--diff` · :material-sign-direction: Default: empty
+:material-flag: `--diff`/`-D` · :material-sign-direction: Default: empty
 
 Run tests only for mutants inside code changes between current state and git reference (branch or commit).
 The default is each mutant covered by tests.
@@ -107,8 +107,6 @@ gremlins unleash --diff "origin/$GITHUB_BASE_REF"
 
 Use `actions/checkout@v4` with `fetch-depth: 0` to fetch all history.
 
-#### Using
-
 ### Dry run
 
 :material-flag:`--dry-run`/`-d` · :material-sign-direction: Default: false
@@ -118,6 +116,55 @@ Just performs the analysis but not the mutation testing.
 ```shell
 gremlins unleash --dry-run
 ```
+
+### Statuses output
+
+:material-flag: `--output-statuses`/`-S` · :material-sign-direction: Default: empty - show all
+
+Filters stdout to print only statuses from flag. Useful to filter important findings in big project output.
+Alternative to `gremlins r | grep LIVED` configured from file.
+
+Flag do not change json file and stats report content.
+
+### Examples
+
+#### Show only `LIVED` and `NOT COVERED`
+
+```shell
+gremlins unleash --output-statuses "lc"
+```
+
+Output
+
+```
+       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3
+ NOT COVERED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3
+```
+
+#### Filter out out `SKIPPED`, `KILLED`.
+
+```shell
+gremlins unleash --S lctv
+```
+
+Output
+
+```
+       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3
+ NOT COVERED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3
+  NOT VIABLE CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3
+   TIMED OUT CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3
+```
+
+### Filter letters
+
+- `l` - LIVED
+- `c` - NOT COVERED
+- `t` - TIMED OUT
+- `k` - KILLED
+- `v` - NOT VIABLE
+- `s` - SKIPPED
+- `r` - RUNNABLE
 
 ### Increment decrement
 

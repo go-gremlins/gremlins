@@ -50,6 +50,8 @@ unleash:
   dry-run: false
   tags: ""
   output: ""
+  diff: ""
+  output-statuses: ""
   workers: 0 #(1)
   test-cpu: 0 #(2)
   timeout-coefficient: 0 #(3)
