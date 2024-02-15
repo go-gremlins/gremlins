@@ -59,6 +59,8 @@ func setFlags(flag *Flag, fs *pflag.FlagSet) error {
 		setInt(flag, fs, dv)
 	case float64:
 		setFloat64(flag, fs, dv)
+	case []string:
+		setStringArray(flag, fs, dv)
 	}
 	err := viper.BindPFlag(flag.CfgKey, fs.Lookup(flag.Name))
 	if err != nil {
@@ -89,6 +91,14 @@ func setString(flag *Flag, flags *pflag.FlagSet, dv string) {
 		flags.StringP(flag.Name, flag.Shorthand, dv, flag.Usage)
 	} else {
 		flags.String(flag.Name, dv, flag.Usage)
+	}
+}
+
+func setStringArray(flag *Flag, flags *pflag.FlagSet, dv []string) {
+	if flag.Shorthand != "" {
+		flags.StringArrayP(flag.Name, flag.Shorthand, dv, flag.Usage)
+	} else {
+		flags.StringArray(flag.Name, dv, flag.Usage)
 	}
 }
 

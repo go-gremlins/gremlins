@@ -41,6 +41,7 @@ const (
 	UnleashTestCPUKey            = "unleash.test-cpu"
 	UnleashTimeoutCoefficientKey = "unleash.timeout-coefficient"
 	UnleashIntegrationMode       = "unleash.integration"
+	UnleashExcludeFiles          = "unleash.exclude-files"
 	UnleashDiffRef               = "unleash.diff"
 	UnleashThresholdEfficacyKey  = "unleash.threshold.efficacy"
 	UnleashThresholdMCoverageKey = "unleash.threshold.mutant-coverage"
