@@ -60,6 +60,26 @@ The default is for each test to analyze only the package being tested.
 gremlins unleash --coverpkg "./internal/...,./pkg/..."
 ```
 
+### Exclude files
+
+:material-flag: `--exclude-files/-E` · :material-sign-direction: Default: empty
+
+Allows to exclude generated or not important files.
+
+If a file path matches a regular expression, it is skipped from execution and threshold calculation.
+
+The default is to skip only test files.
+
+```shell
+gremlins unleash --exclude-files "_(gen|wrap).go"
+```
+
+You can provide a few rules. File is skipped if matches any regexp.
+
+```shell
+gremlins unleash -E "_(gen|wrap).go$" -E "^(generate|wrap)/" -E "internal/super_old/"
+```
+
 ### Diff
 
 :material-flag: `--diff`/`-D` · :material-sign-direction: Default: empty
