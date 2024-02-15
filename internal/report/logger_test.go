@@ -71,27 +71,33 @@ func TestLogger(t *testing.T) {
 	log.Init(out, &bytes.Buffer{})
 	defer log.Reset()
 
+	m := stubMutant{status: mutator.NotCovered, mutantType: mutator.ConditionalsBoundary, position: fakePosition}
+
 	configuration.Set(configuration.UnleashOutputStatusesKey, "lp")
-	logger := report.NewLogger() //nolint // prints error
+	logger := report.NewLogger() // prints error
+
+	logger.Mutant(m) // prints Not covered because no filter
+
+	m.status = mutator.Killed
 
 	configuration.Set(configuration.UnleashOutputStatusesKey, "")
 	logger = report.NewLogger()
 
-	m := stubMutant{status: mutator.Killed, mutantType: mutator.ConditionalsBoundary, position: fakePosition}
 	logger.Mutant(m) // prints Killed because no filter
 
 	configuration.Set(configuration.UnleashOutputStatusesKey, "l")
 	logger = report.NewLogger()
 
-	m = stubMutant{status: mutator.Killed, mutantType: mutator.ConditionalsBoundary, position: fakePosition}
 	logger.Mutant(m) // Killed filtered
 
-	m = stubMutant{status: mutator.Lived, mutantType: mutator.ConditionalsBoundary, position: fakePosition}
+	m.status = mutator.Lived
+
 	logger.Mutant(m) // prints Lived because no filter
 
 	got := out.String()
 
 	want := "output-statuses filter not applied: " + report.ErrInvalidFilter.Error() + "\n" +
+		" NOT COVERED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
 		"      KILLED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
 		"       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
 
