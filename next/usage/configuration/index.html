@@ -1205,6 +1205,7 @@ command documentation to learn how to use them.</p>
 <span class="w">  </span><span class="nt">threshold</span><span class="p">:</span><span class="w"> </span><span class="c1">#(4)</span>
 <span class="w">    </span><span class="nt">efficacy</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
 <span class="w">    </span><span class="nt">mutant-coverage</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="w">  </span><span class="nt">exclude-files</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span><span class="w"> </span><span class="c1">#(5)</span>
 
 <span class="nt">mutants</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">arithmetic-base</span><span class="p">:</span>
@@ -1235,6 +1236,7 @@ command documentation to learn how to use them.</p>
 <li>By default <code>0</code>, which means that no test process CPU will be enforced.</li>
 <li>By default <code>0</code>, which means a default coefficient will be enforced.</li>
 <li>Thresholds are set by default to <code>0</code>, which means they are not enforced.</li>
+<li>Excluded files are set by default to empty list, which means no files skipped except tests.</li>
 </ol>
 <p>For further information check the specific command documentation.</p>
 <div class="admonition tip">

@@ -1035,6 +1035,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#exclude-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Exclude files
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#diff" class="md-nav__link">
     <span class="md-ellipsis">
       Diff
@@ -1292,6 +1301,16 @@ If <code>unleash</code> is too long to type for you, you can use its aliases <co
 <p>Apply coverage analysis in each test to packages matching the patterns.
 The default is for each test to analyze only the package being tested.</p>
 <div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--coverpkg<span class="w"> </span><span class="s2">&quot;./internal/...,./pkg/...&quot;</span>
+</code></pre></div>
+<h3 id="exclude-files">Exclude files<a class="headerlink" href="#exclude-files" title="Permanent link">&para;</a></h3>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--exclude-files/-E</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: empty</p>
+<p>Allows to exclude generated or not important files.</p>
+<p>If a file path matches a regular expression, it is skipped from execution and threshold calculation.</p>
+<p>The default is to skip only test files.</p>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--exclude-files<span class="w"> </span><span class="s2">&quot;_(gen|wrap).go&quot;</span>
+</code></pre></div>
+<p>You can provide a few rules. File is skipped if matches any regexp.</p>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;_(gen|wrap).go</span>$<span class="s2">&quot;</span><span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;^(generate|wrap)/&quot;</span><span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;internal/super_old/&quot;</span>
 </code></pre></div>
 <h3 id="diff">Diff<a class="headerlink" href="#diff" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--diff</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: empty</p>
