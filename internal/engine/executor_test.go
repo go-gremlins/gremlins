@@ -492,7 +492,7 @@ func TestMutatorRunInTheCorrectFolder(t *testing.T) {
 		wantRootDir := "/tmp/static"
 		wdDealer := &dealerStub{
 			t: nil,
-			fnGet: func(idf string) (string, error) {
+			fnGet: func(_ string) (string, error) {
 				return wantRootDir, nil
 			},
 		}

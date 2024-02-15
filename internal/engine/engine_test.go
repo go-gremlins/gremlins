@@ -26,6 +26,7 @@ import (
 
 	"github.com/go-gremlins/gremlins/internal/configuration"
 	"github.com/go-gremlins/gremlins/internal/coverage"
+	"github.com/go-gremlins/gremlins/internal/diff"
 	"github.com/go-gremlins/gremlins/internal/engine"
 	"github.com/go-gremlins/gremlins/internal/gomodule"
 	"github.com/go-gremlins/gremlins/internal/mutator"
@@ -580,6 +581,39 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 
 	if got := res.Mutants; len(got) != 0 {
 		t.Errorf("should not receive results")
+	}
+}
+
+func TestSkipNotDiffMutants(t *testing.T) {
+	t.Parallel()
+	f, _ := os.Open("testdata/fixtures/geq_go")
+	file, _ := io.ReadAll(f)
+
+	sys := fstest.MapFS{
+		"file.go": {Data: file},
+	}
+	mod := gomodule.GoModule{
+		Name:       "example.com",
+		Root:       ".",
+		CallingDir: ".",
+	}
+	viperSet(map[string]any{configuration.UnleashDryRunKey: true})
+	defer viperReset()
+
+	codeData := engine.CodeData{Diff: diff.Diff{
+		"file.go": nil,
+	}}
+	mut := engine.New(mod, codeData, newJobDealerStub(t), engine.WithDirFs(sys))
+	res := mut.Run(context.Background())
+
+	if got := res.Mutants; len(got) == 0 {
+		t.Errorf("should receive mutants")
+	}
+
+	for _, mutant := range res.Mutants {
+		if mutant.Status() != mutator.Skipped {
+			t.Errorf("all mutants should be skipped")
+		}
 	}
 }
 
