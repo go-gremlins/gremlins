@@ -1080,10 +1080,52 @@
   
 </li>
         
+      </ul>
+    </nav>
+  
+</li>
+        
           <li class="md-nav__item">
-  <a href="#using" class="md-nav__link">
+  <a href="#dry-run" class="md-nav__link">
     <span class="md-ellipsis">
-      Using
+      Dry run
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statuses-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      Statuses output
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#show-only-lived-and-not-covered" class="md-nav__link">
+    <span class="md-ellipsis">
+      Show only LIVED and NOT COVERED
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filter-out-out-skipped-killed" class="md-nav__link">
+    <span class="md-ellipsis">
+      Filter out out SKIPPED, KILLED.
     </span>
   </a>
   
@@ -1095,9 +1137,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#dry-run" class="md-nav__link">
+  <a href="#filter-letters" class="md-nav__link">
     <span class="md-ellipsis">
-      Dry run
+      Filter letters
     </span>
   </a>
   
@@ -1313,7 +1355,7 @@ The default is for each test to analyze only the package being tested.</p>
 <div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;_(gen|wrap).go</span>$<span class="s2">&quot;</span><span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;^(generate|wrap)/&quot;</span><span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;internal/super_old/&quot;</span>
 </code></pre></div>
 <h3 id="diff">Diff<a class="headerlink" href="#diff" title="Permanent link">&para;</a></h3>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--diff</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: empty</p>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--diff</code>/<code>-D</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: empty</p>
 <p>Run tests only for mutants inside code changes between current state and git reference (branch or commit).
 The default is each mutant covered by tests.</p>
 <h4 id="branch-merge-base">Branch merge base<a class="headerlink" href="#branch-merge-base" title="Permanent link">&para;</a></h4>
@@ -1326,12 +1368,43 @@ The default is each mutant covered by tests.</p>
 <div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--diff<span class="w"> </span><span class="s2">&quot;origin/</span><span class="nv">$GITHUB_BASE_REF</span><span class="s2">&quot;</span>
 </code></pre></div>
 <p>Use <code>actions/checkout@v4</code> with <code>fetch-depth: 0</code> to fetch all history.</p>
-<h4 id="using">Using<a class="headerlink" href="#using" title="Permanent link">&para;</a></h4>
 <h3 id="dry-run">Dry run<a class="headerlink" href="#dry-run" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span><code>--dry-run</code>/<code>-d</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: false</p>
 <p>Just performs the analysis but not the mutation testing.</p>
 <div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--dry-run
 </code></pre></div>
+<h3 id="statuses-output">Statuses output<a class="headerlink" href="#statuses-output" title="Permanent link">&para;</a></h3>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--output-statuses</code>/<code>-S</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: empty - show all</p>
+<p>Filters stdout to print only statuses from flag. Useful to filter important findings in big project output.
+Alternative to <code>gremlins r | grep LIVED</code> configured from file.</p>
+<p>Flag do not change json file and stats report content.</p>
+<h3 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h3>
+<h4 id="show-only-lived-and-not-covered">Show only <code>LIVED</code> and <code>NOT COVERED</code><a class="headerlink" href="#show-only-lived-and-not-covered" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--output-statuses<span class="w"> </span><span class="s2">&quot;lc&quot;</span>
+</code></pre></div>
+<p>Output</p>
+<div class="highlight"><pre><span></span><code>       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3
+ NOT COVERED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3
+</code></pre></div>
+<h4 id="filter-out-out-skipped-killed">Filter out out <code>SKIPPED</code>, <code>KILLED</code>.<a class="headerlink" href="#filter-out-out-skipped-killed" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--S<span class="w"> </span>lctv
+</code></pre></div>
+<p>Output</p>
+<div class="highlight"><pre><span></span><code>       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3
+ NOT COVERED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3
+  NOT VIABLE CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3
+   TIMED OUT CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3
+</code></pre></div>
+<h3 id="filter-letters">Filter letters<a class="headerlink" href="#filter-letters" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>l</code> - LIVED</li>
+<li><code>c</code> - NOT COVERED</li>
+<li><code>t</code> - TIMED OUT</li>
+<li><code>k</code> - KILLED</li>
+<li><code>v</code> - NOT VIABLE</li>
+<li><code>s</code> - SKIPPED</li>
+<li><code>r</code> - RUNNABLE</li>
+</ul>
 <h3 id="increment-decrement">Increment decrement<a class="headerlink" href="#increment-decrement" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6Z"/></svg></span> <code>--increment-decrement</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2v-8Z"/></svg></span> Default: <code>true</code></p>
 <p>Enables/disables the <a href="../../mutations/increment_decrement/">INCREMENT DECREMENT</a> mutant type.</p>
