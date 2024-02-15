@@ -26,14 +26,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-gremlins/gremlins/internal/configuration"
 	"github.com/go-gremlins/gremlins/internal/engine/workdir"
 	"github.com/go-gremlins/gremlins/internal/engine/workerpool"
+	"github.com/go-gremlins/gremlins/internal/gomodule"
 	"github.com/go-gremlins/gremlins/internal/log"
 	"github.com/go-gremlins/gremlins/internal/mutator"
-	"github.com/go-gremlins/gremlins/internal/report"
-
-	"github.com/go-gremlins/gremlins/internal/configuration"
-	"github.com/go-gremlins/gremlins/internal/gomodule"
 )
 
 // DefaultTimeoutCoefficient is the default multiplier for the timeout length
@@ -172,7 +170,6 @@ func (m *mutantExecutor) Start(w *workerpool.Worker) {
 
 	if m.mutant.Status() == mutator.NotCovered || m.mutant.Status() == mutator.Skipped || m.dryRun {
 		m.outCh <- m.mutant
-		report.Mutant(m.mutant)
 
 		return
 	}
@@ -191,7 +188,6 @@ func (m *mutantExecutor) Start(w *workerpool.Worker) {
 	}
 
 	m.outCh <- m.mutant
-	report.Mutant(m.mutant)
 }
 
 func (m *mutantExecutor) runTests(rootDir, pkg string) mutator.Status {
