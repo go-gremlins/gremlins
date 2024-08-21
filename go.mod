@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
-	github.com/bluekeyes/go-gitdiff v0.7.3
+	github.com/bluekeyes/go-gitdiff v0.8.0
 	github.com/fatih/color v1.17.0
 	github.com/google/go-cmp v0.6.0
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
