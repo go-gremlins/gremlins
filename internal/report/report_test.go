@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/go-gremlins/gremlins/internal/execution"
 	"go/token"
 	"os"
 	"path/filepath"
@@ -38,7 +39,6 @@ import (
 	"github.com/go-gremlins/gremlins/internal/report/internal"
 
 	"github.com/go-gremlins/gremlins/internal/configuration"
-	"github.com/go-gremlins/gremlins/internal/execution"
 )
 
 var fakePosition = newPosition("aFolder/aFile.go", 3, 12)
@@ -275,19 +275,22 @@ func TestAssessment(t *testing.T) {
 
 			err := report.Do(data)
 
-			if tc.expectError && err == nil {
-				t.Fatal("expected an error")
-			}
-			if !tc.expectError {
-				return
-			}
-			var exitErr *execution.ExitError
-			if errors.As(err, &exitErr) {
-				if exitErr.ExitCode() == 0 {
-					t.Errorf("expected exit code to be different from 0, got %d", exitErr.ExitCode())
+			if tc.expectError {
+				if err == nil {
+					t.Fatal("expected an error")
+				}
+				var exitErr *execution.ExitError
+				if errors.As(err, &exitErr) {
+					if exitErr.ExitCode() == 0 {
+						t.Errorf("expected exit code to be different from 0, got %d", exitErr.ExitCode())
+					}
+				} else {
+					t.Errorf("expected err to be ExitError")
 				}
 			} else {
-				t.Errorf("expected err to be ExitError")
+				if err != nil {
+					t.Fatal("unexpected error")
+				}
 			}
 		})
 	}
