@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/go-gremlins/gremlins/internal/execution"
 	"go/token"
 	"os"
 	"path/filepath"
@@ -33,6 +32,7 @@ import (
 	"github.com/hectane/go-acl"
 	"github.com/spf13/viper"
 
+	"github.com/go-gremlins/gremlins/internal/execution"
 	"github.com/go-gremlins/gremlins/internal/log"
 	"github.com/go-gremlins/gremlins/internal/mutator"
 	"github.com/go-gremlins/gremlins/internal/report"
@@ -287,10 +287,8 @@ func TestAssessment(t *testing.T) {
 				} else {
 					t.Errorf("expected err to be ExitError")
 				}
-			} else {
-				if err != nil {
-					t.Fatal("unexpected error")
-				}
+			} else if err != nil {
+				t.Fatal("unexpected error")
 			}
 		})
 	}
