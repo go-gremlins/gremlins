@@ -80,7 +80,7 @@ func checkForDifferentFile(t *testing.T, srcDir string, dstDir string) func(path
 			t.Errorf("expected Name to be %v, got %v", srcFileInfo.Name(), dstFileInfo.Name())
 		}
 		if !cmp.Equal(dstFileInfo.Mode(), srcFileInfo.Mode()) {
-			t.Errorf(cmp.Diff(srcFileInfo.Mode(), dstFileInfo.Mode()))
+			t.Errorf("%s", cmp.Diff(srcFileInfo.Mode(), dstFileInfo.Mode()))
 		}
 
 		return nil

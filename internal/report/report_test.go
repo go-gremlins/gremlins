@@ -32,13 +32,13 @@ import (
 	"github.com/hectane/go-acl"
 	"github.com/spf13/viper"
 
+	"github.com/go-gremlins/gremlins/internal/execution"
 	"github.com/go-gremlins/gremlins/internal/log"
 	"github.com/go-gremlins/gremlins/internal/mutator"
 	"github.com/go-gremlins/gremlins/internal/report"
 	"github.com/go-gremlins/gremlins/internal/report/internal"
 
 	"github.com/go-gremlins/gremlins/internal/configuration"
-	"github.com/go-gremlins/gremlins/internal/execution"
 )
 
 var fakePosition = newPosition("aFolder/aFile.go", 3, 12)
@@ -122,7 +122,7 @@ func TestReport(t *testing.T) {
 			got := out.String()
 
 			if !cmp.Equal(got, tc.want) {
-				t.Errorf(cmp.Diff(tc.want, got))
+				t.Errorf("%s", cmp.Diff(tc.want, got))
 			}
 		})
 	}
@@ -176,7 +176,7 @@ func TestReport(t *testing.T) {
 			got := out.String()
 
 			if !cmp.Equal(got, tc.want) {
-				t.Errorf(cmp.Diff(tc.want, got))
+				t.Errorf("%s", cmp.Diff(tc.want, got))
 			}
 		})
 	}
@@ -275,19 +275,20 @@ func TestAssessment(t *testing.T) {
 
 			err := report.Do(data)
 
-			if tc.expectError && err == nil {
-				t.Fatal("expected an error")
-			}
-			if !tc.expectError {
-				return
-			}
-			var exitErr *execution.ExitError
-			if errors.As(err, &exitErr) {
-				if exitErr.ExitCode() == 0 {
-					t.Errorf("expected exit code to be different from 0, got %d", exitErr.ExitCode())
+			if tc.expectError {
+				if err == nil {
+					t.Fatal("expected an error")
 				}
-			} else {
-				t.Errorf("expected err to be ExitError")
+				var exitErr *execution.ExitError
+				if errors.As(err, &exitErr) {
+					if exitErr.ExitCode() == 0 {
+						t.Errorf("expected exit code to be different from 0, got %d", exitErr.ExitCode())
+					}
+				} else {
+					t.Errorf("expected err to be ExitError")
+				}
+			} else if err != nil {
+				t.Fatal("unexpected error")
 			}
 		})
 	}
@@ -326,7 +327,7 @@ func TestMutantLog(t *testing.T) {
 		"     SKIPPED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
 
 	if !cmp.Equal(got, want) {
-		t.Errorf(cmp.Diff(got, want))
+		t.Errorf("%s", cmp.Diff(got, want))
 	}
 }
 
@@ -377,7 +378,7 @@ func TestReportToFile(t *testing.T) {
 		}
 
 		if !cmp.Equal(got, want, cmpopts.SortSlices(sortOutputFile), cmpopts.SortSlices(sortMutation)) {
-			t.Errorf(cmp.Diff(got, want))
+			t.Errorf("%s", cmp.Diff(got, want))
 		}
 	})
 
