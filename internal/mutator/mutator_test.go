@@ -65,7 +65,7 @@ func TestStatusString(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.mutationStatus.String() != tc.expected {
-				t.Errorf(cmp.Diff(tc.mutationStatus.String(), tc.expected))
+				t.Errorf("%s", cmp.Diff(tc.mutationStatus.String(), tc.expected))
 			}
 		})
 	}
@@ -137,7 +137,7 @@ func TestTypeString(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.mutantType.String() != tc.expected {
-				t.Errorf(cmp.Diff(tc.mutantType.String(), tc.expected))
+				t.Errorf("%s", cmp.Diff(tc.mutantType.String(), tc.expected))
 			}
 		})
 	}

@@ -102,6 +102,6 @@ func TestLogger(t *testing.T) {
 		"       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
 
 	if !cmp.Equal(got, want) {
-		t.Errorf(cmp.Diff(got, want))
+		t.Errorf("%s", cmp.Diff(got, want))
 	}
 }

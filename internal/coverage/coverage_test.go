@@ -104,10 +104,10 @@ func TestCoverageRun(t *testing.T) {
 			secondGot := fmt.Sprintf("go %v", strings.Join(holder.events[1].args, " "))
 
 			if !cmp.Equal(firstGot, firstWant) {
-				t.Errorf(cmp.Diff(firstGot, firstWant))
+				t.Errorf("%s", cmp.Diff(firstGot, firstWant))
 			}
 			if !cmp.Equal(secondGot, secondWant) {
-				t.Errorf(cmp.Diff(secondGot, secondWant))
+				t.Errorf("%s", cmp.Diff(secondGot, secondWant))
 			}
 		})
 	}

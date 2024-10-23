@@ -80,7 +80,7 @@ func TestMutantApplyAndRollback(t *testing.T) {
 			t.Fatal(err)
 		}
 		if !cmp.Equal(string(got), want[i]) {
-			t.Fatalf(cmp.Diff(want[i], string(got)))
+			t.Errorf("%s", cmp.Diff(want[i], string(got)))
 		}
 
 		err = mut.Rollback()
@@ -93,7 +93,7 @@ func TestMutantApplyAndRollback(t *testing.T) {
 			t.Fatal(err)
 		}
 		if !cmp.Equal(string(got), rollbackWant) {
-			t.Fatalf(cmp.Diff(rollbackWant, string(got)))
+			t.Errorf("%s", cmp.Diff(rollbackWant, string(got)))
 		}
 	}
 }
