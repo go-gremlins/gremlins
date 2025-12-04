@@ -118,7 +118,7 @@ func TestConfiguration(t *testing.T) {
 			for key, wanted := range tc.wantedConfig {
 				got := Get[any](key)
 				if got != wanted {
-					t.Errorf(cmp.Diff(got, wanted))
+					t.Error(cmp.Diff(got, wanted))
 				}
 			}
 			viper.Reset()
@@ -159,7 +159,7 @@ func TestConfigPaths(t *testing.T) {
 		got := defaultConfigPaths()
 
 		if !cmp.Equal(got, want) {
-			t.Errorf(cmp.Diff(got, want))
+			t.Error(cmp.Diff(got, want))
 		}
 	})
 
@@ -189,7 +189,7 @@ func TestConfigPaths(t *testing.T) {
 		got := defaultConfigPaths()
 
 		if !cmp.Equal(got, want) {
-			t.Errorf(cmp.Diff(got, want))
+			t.Error(cmp.Diff(got, want))
 		}
 	})
 
@@ -225,7 +225,7 @@ func TestConfigPaths(t *testing.T) {
 		got := defaultConfigPaths()
 
 		if !cmp.Equal(got, want) {
-			t.Errorf(cmp.Diff(got, want))
+			t.Error(cmp.Diff(got, want))
 		}
 	})
 }

@@ -14,6 +14,7 @@
  *    limitations under the License.
  */
 
+// Package engine orchestrates mutation testing by discovering, applying, and testing mutations.
 package engine
 
 import (

@@ -110,6 +110,7 @@ func (m *TokenMutator) Apply() error {
 
 	filename := filepath.Join(m.workDir, m.Position().Filename)
 	var err error
+	//nolint:gosec // filename is internally constructed, not user input
 	m.origFile, err = os.ReadFile(filename)
 	if err != nil {
 		return err

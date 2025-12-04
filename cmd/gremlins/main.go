@@ -14,6 +14,7 @@
  *    limitations under the License.
  */
 
+// Gremlins is a mutation testing tool for Go.
 package main
 
 import (

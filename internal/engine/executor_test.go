@@ -312,7 +312,7 @@ func TestMutatorRun(t *testing.T) {
 			got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
 
 			if !cmp.Equal(got, want) {
-				t.Errorf(fmt.Sprintf("\n+ %s\n- %s\n", got, want))
+				t.Errorf("\n+ %s\n- %s\n", got, want)
 			}
 
 			timeoutDifference := absTimeDiff(holder.timeout, expectedTimeout*2)

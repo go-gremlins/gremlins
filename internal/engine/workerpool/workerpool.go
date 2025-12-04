@@ -14,6 +14,7 @@
  *    limitations under the License.
  */
 
+// Package workerpool provides a worker pool for concurrent mutation testing execution.
 package workerpool
 
 import (

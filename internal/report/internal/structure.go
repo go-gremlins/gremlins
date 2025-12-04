@@ -14,6 +14,7 @@
  *    limitations under the License.
  */
 
+// Package internal provides data structures for the Gremlins JSON output format.
 package internal
 
 // OutputResult is the data structure for the Gremlins file output format.

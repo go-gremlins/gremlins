@@ -14,6 +14,7 @@
  *    limitations under the License.
  */
 
+// Package cmd implements the Gremlins command-line interface.
 package cmd
 
 import (
