@@ -14,6 +14,7 @@
  *    limitations under the License.
  */
 
+// Package coverage analyzes Go test coverage to identify which code is tested.
 package coverage
 
 import (

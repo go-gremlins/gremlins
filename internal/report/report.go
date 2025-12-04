@@ -186,6 +186,7 @@ func (r *reportStatus) fileReport() {
 		}
 
 		jsonResult, _ := json.Marshal(result)
+		//nolint:gosec // output path is from configuration, not arbitrary user input
 		f, err := os.Create(output)
 		if err != nil {
 			log.Errorf("impossible to write file: %s\n", err)

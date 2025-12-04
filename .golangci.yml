@@ -1,4 +1,7 @@
+version: "2"
+
 linters:
+  default: none
   enable:
     - asasalint
     - asciicheck
@@ -9,16 +12,13 @@ linters:
     - errname
     - errorlint
     - exhaustive
-    - exportloopref
     - forbidigo
     - forcetypeassert
     - goconst
     - godot
-    - goimports
     - gosec
     - gocritic
     - gocyclo
-    - gosec
     - importas
     - maintidx
     - makezero
@@ -28,72 +28,49 @@ linters:
     - nonamedreturns
     - predeclared
     - revive
-    - stylecheck
+    - staticcheck
     - tagliatelle
-    - tenv
-    - thelper
     - unconvert
     - usestdlibvars
-
-linters-settings:
-  cyclop:
-    skip-tests: true
-  revive:
-    ignoreGeneratedHeader: false
-    severity: warning
-    confidence: 0.8
-    errorCode: 0
-    warningCode: 0
+  exclusions:
     rules:
-      - name: blank-imports
-        disabled: false
-      - name: context-as-argument
-        disabled: false
-      - name: context-keys-type
-        disabled: false
-      - name: dot-imports
-        disabled: false
-      - name: error-return
-        disabled: false
-      - name: error-strings
-        disabled: false
-      - name: error-naming
-        disabled: false
-      - name: exported
-        disabled: false
-      - name: if-return
-        disabled: false
-      - name: increment-decrement
-        disabled: false
-      - name: var-naming
-        disabled: false
-      - name: var-declaration
-        disabled: false
-      - name: package-comments
-        disabled: false
-      - name: range
-        disabled: false
-      - name: receiver-naming
-        disabled: false
-      - name: time-naming
-        disabled: false
-      - name: unexported-return
-        disabled: false
-      - name: indent-error-flow
-        disabled: false
-      - name: errorf
-        disabled: false
-      - name: empty-block
-        disabled: false
-      - name: superfluous-else
-        disabled: false
-      - name: unused-parameter
-        disabled: false
-      - name: unreachable-code
-        disabled: false
-      - name: redefines-builtin-id
-        disabled: false
-  tagliatelle:
-    case:
+      - path: '_test\.go'
+        linters:
+          - cyclop
+  settings:
+    revive:
+      severity: warning
+      confidence: 0.8
       rules:
-        json: snake
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: exported
+        - name: if-return
+        - name: increment-decrement
+        - name: var-naming
+        - name: var-declaration
+        - name: package-comments
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unexported-return
+        - name: indent-error-flow
+        - name: errorf
+        - name: empty-block
+        - name: superfluous-else
+        - name: unused-parameter
+        - name: unreachable-code
+        - name: redefines-builtin-id
+    tagliatelle:
+      case:
+        rules:
+          json: snake
+
+formatters:
+  enable:
+    - goimports

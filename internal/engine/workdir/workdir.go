@@ -14,6 +14,7 @@
  *    limitations under the License.
  */
 
+// Package workdir manages temporary working directories for isolated mutation testing.
 package workdir
 
 import (
@@ -154,11 +155,12 @@ func copyPath(srcPath, dstPath string, info fs.FileInfo) error {
 }
 
 func doCopy(srcPath, dstPath string, fileMode fs.FileMode) error {
+	//nolint:gosec // srcPath is internally controlled, not user input
 	s, err := os.Open(srcPath)
 	if err != nil {
 		return err
 	}
-	//nolint:nosnakecase
+	//nolint:gosec // dstPath is internally controlled, not user input
 	d, err := os.OpenFile(dstPath, os.O_CREATE|os.O_RDWR, fileMode)
 	if err != nil {
 		return err

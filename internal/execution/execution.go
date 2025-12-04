@@ -14,6 +14,7 @@
  *    limitations under the License.
  */
 
+// Package execution provides error types and status codes for command execution.
 package execution
 
 // ErrorType is the type of the error that can generate a specific exit status.

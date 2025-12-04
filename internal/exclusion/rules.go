@@ -1,3 +1,4 @@
+// Package exclusion provides file exclusion rules based on regex patterns.
 package exclusion
 
 import (
@@ -9,8 +10,10 @@ import (
 	"github.com/go-gremlins/gremlins/internal/configuration"
 )
 
+// Rules represents a collection of regex patterns for file exclusion.
 type Rules []*regexp.Regexp
 
+// New creates exclusion rules from the configuration.
 func New() (Rules, error) {
 	var rules Rules
 
@@ -30,6 +33,7 @@ func New() (Rules, error) {
 	return rules, nil
 }
 
+// IsFileExcluded returns true if the given path matches any of the exclusion rules.
 func (r Rules) IsFileExcluded(path string) bool {
 	if len(r) == 0 {
 		return false
