@@ -16,7 +16,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: Run lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v9
         with:
           version: latest
           skip-cache: true

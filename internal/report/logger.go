@@ -1,3 +1,4 @@
+// Package report formats and outputs mutation testing results.
 package report
 
 import (
@@ -8,8 +9,10 @@ import (
 	"github.com/go-gremlins/gremlins/internal/mutator"
 )
 
+// Filter maps mutation statuses to filter which mutants are logged.
 type Filter = map[mutator.Status]struct{}
 
+// ErrInvalidFilter is returned when an invalid status filter string is provided.
 var ErrInvalidFilter = errors.New("invalid statuses filter, only 'lctkvsr' letters allowed")
 
 // MutantLogger prints mutant statuses based on filter and verbosity flags.
@@ -17,6 +20,7 @@ type MutantLogger struct {
 	Filter
 }
 
+// NewLogger creates a new MutantLogger with filters from configuration.
 func NewLogger() MutantLogger {
 	outputStatuses := configuration.Get[string](configuration.UnleashOutputStatusesKey)
 	f, err := ParseFilter(outputStatuses)
@@ -29,6 +33,7 @@ func NewLogger() MutantLogger {
 	}
 }
 
+// Mutant logs a mutant if it passes the filter.
 func (l MutantLogger) Mutant(m mutator.Mutator) {
 	if l.Filter == nil {
 		Mutant(m)
@@ -41,6 +46,8 @@ func (l MutantLogger) Mutant(m mutator.Mutator) {
 	}
 }
 
+// ParseFilter parses a status filter string into a Filter map.
+// Valid characters are 'lctkvsr' representing different mutation statuses.
 func ParseFilter(s string) (Filter, error) {
 	if s == "" {
 		return nil, nil

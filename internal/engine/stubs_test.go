@@ -55,6 +55,7 @@ func viperReset() {
 }
 
 func loadFixture(fixture, fromPackage string) (fstest.MapFS, gomodule.GoModule, func()) {
+	//nolint:gosec // test code reading test fixtures
 	f, _ := os.Open(fixture)
 	src, _ := io.ReadAll(f)
 	filename := filenameFromFixture(fixture)

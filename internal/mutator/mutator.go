@@ -14,6 +14,7 @@
  *    limitations under the License.
  */
 
+// Package mutator provides mutation types, statuses, and interfaces for mutation testing.
 package mutator
 
 import "go/token"

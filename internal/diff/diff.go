@@ -1,3 +1,4 @@
+// Package diff parses git diff output to identify changed lines for incremental mutation testing.
 package diff
 
 import (
@@ -6,13 +7,16 @@ import (
 	"github.com/bluekeyes/go-gitdiff/gitdiff"
 )
 
+// FileName represents a file path in a diff.
 type FileName string
 
+// Change represents a contiguous range of changed lines in a file.
 type Change struct {
 	StartLine int
 	EndLine   int
 }
 
+// Diff maps file names to their list of changes.
 type Diff map[FileName][]Change
 
 func newDiff(files []*gitdiff.File) Diff {
@@ -46,6 +50,8 @@ func newChanges(file *gitdiff.File) (FileName, []Change) {
 	return FileName(file.NewName), changes
 }
 
+// IsChanged returns true if the given position is within a changed region.
+// If the diff is empty, it returns true for all positions.
 func (d Diff) IsChanged(pos token.Position) bool {
 	if len(d) == 0 {
 		return true
