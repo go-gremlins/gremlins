@@ -14,6 +14,7 @@
  *    limitations under the License.
  */
 
+// Package configuration manages application settings from flags, config files, and environment variables.
 package configuration
 
 import (

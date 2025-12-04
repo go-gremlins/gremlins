@@ -14,6 +14,7 @@
  *    limitations under the License.
  */
 
+// Package flags provides common command-line flag definitions for Gremlins commands.
 package flags
 
 import (

@@ -14,6 +14,7 @@
  *    limitations under the License.
  */
 
+// Package gomodule detects and provides information about Go modules.
 package gomodule
 
 import (
@@ -56,6 +57,7 @@ func Init(path string) (GoModule, error) {
 
 func modPkg(path string) (string, string, error) {
 	root := findModuleRoot(path)
+	//nolint:gosec // root is internally determined, not user input
 	file, err := os.Open(root + "/go.mod")
 	defer func(file *os.File) {
 		_ = file.Close()

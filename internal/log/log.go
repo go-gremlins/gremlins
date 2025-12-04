@@ -14,6 +14,7 @@
  *    limitations under the License.
  */
 
+// Package log provides logging utilities with verbosity control.
 package log
 
 import (

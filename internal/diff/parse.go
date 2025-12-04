@@ -11,6 +11,7 @@ import (
 	"github.com/go-gremlins/gremlins/internal/log"
 )
 
+// New creates a new Diff by parsing git diff output using the default command executor.
 func New() (Diff, error) {
 	return NewWithCmd(exec.Command)
 }
@@ -19,6 +20,8 @@ type execCmd interface {
 	CombinedOutput() ([]byte, error)
 }
 
+// NewWithCmd creates a new Diff by parsing git diff output using a custom command executor.
+// This is useful for testing.
 func NewWithCmd[T execCmd](cmdContext func(name string, args ...string) T) (Diff, error) {
 	diffRef := configuration.Get[string](configuration.UnleashDiffRef)
 	if diffRef == "" {
