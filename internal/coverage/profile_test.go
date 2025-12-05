@@ -215,3 +215,21 @@ func TestIsCovered(t *testing.T) {
 		})
 	}
 }
+
+func TestIsCovered_PathsWithSlashes(t *testing.T) {
+    profile := coverage.Profile{
+        "internal/coverage/file.go": []coverage.Block{
+            {StartLine: 10, StartCol: 1, EndLine: 20, EndCol: 1},
+        },
+    }
+    
+    pos := token.Position{
+        Filename: "internal/coverage/file.go",
+        Line:     15,
+        Column:   5,
+    }
+    
+    if !profile.IsCovered(pos) {
+        t.Error("expected position to be covered")
+    }
+}

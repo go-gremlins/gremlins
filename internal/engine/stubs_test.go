@@ -18,6 +18,7 @@ package engine_test
 
 import (
 	"errors"
+	"fmt"
 	"go/token"
 	"io"
 	"os"
@@ -56,8 +57,15 @@ func viperReset() {
 
 func loadFixture(fixture, fromPackage string) (fstest.MapFS, gomodule.GoModule, func()) {
 	//nolint:gosec // test code reading test fixtures
-	f, _ := os.Open(fixture)
-	src, _ := io.ReadAll(f)
+	f, err := os.Open(fixture)
+	if err != nil {
+		panic(fmt.Sprintf("failed to open test fixture %s: %v", fixture, err))
+	}
+	src, err := io.ReadAll(f)
+	if err != nil {
+		_ = f.Close()
+		panic(fmt.Sprintf("failed to read test fixture %s: %v", fixture, err))
+	}
 	filename := filenameFromFixture(fixture)
 	mapFS := fstest.MapFS{
 		filename: {Data: src},
@@ -73,8 +81,6 @@ func loadFixture(fixture, fromPackage string) (fstest.MapFS, gomodule.GoModule, 
 }
 
 func filenameFromFixture(fix string) string {
-	// Replace the path separator with the OS specific one.
-	fix = strings.ReplaceAll(fix, "/", string(os.PathSeparator))
 	return strings.ReplaceAll(fix, "_go", ".go")
 }
 
