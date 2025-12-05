@@ -203,5 +203,5 @@ func (c *Coverage) removeModuleFromPath(p *cover.Profile) string {
 	path := strings.ReplaceAll(p.FileName, c.mod.Name+"/", "")
 	path, _ = filepath.Rel(c.mod.CallingDir, path)
 
-	return filepath.ToSlash(path) //normalize to slashes
+	return filepath.ToSlash(path) // normalize to slashes
 }
