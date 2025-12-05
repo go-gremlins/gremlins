@@ -560,6 +560,38 @@ func TestMutantSkipDisabled(t *testing.T) {
 	}
 }
 
+func TestDisablingOneMutantTypeDoesNotDisableOthersForSameToken(t *testing.T) {
+	t.Parallel()
+	mapFS, mod, c := loadFixture(defaultFixture, ".")
+	defer c()
+
+	viperSet(map[string]any{
+		configuration.UnleashDryRunKey:                                   true,
+		configuration.MutantTypeEnabledKey(mutator.ConditionalsBoundary): false,
+		configuration.MutantTypeEnabledKey(mutator.ConditionalsNegation): true,
+	})
+	defer viperReset()
+
+	mut := engine.New(mod, testCodeData, newJobDealerStub(t), engine.WithDirFs(mapFS))
+	res := mut.Run(context.Background())
+
+	var hasNegation, hasBoundary bool
+	for _, m := range res.Mutants {
+		if m.Type() == mutator.ConditionalsNegation {
+			hasNegation = true
+		} else if m.Type() == mutator.ConditionalsBoundary {
+			hasBoundary = true
+		}
+	}
+
+	if !hasNegation {
+		t.Fatal("expected ConditionalsNegation mutants to still be produced")
+	}
+	if hasBoundary {
+		t.Fatal("expected ConditionalsBoundary mutants to be disabled")
+	}
+}
+
 func TestSkipTestAndNonGoFiles(t *testing.T) {
 	t.Parallel()
 	f, _ := os.Open("testdata/fixtures/geq_go")
@@ -672,7 +704,6 @@ func TestPackageDiscovery(t *testing.T) {
 
 			if got != tc.wantPath {
 				t.Errorf("want %q, got %q", tc.wantPath, got)
-
 			}
 		})
 	}

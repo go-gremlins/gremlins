@@ -146,7 +146,7 @@ func (mu *Engine) findMutations(fileName string, set *token.FileSet, file *ast.F
 	pkg := mu.pkgName(fileName, file.Name.Name)
 	for _, mt := range mutantTypes {
 		if !configuration.Get[bool](configuration.MutantTypeEnabledKey(mt)) {
-			return
+			continue
 		}
 		mutantType := mt
 		tm := NewTokenMutant(pkg, set, file, node)
