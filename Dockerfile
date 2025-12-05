@@ -1,4 +1,4 @@
-FROM golang:1.19
+FROM golang:1.25
 
 COPY gremlins /usr/bin
 RUN adduser --disabled-password --gecos "" nonroot
