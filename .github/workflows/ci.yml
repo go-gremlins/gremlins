@@ -37,7 +37,7 @@ jobs:
       - name: Run tests with coverage
         run: make cover
       - name: Report coverage to CodeCov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
