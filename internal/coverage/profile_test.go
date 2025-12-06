@@ -189,7 +189,7 @@ func TestIsCovered(t *testing.T) {
 	for _, tc := range testCases {
 		tCase := tc
 		t.Run(tCase.name, func(t *testing.T) {
-			profile := coverage.Profile{
+			profile := coverage.Profile {
 				tCase.proFilename: {
 					{
 						StartLine: tCase.proStartL,
