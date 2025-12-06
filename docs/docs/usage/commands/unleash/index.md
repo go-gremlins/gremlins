@@ -378,20 +378,45 @@ gremlins unleash --threshold-mcover 80
 
 ### Timeout coefficient
 
-:material-flag: `--timeout-coefficient` · :material-sign-direction: Default: `0`
+:material-flag: `--timeout-coefficient` · :material-sign-direction:
+Default: `0` (uses default value of `5`)
 
 [//]: # (@formatter:off)
 !!! tip
     To understand better the use of these flag, check [workers](workers.md)
 [//]: # (@formatter:on)
 
-Gremlins determines the timeout for each Go test run by multiplying by a coefficient the time it took to perform the
-coverage run.
-It is possible to override this coefficient (`0` means use the default).
+Gremlins determines the timeout for each Go test run by multiplying by a
+coefficient the time it took to perform the coverage run. The default
+coefficient is `5`, which can be overridden with this flag (`0` means use
+the default).
+
+To ensure reasonable timeouts even when the coverage run is very fast,
+Gremlins enforces a minimum base timeout of 1 second before applying the
+coefficient. For example:
+
+- Coverage run takes 500ms → timeout = max(500ms, 1s) × 5 = 5 seconds
+- Coverage run takes 2s → timeout = 2s × 5 = 10 seconds
 
 ```shell
-gremlins unleash --timeout-coefficient=3
+gremlins unleash --timeout-coefficient=10
 ```
+
+[//]: # (@formatter:off)
+!!! note "Result Consistency"
+    You may observe small fluctuations in the number of
+    killed/lived/timed-out mutants between runs (typically ±2-4 mutants).
+    This is normal and can be caused by:
+    - **Race conditions**: Mutations may introduce or remove race
+      conditions that behave differently each run
+    - **Timing-sensitive tests**: Tests involving timeouts, concurrency,
+      or I/O timing
+    - **System variations**: CPU scheduling, system load, and other
+      OS-level factors
+    These minor variations do not indicate a problem with the mutation
+    testing process. Large variations or progressive degradation would
+    indicate an issue.
+[//]: # (@formatter:on)
 
 ### Workers
 
