@@ -92,7 +92,7 @@ brews:
       name: homebrew-tap
       branch: main
       token: "{{ .Env.GITHUB_TOKEN }}"
-    folder: Formula
+    directory: Formula
     homepage: https://gremlins.dev
     description: A mutation testing tool for Go.
     license: Apache-2.0 License
@@ -104,7 +104,7 @@ checksum:
 source:
   enabled: true
 changelog:
-  skip: false
+  disable: false
   sort: asc
   use: github-native
 snapshot:
