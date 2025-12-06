@@ -3,6 +3,8 @@ dist/
 out
 .idea
 
+CLAUDE.local.md
+
 ### Go template
 # Binaries for programs and plugins
 *.exe
