@@ -162,7 +162,8 @@ func (m *mutantExecutor) Start(w *workerpool.Worker) {
 	workerName := fmt.Sprintf("%s-%d", w.Name, w.ID)
 	rootDir, err := m.wdDealer.Get(workerName)
 	if err != nil {
-		panic("error, this is temporary")
+		log.Errorf("failed to get working directory for worker %s: %v", workerName, err)
+		panic(fmt.Sprintf("failed to get working directory for worker %s: %v", workerName, err))
 	}
 
 	workingDir := filepath.Join(rootDir, m.module.CallingDir)
