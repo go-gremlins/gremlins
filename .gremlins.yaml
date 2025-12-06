@@ -1,5 +1,4 @@
 unleash:
-  output-statuses: lctr
   threshold:
     efficacy: 80
     mutant-coverage: 90

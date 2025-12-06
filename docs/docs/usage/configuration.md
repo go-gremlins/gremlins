@@ -88,7 +88,7 @@ mutants:
 
 1. By default `0`, which means that Gremlins will use the system CPUs number.
 2. By default `0`, which means that no test process CPU will be enforced.
-3. By default `0`, which means a default coefficient will be enforced.
+3. By default `0`, which means a default coefficient of `5` will be enforced.
 4. Thresholds are set by default to `0`, which means they are not enforced.
 5. Excluded files are set by default to empty list, which means no files skipped except tests.
 
