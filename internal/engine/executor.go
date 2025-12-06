@@ -36,7 +36,7 @@ import (
 
 // DefaultTimeoutCoefficient is the default multiplier for the timeout length
 // of each test run.
-const DefaultTimeoutCoefficient = 3
+const DefaultTimeoutCoefficient = 5
 
 // ExecutorDealer is the initializer for new workerpool.Executor.
 type ExecutorDealer interface {
@@ -91,6 +91,13 @@ func NewExecutorDealer(mod gomodule.GoModule, wdd workdir.Dealer, elapsed time.D
 		testCPU /= testCPU
 	}
 
+	// Use a minimum of 1 second for timeout calculation to prevent
+	// unreasonably short timeouts when coverage runs very quickly
+	baseTime := elapsed
+	if baseTime < time.Second {
+		baseTime = time.Second
+	}
+
 	jd := MutantExecutorDealer{
 		mod:               mod,
 		wdDealer:          wdd,
@@ -98,7 +105,7 @@ func NewExecutorDealer(mod gomodule.GoModule, wdd workdir.Dealer, elapsed time.D
 		dryRun:            dryRun,
 		integrationMode:   integrationMode,
 		testCPU:           testCPU,
-		testExecutionTime: elapsed * time.Duration(coefficient),
+		testExecutionTime: baseTime * time.Duration(coefficient),
 		execContext:       exec.CommandContext,
 	}
 
@@ -203,8 +210,10 @@ func (m *mutantExecutor) runTests(rootDir, pkg string) mutator.Status {
 	cmd.Env = append(cmd.Env, os.Environ()...)
 	cmd.Env = append(cmd.Env, fmt.Sprintf("GOTMPDIR=%s", m.wdDealer.WorkDir()))
 
-	rel, err := run(cmd)
-	defer rel()
+	// Set up process group for killing entire process tree
+	setupProcessGroup(cmd)
+
+	err := run(ctx, cmd)
 
 	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 		return mutator.TimedOut
@@ -241,18 +250,41 @@ func (m *mutantExecutor) getTestArgs(pkg string) []string {
 	return args
 }
 
-func run(cmd *exec.Cmd) (func(), error) {
-	if err := cmd.Run(); err != nil {
-
-		return func() {}, err
+func run(ctx context.Context, cmd *exec.Cmd) error {
+	if err := cmd.Start(); err != nil {
+		return err
 	}
 
-	return func() {
-		err := cmd.Process.Release()
-		if err != nil {
-			_ = cmd.Process.Kill()
+	// Ensure cleanup happens regardless of how we exit
+	defer func() {
+		if cmd.Process != nil {
+			// Always kill the process group to catch any child processes
+			// This is safe even if the process already exited
+			_ = killProcessGroup(cmd)
+			// Release OS resources
+			_ = cmd.Process.Release()
 		}
-	}, nil
+	}()
+
+	// Monitor context cancellation in parallel with process execution
+	done := make(chan error, 1)
+	go func() {
+		done <- cmd.Wait()
+	}()
+
+	select {
+	case <-ctx.Done():
+		// Context cancelled/timed out - kill the entire process group
+		// Do this BEFORE the parent process exits to catch children
+		_ = killProcessGroup(cmd)
+		// Wait for the process to actually exit
+		<-done
+
+		return ctx.Err()
+	case err := <-done:
+		// Process completed normally
+		return err
+	}
 }
 
 func getTestFailedStatus(exitCode int) mutator.Status {
