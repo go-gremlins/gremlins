@@ -98,3 +98,62 @@ func TestGetMutantTypesForToken_UnsupportedToken(t *testing.T) {
 		t.Errorf("expected nil for unsupported token, got %v", types)
 	}
 }
+
+func TestGetExprMutantTypes_UnaryNotExpression(t *testing.T) {
+	// Create a UnaryExpr with NOT operator (!x)
+	expr := &ast.UnaryExpr{
+		Op: token.NOT,
+		X:  &ast.Ident{Name: "x"},
+	}
+
+	types := engine.GetExprMutantTypes(expr)
+
+	// Should return InvertLogicalNot
+	if len(types) != 1 {
+		t.Fatalf("expected 1 mutation type, got %d", len(types))
+	}
+
+	if types[0] != mutator.InvertLogicalNot {
+		t.Errorf("expected InvertLogicalNot, got %s", types[0])
+	}
+}
+
+func TestGetExprMutantTypes_UnaryOtherOperator(t *testing.T) {
+	// Create a UnaryExpr with different operator (-x)
+	expr := &ast.UnaryExpr{
+		Op: token.SUB,
+		X:  &ast.Ident{Name: "x"},
+	}
+
+	types := engine.GetExprMutantTypes(expr)
+
+	// Should return nil for non-NOT operators
+	if types != nil {
+		t.Errorf("expected nil for non-NOT unary operator, got %v", types)
+	}
+}
+
+func TestGetExprMutantTypes_NonUnaryExpression(t *testing.T) {
+	// Create a BinaryExpr
+	expr := &ast.BinaryExpr{
+		X:  &ast.Ident{Name: "a"},
+		Op: token.ADD,
+		Y:  &ast.Ident{Name: "b"},
+	}
+
+	types := engine.GetExprMutantTypes(expr)
+
+	// Should return nil for non-UnaryExpr
+	if types != nil {
+		t.Errorf("expected nil for non-unary expression, got %v", types)
+	}
+}
+
+func TestGetExprMutantTypes_NilExpression(t *testing.T) {
+	types := engine.GetExprMutantTypes(nil)
+
+	// Should handle nil gracefully
+	if types != nil {
+		t.Errorf("expected nil for nil expression, got %v", types)
+	}
+}

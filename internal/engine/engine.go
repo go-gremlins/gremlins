@@ -127,11 +127,15 @@ func (mu *Engine) runOnFile(fileName string) {
 	_ = src.Close()
 
 	ast.Inspect(file, func(node ast.Node) bool {
-		n, ok := NewTokenNode(node)
-		if !ok {
-			return true
+		// Check for token-based mutations
+		if n, ok := NewTokenNode(node); ok {
+			mu.findMutations(fileName, set, file, n)
 		}
-		mu.findMutations(fileName, set, file, n)
+
+		// Check for expression-based mutations
+		if e, ok := NewExprNode(node); ok {
+			mu.findExprMutations(fileName, set, file, e, node)
+		}
 
 		return true
 	})
@@ -154,6 +158,34 @@ func (mu *Engine) findMutations(fileName string, set *token.FileSet, file *ast.F
 		tm.SetStatus(mu.mutationStatus(set.Position(node.TokPos)))
 
 		mu.mutantStream <- tm
+	}
+}
+
+func (mu *Engine) findExprMutations(fileName string, set *token.FileSet, file *ast.File, node *NodeExpr, astNode ast.Node) {
+	mutantTypes := GetExprMutantTypes(node.Expr())
+	if len(mutantTypes) == 0 {
+		return
+	}
+
+	pkg := mu.pkgName(fileName, file.Name.Name)
+
+	// Find parent node and create replace function
+	parentNode, replaceFunc := mu.findParentAndReplacer(file, astNode)
+	if parentNode == nil || replaceFunc == nil {
+		// Cannot mutate if we can't find parent or create replacer
+		return
+	}
+
+	for _, mt := range mutantTypes {
+		if !configuration.Get[bool](configuration.MutantTypeEnabledKey(mt)) {
+			continue
+		}
+		mutantType := mt
+		em := NewExprMutant(pkg, set, file, node, parentNode, replaceFunc)
+		em.SetType(mutantType)
+		em.SetStatus(mu.mutationStatus(set.Position(node.Pos())))
+
+		mu.mutantStream <- em
 	}
 }
 
@@ -197,6 +229,158 @@ func (mu *Engine) mutationStatus(pos token.Position) mutator.Status {
 	}
 
 	return status
+}
+
+// findParentAndReplacer finds the parent node of target and returns a function
+// to replace target with a new expression in the parent.
+func (mu *Engine) findParentAndReplacer(file *ast.File, target ast.Node) (ast.Node, func(ast.Expr) error) {
+	var parent ast.Node
+	var replacer func(ast.Expr) error
+
+	ast.Inspect(file, func(n ast.Node) bool {
+		if n == nil {
+			return false
+		}
+
+		// Check if this node contains our target as a child
+		switch p := n.(type) {
+		case *ast.UnaryExpr:
+			if p.X == target {
+				parent = p
+				replacer = func(newExpr ast.Expr) error {
+					p.X = newExpr
+
+					return nil
+				}
+
+				return false
+			}
+		case *ast.BinaryExpr:
+			if p.X == target {
+				parent = p
+				replacer = func(newExpr ast.Expr) error {
+					p.X = newExpr
+
+					return nil
+				}
+
+				return false
+			}
+			if p.Y == target {
+				parent = p
+				replacer = func(newExpr ast.Expr) error {
+					p.Y = newExpr
+
+					return nil
+				}
+
+				return false
+			}
+		case *ast.ParenExpr:
+			if p.X == target {
+				parent = p
+				replacer = func(newExpr ast.Expr) error {
+					p.X = newExpr
+
+					return nil
+				}
+
+				return false
+			}
+		case *ast.CallExpr:
+			for i, arg := range p.Args {
+				if arg == target {
+					parent = p
+					idx := i // capture for closure
+					replacer = func(newExpr ast.Expr) error {
+						p.Args[idx] = newExpr
+
+						return nil
+					}
+
+					return false
+				}
+			}
+		case *ast.ReturnStmt:
+			for i, result := range p.Results {
+				if result == target {
+					parent = p
+					idx := i
+					replacer = func(newExpr ast.Expr) error {
+						p.Results[idx] = newExpr
+
+						return nil
+					}
+
+					return false
+				}
+			}
+		case *ast.AssignStmt:
+			for i, expr := range p.Lhs {
+				if expr == target {
+					parent = p
+					idx := i
+					replacer = func(newExpr ast.Expr) error {
+						p.Lhs[idx] = newExpr
+
+						return nil
+					}
+
+					return false
+				}
+			}
+			for i, expr := range p.Rhs {
+				if expr == target {
+					parent = p
+					idx := i
+					replacer = func(newExpr ast.Expr) error {
+						p.Rhs[idx] = newExpr
+
+						return nil
+					}
+
+					return false
+				}
+			}
+		case *ast.IfStmt:
+			if p.Cond == target {
+				parent = p
+				replacer = func(newExpr ast.Expr) error {
+					p.Cond = newExpr
+
+					return nil
+				}
+
+				return false
+			}
+		case *ast.ForStmt:
+			if p.Cond == target {
+				parent = p
+				replacer = func(newExpr ast.Expr) error {
+					p.Cond = newExpr
+
+					return nil
+				}
+
+				return false
+			}
+		case *ast.SwitchStmt:
+			if p.Tag == target {
+				parent = p
+				replacer = func(newExpr ast.Expr) error {
+					p.Tag = newExpr
+
+					return nil
+				}
+
+				return false
+			}
+		}
+
+		return true
+	})
+
+	return parent, replacer
 }
 
 func (mu *Engine) executeTests(ctx context.Context) report.Results {

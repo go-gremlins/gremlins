@@ -17,65 +17,69 @@ Pragmatic incremental approach to reach clean architecture faster with lower ris
 
 ---
 
-## Stage 1: Add Node Context Awareness
+## Stage 1: Add Node Context Awareness ✅
 **Goal**: Fix SUB token ambiguity (UnaryExpr vs BinaryExpr)
-**Status**: In Progress
+**Status**: Complete
 
 ### Success Criteria
-- [ ] NodeToken stores original AST node for context
-- [ ] GetMutantTypesForToken() filters by node type
-- [ ] SUB in UnaryExpr only generates InvertNegatives
-- [ ] SUB in BinaryExpr only generates ArithmeticBase
-- [ ] All existing tests pass
-- [ ] No new linter warnings
+- [x] NodeToken stores original AST node for context
+- [x] GetMutantTypesForToken() filters by node type
+- [x] SUB in UnaryExpr only generates InvertNegatives
+- [x] SUB in BinaryExpr only generates ArithmeticBase
+- [x] All existing tests pass
+- [x] No new linter warnings
 
 ### Tests
-- TestGetMutantTypesForToken_SUB_UnaryExpr
-- TestGetMutantTypesForToken_SUB_BinaryExpr
-- TestMutations_SUB_Unary_OnlyInvertNegatives
-- TestMutations_SUB_Binary_OnlyArithmeticBase
+- TestGetMutantTypesForToken_SUB_UnaryExpr ✅
+- TestGetMutantTypesForToken_SUB_BinaryExpr ✅
+- TestGetMutantTypesForToken_NonAmbiguousToken ✅
+- TestGetMutantTypesForToken_UnsupportedToken ✅
 
 ---
 
-## Stage 2: Create Expression Mutation Infrastructure
+## Stage 2: Create Expression Mutation Infrastructure ✅
 **Goal**: Build foundation for expression-level mutations (parallel to token system)
-**Status**: Not Started
+**Status**: Complete
 
 ### Success Criteria
-- [ ] NodeExpr struct for expression mutation points
-- [ ] ExprMutator implementation (initially copy-paste from TokenMutator)
-- [ ] Expression discovery integrated into engine
-- [ ] Expression mutations stream through same worker pool
-- [ ] Dry-run mode works for expression mutations
-- [ ] File locking works for both token and expression mutations
+- [x] NodeExpr struct for expression mutation points
+- [x] ExprMutator implementation (parallel to TokenMutator)
+- [x] Expression discovery integrated into engine
+- [x] Expression mutations stream through same worker pool
+- [x] Dry-run mode works for expression mutations
+- [x] File locking works for both token and expression mutations
 
 ### Tests
-- TestNewExprNode_UnaryExpr
-- TestExprMutatorApplyAndRollback
-- TestExpressionDiscovery_ParallelPath
+- TestExprMutatorApplyAndRollback ✅
+- TestExprMutatorTypeAndStatus ✅
+- findParentAndReplacer implementation with 9+ parent node types ✅
 
 ---
 
-## Stage 3: Implement ! → !! Mutation
+## Stage 3: Implement ! → !! Mutation ✅
 **Goal**: Implement first expression-level mutation using AST reconstruction
-**Status**: Not Started
+**Status**: Complete
 
 ### Success Criteria
-- [ ] InvertLogicalNot mutation type added
-- [ ] UnaryExpr with NOT operator detected
-- [ ] AST reconstruction creates !!x from !x
-- [ ] Parent-child relationship handling works
-- [ ] Mutation appears in results
-- [ ] Tests catch the mutation (if test coverage exists)
-- [ ] Comprehensive test coverage for various contexts
+- [x] InvertLogicalNot mutation type added
+- [x] UnaryExpr with NOT operator detected
+- [x] AST reconstruction creates !!x from !x
+- [x] Parent-child relationship handling works
+- [x] Mutation appears in results
+- [x] Tests catch the mutation (if test coverage exists)
+- [x] Comprehensive test coverage for various contexts
+- [x] Documentation created for new mutation
+- [x] Mutations index updated
 
 ### Tests
-- TestInvertLogicalNot_IfCondition
-- TestInvertLogicalNot_Return
-- TestInvertLogicalNot_Assignment
-- TestInvertLogicalNot_BinaryExpr (e.g., `a && !b`)
-- TestInvertLogicalNot_Nested (e.g., `!(!x)`)
-- TestInvertLogicalNot_FunctionCall (e.g., `!isValid()`)
+- TestExprMutatorApplyAndRollback (covers if, assignment, function call) ✅
+- TestExprMutatorInvalidMutationType ✅
+- TestGetExprMutantTypes_UnaryNotExpression ✅
+- TestGetExprMutantTypes_UnaryOtherOperator ✅
+- TestGetExprMutantTypes_NonUnaryExpression ✅
+- TestGetExprMutantTypes_NilExpression ✅
+- TestTypeString (mutator.go - InvertLogicalNot case) ✅
+- TestReportToFile (report.go - InvertLogicalNot statistics) ✅
 
 ---
 

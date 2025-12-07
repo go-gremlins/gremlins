@@ -83,6 +83,7 @@ const (
 	InvertLogical
 	InvertLoopCtrl
 	InvertNegatives
+	InvertLogicalNot
 	RemoveSelfAssignments
 )
 
@@ -98,6 +99,7 @@ var Types = []Type{
 	InvertLogical,
 	InvertLoopCtrl,
 	InvertNegatives,
+	InvertLogicalNot,
 	RemoveSelfAssignments,
 }
 
@@ -113,6 +115,8 @@ func (mt Type) String() string {
 		return "INVERT_LOGICAL"
 	case InvertNegatives:
 		return "INVERT_NEGATIVES"
+	case InvertLogicalNot:
+		return "INVERT_LOGICAL_NOT"
 	case ArithmeticBase:
 		return "ARITHMETIC_BASE"
 	case InvertLoopCtrl:

@@ -175,3 +175,14 @@ func filterTypes(types []mutator.Type, target mutator.Type) []mutator.Type {
 
 	return filtered
 }
+
+// GetExprMutantTypes returns the applicable mutation types for a given expression node.
+// This enables expression-level mutations that require AST reconstruction.
+func GetExprMutantTypes(expr ast.Expr) []mutator.Type {
+	if unary, ok := expr.(*ast.UnaryExpr); ok && unary.Op == token.NOT {
+		// ! operator can be mutated to !!
+		return []mutator.Type{mutator.InvertLogicalNot}
+	}
+
+	return nil
+}
