@@ -20,7 +20,7 @@ Each _mutant type_ can be enabled or disabled, and only a subset of mutations is
 | [INCREMENT DECREMENT](increment_decrement.md)          |   YES   |
 | [INVERT NEGATIVES ](invert_negatives.md)               |   YES   |
 | [INVERT LOGICAL ](invert_logical.md)                   |  FALSE  |
-| [INVERT LOGICAL NOT ](invert_logical_not.md)           |   YES   |
+| [INVERT LOGICAL NOT](invert_logical_not.md)            |   YES   |
 | [INVERT LOOP CTRL ](invert_loop.md)                    |  FALSE  |
 | [INVERT ASSIGNMENTS ](invert_assignments.md)           |  FALSE  |
 | [INVERT BITWISE ](invert_bitwise.md)                   |  FALSE  |

@@ -2,11 +2,11 @@
 title: Invert logical not
 ---
 
-# Invert logical not operator
+_Invert logical not_ will double-negate boolean expressions by wrapping a NOT
+operator with another NOT operator.
 
-_Invert logical not_ will double-negate boolean expressions by wrapping a NOT operator with another NOT operator.
-
-This mutation tests whether your tests can detect when a boolean negation is effectively neutralized by a double negation.
+This mutation tests whether your tests can detect when a boolean negation is
+effectively neutralized by a double negation.
 
 ## Mutation table
 
@@ -52,7 +52,9 @@ This mutation tests whether your tests can detect when a boolean negation is eff
 
 ## Why this mutation matters
 
-Double negation (`!!x`) is logically equivalent to the original value (`x`), effectively canceling out the NOT operator. If your tests pass with this mutation, it indicates:
+Double negation (`!!x`) is logically equivalent to the original value (`x`),
+effectively canceling out the NOT operator. If your tests pass with this
+mutation, it indicates:
 
 - The negation might not be necessary in the first place
 - Your tests may not be properly validating the boolean logic
