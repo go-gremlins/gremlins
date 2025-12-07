@@ -24,8 +24,9 @@ import (
 // NodeToken is the reference to the actualToken that will be mutated during
 // the mutation testing.
 type NodeToken struct {
-	tok    *token.Token
-	TokPos token.Pos
+	tok      *token.Token
+	TokPos   token.Pos
+	nodeType ast.Node // The original AST node for context-aware mutations
 }
 
 // NewTokenNode checks if the ast.Node implementation is supported by
@@ -56,8 +57,9 @@ func NewTokenNode(n ast.Node) (*NodeToken, bool) {
 	}
 
 	return &NodeToken{
-		tok:    tok,
-		TokPos: pos,
+		tok:      tok,
+		TokPos:   pos,
+		nodeType: n,
 	}, true
 }
 
@@ -69,4 +71,9 @@ func (n *NodeToken) Tok() token.Token {
 // SetTok sets the token.Token of the tokenNode.
 func (n *NodeToken) SetTok(t token.Token) {
 	*n.tok = t
+}
+
+// NodeType returns the original AST node for context-aware mutation filtering.
+func (n *NodeToken) NodeType() ast.Node {
+	return n.nodeType
 }
