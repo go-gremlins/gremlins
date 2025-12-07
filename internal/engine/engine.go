@@ -233,7 +233,7 @@ func (mu *Engine) mutationStatus(pos token.Position) mutator.Status {
 
 // findParentAndReplacer finds the parent node of target and returns a function
 // to replace target with a new expression in the parent.
-func (mu *Engine) findParentAndReplacer(file *ast.File, target ast.Node) (ast.Node, func(ast.Expr) error) {
+func (*Engine) findParentAndReplacer(file *ast.File, target ast.Node) (ast.Node, func(ast.Expr) error) {
 	var parent ast.Node
 	var replacer func(ast.Expr) error
 
