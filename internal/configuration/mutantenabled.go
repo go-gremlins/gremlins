@@ -31,6 +31,7 @@ var mutationEnabled = map[mutator.Type]bool{
 	mutator.InvertLogical:            false,
 	mutator.InvertLoopCtrl:           false,
 	mutator.InvertNegatives:          true,
+	mutator.InvertLogicalNot:         true,
 	mutator.RemoveSelfAssignments:    false,
 }
 

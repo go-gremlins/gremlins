@@ -345,6 +345,7 @@ func TestReportToFile(t *testing.T) {
 		stubMutant{status: mutator.Lived, mutantType: mutator.InvertLogical, position: newPosition("file2.go", 4, 11)},
 		stubMutant{status: mutator.NotViable, mutantType: mutator.InvertNegatives, position: newPosition("file3.go", 4, 200)},
 		stubMutant{status: mutator.Killed, mutantType: mutator.RemoveSelfAssignments, position: newPosition("file3.go", 4, 100)},
+		stubMutant{status: mutator.Killed, mutantType: mutator.InvertLogicalNot, position: newPosition("file3.go", 5, 50)},
 	}
 	data := report.Results{
 		Module:  "example.com/go/module",

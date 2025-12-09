@@ -17,6 +17,7 @@
 package engine
 
 import (
+	"go/ast"
 	"go/token"
 
 	"github.com/go-gremlins/gremlins/internal/mutator"
@@ -134,4 +135,54 @@ var tokenMutations = map[mutator.Type]map[token.Token]token.Token{
 		token.SUB_ASSIGN:     token.ASSIGN,
 		token.XOR_ASSIGN:     token.ASSIGN,
 	},
+}
+
+// GetMutantTypesForToken returns the applicable mutation types for a given token,
+// filtered by the AST node context. This allows context-aware mutations where the
+// same token may have different mutations based on the node type.
+//
+// For example, token.SUB in a UnaryExpr (-x) should only apply InvertNegatives,
+// while token.SUB in a BinaryExpr (a - b) should only apply ArithmeticBase.
+func GetMutantTypesForToken(tok token.Token, node ast.Node) []mutator.Type {
+	types, ok := TokenMutantType[tok]
+	if !ok {
+		return nil
+	}
+
+	// Apply context-aware filtering for ambiguous tokens
+	if tok == token.SUB {
+		switch node.(type) {
+		case *ast.UnaryExpr:
+			// Unary negation: only InvertNegatives applies
+			return filterTypes(types, mutator.InvertNegatives)
+		case *ast.BinaryExpr:
+			// Binary subtraction: only ArithmeticBase applies
+			return filterTypes(types, mutator.ArithmeticBase)
+		}
+	}
+
+	return types
+}
+
+// filterTypes returns only the mutation types that match the given type.
+func filterTypes(types []mutator.Type, target mutator.Type) []mutator.Type {
+	var filtered []mutator.Type
+	for _, t := range types {
+		if t == target {
+			filtered = append(filtered, t)
+		}
+	}
+
+	return filtered
+}
+
+// GetExprMutantTypes returns the applicable mutation types for a given expression node.
+// This enables expression-level mutations that require AST reconstruction.
+func GetExprMutantTypes(expr ast.Expr) []mutator.Type {
+	if unary, ok := expr.(*ast.UnaryExpr); ok && unary.Op == token.NOT {
+		// ! operator can be mutated to !!
+		return []mutator.Type{mutator.InvertLogicalNot}
+	}
+
+	return nil
 }

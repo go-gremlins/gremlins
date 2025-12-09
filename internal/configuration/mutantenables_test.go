@@ -63,6 +63,10 @@ func TestMutantDefaultStatus(t *testing.T) {
 			expected:   true,
 		},
 		{
+			mutantType: mutator.InvertLogicalNot,
+			expected:   true,
+		},
+		{
 			mutantType: mutator.InvertLoopCtrl,
 			expected:   false,
 		},
