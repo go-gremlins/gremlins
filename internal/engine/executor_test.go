@@ -393,20 +393,30 @@ func TestCPU(t *testing.T) {
 			executor.Start(w)
 			wg.Wait()
 
-			for _, arg := range holder.args {
-				if !tc.cpuPresent && strings.Contains(arg, "-cpu") {
-					t.Fatalf("didn't expect to have -cpu flag")
+			// Verify -cpu flag absence.
+			if !tc.cpuPresent {
+				for _, arg := range holder.args {
+					if strings.Contains(arg, "-cpu") {
+						t.Fatalf("didn't expect to have -cpu flag, got args %v", holder.args)
+					}
 				}
-				if !tc.cpuPresent {
-					return
+
+				return
+			}
+
+			// Verify -cpu and its value are passed as two separate consecutive args,
+			// not as a single string like "-cpu 2" which exec.Command would not parse correctly.
+			wantCPU := fmt.Sprintf("%d", tc.wantTestCPU)
+			found := false
+			for i, arg := range holder.args {
+				if arg == "-cpu" && i+1 < len(holder.args) && holder.args[i+1] == wantCPU {
+					found = true
+
+					break
 				}
-				got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
-				cpuFlag := fmt.Sprintf("-cpu %d", tc.wantTestCPU)
-				if strings.Contains(got, cpuFlag) {
-					// PASS
-					return
-				}
-				t.Fatalf("want flag %q, got args %s", cpuFlag, holder.args)
+			}
+			if !found {
+				t.Fatalf("want -cpu and %q as separate consecutive args, got args %v", wantCPU, holder.args)
 			}
 
 		})
