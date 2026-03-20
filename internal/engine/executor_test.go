@@ -529,7 +529,7 @@ func TestMutatorRunInTheCorrectFolder(t *testing.T) {
 func fakeExecCommandSuccess(ctx context.Context, command string, args ...string) *exec.Cmd {
 	cs := []string{"-test.run=TestCoverageProcessSuccess", "--", command}
 	cs = append(cs, args...)
-	// #nosec G204 - We are in tests, we don't care
+	// #nosec G204 G702 - We are in tests, we don't care
 	cmd := exec.CommandContext(ctx, os.Args[0], cs...)
 	cmd.Env = []string{"GO_TEST_PROCESS=1"}
 
@@ -586,7 +586,7 @@ func fakeExecCommandBuildFailure(ctx context.Context, command string, args ...st
 }
 
 func getCmd(ctx context.Context, cs []string) *exec.Cmd {
-	// #nosec G204 - We are in tests, we don't care
+	// #nosec G204 G702 - We are in tests, we don't care
 	cmd := exec.CommandContext(ctx, os.Args[0], cs...)
 	cmd.Env = []string{"GO_TEST_PROCESS=1"}
 
