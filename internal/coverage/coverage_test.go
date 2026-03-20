@@ -214,7 +214,7 @@ func fakeExecCommandSuccess(got *commandHolder) execContext {
 		}
 		cs := []string{"-test.run=TestCoverageProcessSuccess", "--", command}
 		cs = append(cs, args...)
-		// #nosec G204 - We are in tests, we don't care
+		// #nosec G204 G702 - We are in tests, we don't care
 		cmd := exec.Command(os.Args[0], cs...)
 		cmd.Env = []string{"GO_TEST_PROCESS=1"}
 
@@ -231,7 +231,7 @@ func fakeExecCommandFailure(run int) execContext {
 			cs = []string{"-test.run=TestCoverageProcessFailure", "--", command}
 		}
 		cs = append(cs, args...)
-		// #nosec G204 - We are in tests, we don't care
+		// #nosec G204 G702 - We are in tests, we don't care
 		cmd := exec.Command(os.Args[0], cs...)
 		cmd.Env = []string{"GO_TEST_PROCESS=1"}
 		executed++
