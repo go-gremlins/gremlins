@@ -24,8 +24,9 @@ import (
 // NodeToken is the reference to the actualToken that will be mutated during
 // the mutation testing.
 type NodeToken struct {
-	tok    *token.Token
-	TokPos token.Pos
+	tok      *token.Token
+	TokPos   token.Pos
+	nodeType ast.Node // The original AST node for context-aware mutations
 }
 
 // NewTokenNode checks if the ast.Node implementation is supported by
@@ -56,8 +57,9 @@ func NewTokenNode(n ast.Node) (*NodeToken, bool) {
 	}
 
 	return &NodeToken{
-		tok:    tok,
-		TokPos: pos,
+		tok:      tok,
+		TokPos:   pos,
+		nodeType: n,
 	}, true
 }
 
@@ -69,4 +71,43 @@ func (n *NodeToken) Tok() token.Token {
 // SetTok sets the token.Token of the tokenNode.
 func (n *NodeToken) SetTok(t token.Token) {
 	*n.tok = t
+}
+
+// NodeType returns the original AST node for context-aware mutation filtering.
+func (n *NodeToken) NodeType() ast.Node {
+	return n.nodeType
+}
+
+// NodeExpr represents an expression-level mutation point.
+// Unlike NodeToken which mutates tokens, NodeExpr supports mutations that
+// require AST reconstruction (e.g., wrapping expressions).
+type NodeExpr struct {
+	expr ast.Expr  // The expression to mutate
+	pos  token.Pos // Position for reporting
+}
+
+// NewExprNode checks if the ast.Node represents an expression that can be
+// mutated at the expression level. Returns false if the node type is not
+// supported for expression mutations.
+func NewExprNode(n ast.Node) (*NodeExpr, bool) {
+	switch expr := n.(type) {
+	case *ast.UnaryExpr:
+		// Support unary expressions for wrapping mutations (e.g., !x → !!x)
+		return &NodeExpr{
+			expr: expr,
+			pos:  expr.Pos(),
+		}, true
+	default:
+		return nil, false
+	}
+}
+
+// Expr returns the expression node.
+func (n *NodeExpr) Expr() ast.Expr {
+	return n.expr
+}
+
+// Pos returns the position of the expression.
+func (n *NodeExpr) Pos() token.Pos {
+	return n.pos
 }

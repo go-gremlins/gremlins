@@ -1,113 +1,120 @@
 {
-  "go_module": "example.com/go/module",
-  "test_efficacy": 57.14285714285714,
-  "mutations_coverage": 70,
-  "mutants_total": 9,
-  "mutants_killed": 4,
-  "mutants_lived": 3,
-  "mutants_not_viable": 2,
-  "mutants_not_covered": 3,
-  "elapsed_time": 142.123,
-  "mutator_statistics": {
-    "arithmetic_base": 1,
-    "conditionals_negation": 1,
-    "conditionals_boundary": 1,
-    "increment_decrement": 2,
-    "invert_assignments": 1,
-    "invert_bitwise": 1,
-    "invert_bitwise_assignments": 1,
-    "invert_logical": 1,
-    "invert_loop_ctrl": 1,
-    "invert_negatives": 1,
-    "remove_self_assignments": 1
-  },
-  "files": [
-    {
-      "file_name": "file1.go",
-      "mutations": [
-        {
-          "line": 10,
-          "column": 3,
-          "type": "CONDITIONALS_NEGATION",
-          "status": "KILLED"
-        },
-        {
-          "line": 20,
-          "column": 8,
-          "type": "ARITHMETIC_BASE",
-          "status": "LIVED"
-        },
-        {
-          "line": 40,
-          "column": 7,
-          "type": "INCREMENT_DECREMENT",
-          "status": "NOT COVERED"
-        },
-        {
-          "line": 10,
-          "column": 8,
-          "type": "INVERT_ASSIGNMENTS",
-          "status": "NOT VIABLE"
-        }
-      ]
+    "go_module": "example.com/go/module",
+    "test_efficacy": 62.5,
+    "mutations_coverage": 72.72727272727273,
+    "mutants_total": 10,
+    "mutants_killed": 5,
+    "mutants_lived": 3,
+    "mutants_not_viable": 2,
+    "mutants_not_covered": 3,
+    "elapsed_time": 142.123,
+    "mutator_statistics": {
+        "arithmetic_base": 1,
+        "conditionals_negation": 1,
+        "conditionals_boundary": 1,
+        "increment_decrement": 2,
+        "invert_assignments": 1,
+        "invert_bitwise": 1,
+        "invert_bitwise_assignments": 1,
+        "invert_logical": 1,
+        "invert_loop_ctrl": 1,
+        "invert_negatives": 1,
+        "invert_logical_not": 1,
+        "remove_self_assignments": 1
     },
-    {
-      "file_name": "file2.go",
-      "mutations": [
+    "files": [
         {
-          "line": 20,
-          "column": 3,
-          "type": "INVERT_LOOPCTRL",
-          "status": "NOT COVERED"
+            "file_name": "file1.go",
+            "mutations": [
+                {
+                    "line": 10,
+                    "column": 3,
+                    "type": "CONDITIONALS_NEGATION",
+                    "status": "KILLED"
+                },
+                {
+                    "line": 20,
+                    "column": 8,
+                    "type": "ARITHMETIC_BASE",
+                    "status": "LIVED"
+                },
+                {
+                    "line": 40,
+                    "column": 7,
+                    "type": "INCREMENT_DECREMENT",
+                    "status": "NOT COVERED"
+                },
+                {
+                    "line": 10,
+                    "column": 8,
+                    "type": "INVERT_ASSIGNMENTS",
+                    "status": "NOT VIABLE"
+                }
+            ]
         },
         {
-          "line": 44,
-          "column": 17,
-          "type": "INCREMENT_DECREMENT",
-          "status": "KILLED"
+            "file_name": "file2.go",
+            "mutations": [
+                {
+                    "line": 20,
+                    "column": 3,
+                    "type": "INVERT_LOOPCTRL",
+                    "status": "NOT COVERED"
+                },
+                {
+                    "line": 44,
+                    "column": 17,
+                    "type": "INCREMENT_DECREMENT",
+                    "status": "KILLED"
+                },
+                {
+                    "line": 500,
+                    "column": 3,
+                    "type": "CONDITIONALS_BOUNDARY",
+                    "status": "NOT COVERED"
+                },
+                {
+                    "line": 100,
+                    "column": 3,
+                    "type": "INVERT_BITWISE",
+                    "status": "LIVED"
+                },
+                {
+                    "line": 10,
+                    "column": 4,
+                    "type": "INVERT_BWASSIGN",
+                    "status": "KILLED"
+                },
+                {
+                    "line": 11,
+                    "column": 4,
+                    "type": "INVERT_LOGICAL",
+                    "status": "LIVED"
+                }
+            ]
         },
         {
-          "line": 500,
-          "column": 3,
-          "type": "CONDITIONALS_BOUNDARY",
-          "status": "NOT COVERED"
-        },
-        {
-          "line": 100,
-          "column": 3,
-          "type": "INVERT_BITWISE",
-          "status": "LIVED"
-        },
-        {
-          "line": 10,
-          "column": 4,
-          "type": "INVERT_BWASSIGN",
-          "status": "KILLED"
-        },
-        {
-          "line": 11,
-          "column": 4,
-          "type": "INVERT_LOGICAL",
-          "status": "LIVED"
+            "file_name": "file3.go",
+            "mutations": [
+                {
+                    "line": 200,
+                    "column": 4,
+                    "type": "INVERT_NEGATIVES",
+                    "status": "NOT VIABLE"
+                },
+                {
+                    "line": 100,
+                    "column": 4,
+                    "type": "REMOVE_SELF_ASSIGNMENTS",
+                    "status": "KILLED"
+                },
+                {
+                    "line": 50,
+                    "column": 5,
+                    "type": "INVERT_LOGICAL_NOT",
+                    "status": "KILLED"
+                }
+            ]
         }
-      ]
-    },
-    {
-      "file_name": "file3.go",
-      "mutations": [
-        {
-          "line": 200,
-          "column": 4,
-          "type": "INVERT_NEGATIVES",
-          "status": "NOT VIABLE"
-        },
-        {
-          "line": 100,
-          "column": 4,
-          "type": "REMOVE_SELF_ASSIGNMENTS",
-          "status": "KILLED"
-        }
-      ]
-    }
-  ]
+    ]
 }
