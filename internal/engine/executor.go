@@ -238,7 +238,7 @@ func (m *mutantExecutor) getTestArgs(pkg string) []string {
 	args = append(args, "-failfast")
 
 	if m.testCPU != 0 {
-		args = append(args, fmt.Sprintf("-cpu %d", m.testCPU))
+		args = append(args, "-cpu", fmt.Sprintf("%d", m.testCPU))
 	}
 
 	path := pkg
