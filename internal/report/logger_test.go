@@ -66,6 +66,115 @@ func Test_parseFilter(t *testing.T) {
 	}
 }
 
+func TestParseDiffFilter(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		input      string
+		assertFunc func(t *testing.T, got report.Filter, err error)
+	}{
+		"should_return_nil_when_input_is_empty": {
+			input: "",
+			assertFunc: func(t *testing.T, got report.Filter, err error) {
+				t.Helper()
+				if err != nil {
+					t.Errorf("expected no error, got: %v", err)
+				}
+				if got != nil {
+					t.Errorf("expected nil filter, got: %v", got)
+				}
+			},
+		},
+		"should_return_error_when_input_contains_invalid_character": {
+			input: "x",
+			assertFunc: func(t *testing.T, got report.Filter, err error) {
+				t.Helper()
+				if !errors.Is(err, report.ErrInvalidDiffFilter) {
+					t.Errorf("expected ErrInvalidDiffFilter, got: %v", err)
+				}
+				if got != nil {
+					t.Errorf("expected nil filter on error, got: %v", got)
+				}
+			},
+		},
+		"should_return_error_when_invalid_character_is_mixed_with_valid": {
+			input: "lx",
+			assertFunc: func(t *testing.T, got report.Filter, err error) {
+				t.Helper()
+				if !errors.Is(err, report.ErrInvalidDiffFilter) {
+					t.Errorf("expected ErrInvalidDiffFilter, got: %v", err)
+				}
+				if got != nil {
+					t.Errorf("expected nil filter on error, got: %v", got)
+				}
+			},
+		},
+		"should_return_filter_with_lived_when_input_is_l": {
+			input: "l",
+			assertFunc: func(t *testing.T, got report.Filter, err error) {
+				t.Helper()
+				if err != nil {
+					t.Errorf("expected no error, got: %v", err)
+				}
+				want := report.Filter{mutator.Lived: struct{}{}}
+				if !reflect.DeepEqual(got, want) {
+					t.Errorf("ParseDiffFilter() got = %v, want %v", got, want)
+				}
+			},
+		},
+		"should_return_filter_with_killed_when_input_is_k": {
+			input: "k",
+			assertFunc: func(t *testing.T, got report.Filter, err error) {
+				t.Helper()
+				if err != nil {
+					t.Errorf("expected no error, got: %v", err)
+				}
+				want := report.Filter{mutator.Killed: struct{}{}}
+				if !reflect.DeepEqual(got, want) {
+					t.Errorf("ParseDiffFilter() got = %v, want %v", got, want)
+				}
+			},
+		},
+		"should_return_filter_with_both_statuses_when_input_is_lk": {
+			input: "lk",
+			assertFunc: func(t *testing.T, got report.Filter, err error) {
+				t.Helper()
+				if err != nil {
+					t.Errorf("expected no error, got: %v", err)
+				}
+				want := report.Filter{
+					mutator.Lived:  struct{}{},
+					mutator.Killed: struct{}{},
+				}
+				if !reflect.DeepEqual(got, want) {
+					t.Errorf("ParseDiffFilter() got = %v, want %v", got, want)
+				}
+			},
+		},
+		"should_deduplicate_repeated_characters": {
+			input: "ll",
+			assertFunc: func(t *testing.T, got report.Filter, err error) {
+				t.Helper()
+				if err != nil {
+					t.Errorf("expected no error, got: %v", err)
+				}
+				want := report.Filter{mutator.Lived: struct{}{}}
+				if !reflect.DeepEqual(got, want) {
+					t.Errorf("ParseDiffFilter() got = %v, want %v", got, want)
+				}
+			},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			got, err := report.ParseDiffFilter(tc.input)
+			tc.assertFunc(t, got, err)
+		})
+	}
+}
+
 func TestLogger(t *testing.T) {
 	out := &bytes.Buffer{}
 	defer out.Reset()

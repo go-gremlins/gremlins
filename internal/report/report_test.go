@@ -316,48 +316,96 @@ func TestMutantNoDiff(t *testing.T) {
 }
 
 func TestMutantDiff(t *testing.T) {
-	t.Run("prints diff when snippets are non-empty", func(t *testing.T) {
-		out := &bytes.Buffer{}
-		log.Init(out, &bytes.Buffer{})
-		defer log.Reset()
-
-		m := stubMutant{
-			status:         mutator.Lived,
-			mutantType:     mutator.ConditionalsBoundary,
-			position:       fakePosition,
-			originSnippet:  []byte("x > y\n"),
+	testCases := map[string]struct {
+		originSnippet  []byte
+		mutatedSnippet []byte
+		assertFunc     func(t *testing.T, out, errOut *bytes.Buffer)
+	}{
+		"should_log_error_when_both_snippets_are_empty": {
+			assertFunc: func(t *testing.T, out, errOut *bytes.Buffer) {
+				t.Helper()
+				if errOut.Len() == 0 {
+					t.Error("expected error to be logged")
+				}
+				if out.Len() > 0 {
+					t.Errorf("expected no output on error, got: %q", out.String())
+				}
+			},
+		},
+		"should_log_error_when_only_origin_snippet_is_empty": {
 			mutatedSnippet: []byte("x >= y\n"),
-		}
-		report.MutantDiff(m)
+			assertFunc: func(t *testing.T, out, errOut *bytes.Buffer) {
+				t.Helper()
+				if errOut.Len() == 0 {
+					t.Error("expected error to be logged")
+				}
+				if out.Len() > 0 {
+					t.Errorf("expected no output on error, got: %q", out.String())
+				}
+			},
+		},
+		"should_log_error_when_only_mutated_snippet_is_empty": {
+			originSnippet: []byte("x > y\n"),
+			assertFunc: func(t *testing.T, out, errOut *bytes.Buffer) {
+				t.Helper()
+				if errOut.Len() == 0 {
+					t.Error("expected error to be logged")
+				}
+				if out.Len() > 0 {
+					t.Errorf("expected no output on error, got: %q", out.String())
+				}
+			},
+		},
+		"should_print_nothing_when_snippets_are_identical": {
+			originSnippet:  []byte("x > y\n"),
+			mutatedSnippet: []byte("x > y\n"),
+			assertFunc: func(t *testing.T, out, errOut *bytes.Buffer) {
+				t.Helper()
+				if errOut.Len() > 0 {
+					t.Errorf("unexpected error logged: %q", errOut.String())
+				}
+				if out.Len() > 0 {
+					t.Errorf("expected no output for identical snippets, got: %q", out.String())
+				}
+			},
+		},
+		"should_print_diff_when_snippets_differ": {
+			originSnippet:  []byte("if x > y {\n  x = 10"),
+			mutatedSnippet: []byte("if x >= y {\n  x = 10"),
+			assertFunc: func(t *testing.T, out, errOut *bytes.Buffer) {
+				t.Helper()
+				if errOut.Len() > 0 {
+					t.Errorf("unexpected error logged: %q", errOut.String())
+				}
+				want := "       -if x > y {\n       +if x >= y {\n          x = 10\n"
+				got := out.String()
+				if !cmp.Equal(got, want) {
+					t.Error(cmp.Diff(want, got))
+				}
+			},
+		},
+	}
 
-		want := "       -x > y\n" +
-			"       +x >= y\n"
-		got := out.String()
-		if !cmp.Equal(got, want) {
-			t.Error(cmp.Diff(want, got))
-		}
-	})
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			out := &bytes.Buffer{}
+			errOut := &bytes.Buffer{}
 
-	t.Run("logs error and prints nothing when snippets are empty", func(t *testing.T) {
-		out := &bytes.Buffer{}
-		errOut := &bytes.Buffer{}
-		log.Init(out, errOut)
-		defer log.Reset()
+			log.Init(out, errOut)
+			defer log.Reset()
 
-		m := stubMutant{
-			status:     mutator.Lived,
-			mutantType: mutator.ConditionalsBoundary,
-			position:   fakePosition,
-		}
-		report.MutantDiff(m)
+			m := stubMutant{
+				status:         mutator.Lived,
+				mutantType:     mutator.ConditionalsBoundary,
+				position:       fakePosition,
+				originSnippet:  tc.originSnippet,
+				mutatedSnippet: tc.mutatedSnippet,
+			}
+			report.MutantDiff(m)
 
-		if out.Len() > 0 {
-			t.Errorf("expected no output, got: %q", out.String())
-		}
-		if errOut.Len() == 0 {
-			t.Error("expected error to be logged")
-		}
-	})
+			tc.assertFunc(t, out, errOut)
+		})
+	}
 }
 
 func TestMutantLog(t *testing.T) {

@@ -328,7 +328,7 @@ func generateDiff(m mutator.Mutator) ([]string, error) {
 	// --- Original
 	// +++ Mutated
 	// @@ -1 +1 @@
-	for _, line := range lines[3:] {
+	for _, line := range lines {
 		switch {
 		case line == "":
 		case strings.HasPrefix(line, "---"):
