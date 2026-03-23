@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -104,4 +105,64 @@ func TestLogger(t *testing.T) {
 	if !cmp.Equal(got, want) {
 		t.Error(cmp.Diff(got, want))
 	}
+}
+
+func TestLoggerOutputDiffStatuses(t *testing.T) {
+	livedWithSnippets := stubMutant{
+		status:         mutator.Lived,
+		mutantType:     mutator.ConditionalsBoundary,
+		position:       fakePosition,
+		originSnippet:  []byte("x > y\n"),
+		mutatedSnippet: []byte("x >= y\n"),
+	}
+	statusLine := "       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
+
+	t.Run("prints diff when status matches output-diff-statuses", func(t *testing.T) {
+		out := &bytes.Buffer{}
+		log.Init(out, &bytes.Buffer{})
+		defer log.Reset()
+		configuration.Set(configuration.UnleashOutputDiffStatusesKey, "l")
+		defer configuration.Reset()
+
+		logger := report.NewLogger()
+		logger.Mutant(livedWithSnippets)
+
+		got := out.String()
+		if !strings.HasPrefix(got, statusLine) {
+			t.Errorf("expected status line prefix, got: %q", got)
+		}
+		if !strings.Contains(got, "-x > y") || !strings.Contains(got, "+x >= y") {
+			t.Errorf("expected diff lines in output, got: %q", got)
+		}
+	})
+
+	t.Run("does not print diff when status does not match output-diff-statuses", func(t *testing.T) {
+		out := &bytes.Buffer{}
+		log.Init(out, &bytes.Buffer{})
+		defer log.Reset()
+		configuration.Set(configuration.UnleashOutputDiffStatusesKey, "k")
+		defer configuration.Reset()
+
+		logger := report.NewLogger()
+		logger.Mutant(livedWithSnippets)
+
+		got := out.String()
+		if got != statusLine {
+			t.Errorf("expected only status line, got: %q", got)
+		}
+	})
+
+	t.Run("does not print diff when output-diff-statuses is not set", func(t *testing.T) {
+		out := &bytes.Buffer{}
+		log.Init(out, &bytes.Buffer{})
+		defer log.Reset()
+
+		logger := report.NewLogger()
+		logger.Mutant(livedWithSnippets)
+
+		got := out.String()
+		if got != statusLine {
+			t.Errorf("expected only status line, got: %q", got)
+		}
+	})
 }

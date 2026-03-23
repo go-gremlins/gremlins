@@ -190,3 +190,11 @@ func (m *mutantStub) Rollback() error {
 
 	return nil
 }
+
+func (m *mutantStub) OrigSnippet() []byte {
+	return nil
+}
+
+func (m *mutantStub) MutatedSnippet() []byte {
+	return nil
+}
