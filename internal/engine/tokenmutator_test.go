@@ -31,6 +31,8 @@ import (
 )
 
 func TestTokenMutator_Apply_SetsSnippets(t *testing.T) {
+	t.Parallel()
+
 	src := "package main\n\nfunc main() {\n\ta := 1 + 2\n}\n"
 
 	testCases := map[string]struct {
