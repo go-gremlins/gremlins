@@ -73,6 +73,12 @@ func TestExtractSnippet(t *testing.T) {
 			contextLines: 3,
 			want:         []byte(""),
 		},
+		"should_return_empty_when_target_line_is_beyond_content": {
+			content:      []byte("line1\nline2\nline3"),
+			targetLine:   20,
+			contextLines: 3,
+			want:         []byte(""),
+		},
 	}
 
 	for name, tc := range testCases {

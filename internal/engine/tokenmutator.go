@@ -237,5 +237,9 @@ func extractSnippet(content []byte, targetLine, contextLines int) []byte {
 		end = len(lines)
 	}
 
+	if start > end {
+		start = end
+	}
+
 	return bytes.Join(lines[start:end], []byte("\n"))
 }

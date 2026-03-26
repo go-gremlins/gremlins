@@ -18,7 +18,6 @@ package report
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -310,7 +309,7 @@ func generateDiff(m mutator.Mutator) ([]string, error) {
 	original := m.OrigSnippet()
 	mutated := m.MutatedSnippet()
 	if len(original) == 0 || len(mutated) == 0 {
-		return nil, errors.New("no differences found")
+		return nil, nil
 	}
 
 	diffText, err := udiff.ToUnified("Original", "Mutated", string(original), udiff.Bytes(original, mutated), 3)
@@ -324,16 +323,16 @@ func generateDiff(m mutator.Mutator) ([]string, error) {
 	}
 
 	diffBuilder := make([]string, 0, len(lines)-3)
-	// Skip lines until the actual diff content starts
-	// --- Original
-	// +++ Mutated
-	// @@ -1 +1 @@
 	for _, line := range lines {
 		switch {
 		case line == "":
+			continue
 		case strings.HasPrefix(line, "---"):
+			continue
 		case strings.HasPrefix(line, "+++"):
+			continue
 		case strings.HasPrefix(line, "@@"):
+			continue
 		case strings.Contains(line, "No newline at end of file"):
 			continue
 		case strings.HasPrefix(line, "-"):

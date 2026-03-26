@@ -166,6 +166,44 @@ Output
 - `s` - SKIPPED
 - `r` - RUNNABLE
 
+### Diff statuses output
+
+:material-flag: `--output-diff-statuses` · :material-sign-direction: Default: empty - no diffs shown
+
+Prints a unified diff of the original vs mutated code snippet for mutants whose status matches
+the filter. Only `l` (LIVED) and `k` (KILLED) are accepted — other statuses are not valid because
+diffs are only meaningful for mutants that were actually executed and had their source changed.
+
+This flag works in combination with `--output-statuses`: a mutant that is hidden by
+`--output-statuses` will produce no output at all — no status line and no diff.
+
+#### Examples
+
+##### Show diff for survived mutants
+
+```shell
+gremlins unleash --output-diff-statuses l
+```
+
+Output
+
+```
+       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3
+       -x > y
+       +x >= y
+```
+
+##### Show diff for both lived and killed mutants
+
+```shell
+gremlins unleash --output-diff-statuses lk
+```
+
+### Filter letters
+
+- `l` - LIVED
+- `k` - KILLED
+
 ### Increment decrement
 
 :material-flag: `--increment-decrement` · :material-sign-direction: Default: `true`

@@ -321,38 +321,38 @@ func TestMutantDiff(t *testing.T) {
 		mutatedSnippet []byte
 		assertFunc     func(t *testing.T, out, errOut *bytes.Buffer)
 	}{
-		"should_log_error_when_both_snippets_are_empty": {
+		"should_print_nothing_when_both_snippets_are_empty": {
 			assertFunc: func(t *testing.T, out, errOut *bytes.Buffer) {
 				t.Helper()
-				if errOut.Len() == 0 {
-					t.Error("expected error to be logged")
+				if errOut.Len() > 0 {
+					t.Errorf("unexpected error logged: %q", errOut.String())
 				}
 				if out.Len() > 0 {
-					t.Errorf("expected no output on error, got: %q", out.String())
+					t.Errorf("expected no output for empty snippets, got: %q", out.String())
 				}
 			},
 		},
-		"should_log_error_when_only_origin_snippet_is_empty": {
+		"should_print_nothing_when_only_origin_snippet_is_empty": {
 			mutatedSnippet: []byte("x >= y\n"),
 			assertFunc: func(t *testing.T, out, errOut *bytes.Buffer) {
 				t.Helper()
-				if errOut.Len() == 0 {
-					t.Error("expected error to be logged")
+				if errOut.Len() > 0 {
+					t.Errorf("unexpected error logged: %q", errOut.String())
 				}
 				if out.Len() > 0 {
-					t.Errorf("expected no output on error, got: %q", out.String())
+					t.Errorf("expected no output for empty origin snippet, got: %q", out.String())
 				}
 			},
 		},
-		"should_log_error_when_only_mutated_snippet_is_empty": {
+		"should_print_nothing_when_only_mutated_snippet_is_empty": {
 			originSnippet: []byte("x > y\n"),
 			assertFunc: func(t *testing.T, out, errOut *bytes.Buffer) {
 				t.Helper()
-				if errOut.Len() == 0 {
-					t.Error("expected error to be logged")
+				if errOut.Len() > 0 {
+					t.Errorf("unexpected error logged: %q", errOut.String())
 				}
 				if out.Len() > 0 {
-					t.Errorf("expected no output on error, got: %q", out.String())
+					t.Errorf("expected no output for empty mutated snippet, got: %q", out.String())
 				}
 			},
 		},
