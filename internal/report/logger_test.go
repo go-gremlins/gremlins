@@ -161,8 +161,6 @@ func TestLogger(t *testing.T) {
 }
 
 func TestLoggerOutputStatusesAndDiffStatusesTogether(t *testing.T) {
-	t.Parallel()
-
 	t.Run("mutant filtered by output-statuses produces no output at all, even if diff-statuses would match", func(t *testing.T) {
 		out := &bytes.Buffer{}
 		errOut := &bytes.Buffer{}
