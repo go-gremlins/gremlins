@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -65,6 +66,59 @@ func Test_parseFilter(t *testing.T) {
 	}
 }
 
+func TestParseDiffFilter(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		input      string
+		wantFilter report.Filter
+		wantErr    error
+	}{
+		"should_return_nil_when_input_is_empty": {
+			input: "",
+		},
+		"should_return_error_when_input_contains_invalid_character": {
+			input:   "x",
+			wantErr: report.ErrInvalidDiffFilter,
+		},
+		"should_return_error_when_invalid_character_is_mixed_with_valid": {
+			input:   "lx",
+			wantErr: report.ErrInvalidDiffFilter,
+		},
+		"should_return_filter_with_lived_when_input_is_l": {
+			input:      "l",
+			wantFilter: report.Filter{mutator.Lived: struct{}{}},
+		},
+		"should_return_filter_with_killed_when_input_is_k": {
+			input:      "k",
+			wantFilter: report.Filter{mutator.Killed: struct{}{}},
+		},
+		"should_return_filter_with_both_statuses_when_input_is_lk": {
+			input:      "lk",
+			wantFilter: report.Filter{mutator.Lived: struct{}{}, mutator.Killed: struct{}{}},
+		},
+		"should_deduplicate_repeated_characters": {
+			input:      "ll",
+			wantFilter: report.Filter{mutator.Lived: struct{}{}},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := report.ParseDiffFilter(tc.input)
+			if !errors.Is(err, tc.wantErr) {
+				t.Errorf("expected err %v, got: %v", tc.wantErr, err)
+			}
+
+			if !reflect.DeepEqual(got, tc.wantFilter) {
+				t.Errorf("ParseDiffFilter() got = %v, want %v", got, tc.wantFilter)
+			}
+		})
+	}
+}
+
 func TestLogger(t *testing.T) {
 	out := &bytes.Buffer{}
 	defer out.Reset()
@@ -104,4 +158,121 @@ func TestLogger(t *testing.T) {
 	if !cmp.Equal(got, want) {
 		t.Error(cmp.Diff(got, want))
 	}
+}
+
+func TestLoggerOutputStatusesAndDiffStatusesTogether(t *testing.T) {
+	t.Run("mutant filtered by output-statuses produces no output at all, even if diff-statuses would match", func(t *testing.T) {
+		out := &bytes.Buffer{}
+		errOut := &bytes.Buffer{}
+		log.Init(out, errOut)
+		defer log.Reset()
+
+		configuration.Set(configuration.UnleashOutputStatusesKey, "k")
+		configuration.Set(configuration.UnleashOutputDiffStatusesKey, "l")
+		defer configuration.Reset()
+
+		logger := report.NewLogger()
+		logger.Mutant(stubMutant{
+			status:         mutator.Lived,
+			mutantType:     mutator.ConditionalsBoundary,
+			position:       fakePosition,
+			originSnippet:  []byte("x > y\n"),
+			mutatedSnippet: []byte("x >= y\n"),
+		})
+
+		if out.Len() > 0 {
+			t.Errorf("expected no output for filtered-out mutant, got: %q", out.String())
+		}
+		if errOut.Len() > 0 {
+			t.Errorf("expected no error output for filtered-out mutant, got: %q", errOut.String())
+		}
+	})
+
+	t.Run("mutant passing output-statuses filter prints status and diff when diff-statuses matches", func(t *testing.T) {
+		out := &bytes.Buffer{}
+		log.Init(out, &bytes.Buffer{})
+		defer log.Reset()
+
+		configuration.Set(configuration.UnleashOutputStatusesKey, "k")
+		configuration.Set(configuration.UnleashOutputDiffStatusesKey, "k")
+		defer configuration.Reset()
+
+		logger := report.NewLogger()
+		logger.Mutant(stubMutant{
+			status:         mutator.Killed,
+			mutantType:     mutator.ConditionalsBoundary,
+			position:       fakePosition,
+			originSnippet:  []byte("x > y\n"),
+			mutatedSnippet: []byte("x >= y\n"),
+		})
+
+		got := out.String()
+		statusLine := "      KILLED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
+		if !strings.HasPrefix(got, statusLine) {
+			t.Errorf("expected status line prefix, got: %q", got)
+		}
+		if !strings.Contains(got, "-x > y") || !strings.Contains(got, "+x >= y") {
+			t.Errorf("expected diff lines in output, got: %q", got)
+		}
+	})
+}
+
+func TestLoggerOutputDiffStatuses(t *testing.T) {
+	livedWithSnippets := stubMutant{
+		status:         mutator.Lived,
+		mutantType:     mutator.ConditionalsBoundary,
+		position:       fakePosition,
+		originSnippet:  []byte("x > y\n"),
+		mutatedSnippet: []byte("x >= y\n"),
+	}
+	statusLine := "       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
+
+	t.Run("prints diff when status matches output-diff-statuses", func(t *testing.T) {
+		out := &bytes.Buffer{}
+		log.Init(out, &bytes.Buffer{})
+		defer log.Reset()
+		configuration.Set(configuration.UnleashOutputDiffStatusesKey, "l")
+		defer configuration.Reset()
+
+		logger := report.NewLogger()
+		logger.Mutant(livedWithSnippets)
+
+		got := out.String()
+		if !strings.HasPrefix(got, statusLine) {
+			t.Errorf("expected status line prefix, got: %q", got)
+		}
+		if !strings.Contains(got, "-x > y") || !strings.Contains(got, "+x >= y") {
+			t.Errorf("expected diff lines in output, got: %q", got)
+		}
+	})
+
+	t.Run("does not print diff when status does not match output-diff-statuses", func(t *testing.T) {
+		out := &bytes.Buffer{}
+		log.Init(out, &bytes.Buffer{})
+		defer log.Reset()
+		configuration.Set(configuration.UnleashOutputDiffStatusesKey, "k")
+		defer configuration.Reset()
+
+		logger := report.NewLogger()
+		logger.Mutant(livedWithSnippets)
+
+		got := out.String()
+		if got != statusLine {
+			t.Errorf("expected only status line, got: %q", got)
+		}
+	})
+
+	t.Run("does not print diff when output-diff-statuses is not set", func(t *testing.T) {
+		out := &bytes.Buffer{}
+		log.Init(out, &bytes.Buffer{})
+		defer log.Reset()
+
+		logger := report.NewLogger()
+		logger.Mutant(livedWithSnippets)
+
+		got := out.String()
+		if got != statusLine {
+			t.Errorf("expected only status line, got: %q", got)
+		}
+	})
 }

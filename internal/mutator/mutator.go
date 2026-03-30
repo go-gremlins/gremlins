@@ -169,4 +169,10 @@ type Mutator interface {
 	// Rollback removes the mutation from the source code and sets it back to
 	// its original status.
 	Rollback() error
+
+	// OrigSnippet returns the original code snippet around the mutation point.
+	OrigSnippet() []byte
+
+	// MutatedSnippet returns the mutated code snippet around the mutation point.
+	MutatedSnippet() []byte
 }

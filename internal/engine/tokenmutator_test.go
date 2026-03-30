@@ -30,6 +30,88 @@ import (
 	"github.com/go-gremlins/gremlins/internal/mutator"
 )
 
+func TestTokenMutator_Apply_SetsSnippets(t *testing.T) {
+	t.Parallel()
+
+	src := "package main\n\nfunc main() {\n\ta := 1 + 2\n}\n"
+
+	testCases := map[string]struct {
+		assertFunc func(t *testing.T, mut *engine.TokenMutator, err error)
+	}{
+		"should_set_orig_snippet_when_apply_is_called": {
+			assertFunc: func(t *testing.T, mut *engine.TokenMutator, err error) {
+				t.Helper()
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := []byte("package main\n\nfunc main() {\n\ta := 1 + 2\n}\n")
+				if !cmp.Equal(want, mut.OrigSnippet()) {
+					t.Fatal(cmp.Diff(string(want), string(mut.OrigSnippet())))
+				}
+			},
+		},
+		"should_set_mutated_snippet_when_apply_is_called": {
+			assertFunc: func(t *testing.T, mut *engine.TokenMutator, err error) {
+				t.Helper()
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := []byte("package main\n\nfunc main() {\n\ta := 1 - 2\n}\n")
+				if !cmp.Equal(want, mut.MutatedSnippet()) {
+					t.Fatal(cmp.Diff(string(want), string(mut.MutatedSnippet())))
+				}
+			},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			workdir := t.TempDir()
+			filePath := "sourceFile.go"
+			fileFullPath := filepath.Join(workdir, filePath)
+
+			err := os.WriteFile(fileFullPath, []byte(src), 0o600)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			set := token.NewFileSet()
+			f, err := parser.ParseFile(set, filePath, src, parser.ParseComments)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var node *ast.BinaryExpr
+			ast.Inspect(f, func(n ast.Node) bool {
+				if b, ok := n.(*ast.BinaryExpr); ok && node == nil {
+					node = b
+				}
+
+				return true
+			})
+			if node == nil {
+				t.Fatal("binary expression node must be found")
+			}
+
+			n, ok := engine.NewTokenNode(node)
+			if !ok {
+				t.Fatal("token node must be created")
+			}
+
+			mut := engine.NewTokenMutant("example.com/test", set, f, n)
+			mut.SetType(mutator.ArithmeticBase)
+			mut.SetStatus(mutator.Runnable)
+			mut.SetWorkdir(workdir)
+
+			applyErr := mut.Apply()
+
+			tc.assertFunc(t, mut, applyErr)
+		})
+	}
+}
+
 func TestMutantApplyAndRollback(t *testing.T) {
 	want := []string{
 		"package main\n\nfunc main() {\n\ta := 1 - 2\n\tb := 1 - 2\n}\n",
@@ -41,7 +123,7 @@ func TestMutantApplyAndRollback(t *testing.T) {
 	filePath := "sourceFile.go"
 	fileFullPath := filepath.Join(workdir, filePath)
 
-	err := os.WriteFile(fileFullPath, []byte(rollbackWant), 0600)
+	err := os.WriteFile(fileFullPath, []byte(rollbackWant), 0o600)
 	if err != nil {
 		t.Fatal(err)
 	}

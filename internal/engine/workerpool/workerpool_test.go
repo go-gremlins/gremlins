@@ -203,3 +203,11 @@ func (fakeMutant) Apply() error {
 func (fakeMutant) Rollback() error {
 	panic("not used in test")
 }
+
+func (fakeMutant) OrigSnippet() []byte {
+	panic("not used in test")
+}
+
+func (fakeMutant) MutatedSnippet() []byte {
+	panic("not used in test")
+}

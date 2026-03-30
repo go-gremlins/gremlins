@@ -47,6 +47,7 @@ const (
 	UnleashDiffRef               = "unleash.diff"
 	UnleashThresholdEfficacyKey  = "unleash.threshold.efficacy"
 	UnleashThresholdMCoverageKey = "unleash.threshold.mutant-coverage"
+	UnleashOutputDiffStatusesKey = "unleash.output-diff-statuses"
 )
 
 const (
