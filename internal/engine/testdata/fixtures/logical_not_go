@@ -1,0 +1,24 @@
+package main
+
+func main() {
+	ready := false
+	valid := true
+
+	// Test case 1: if condition
+	if !ready {
+		println("not ready")
+	}
+
+	// Test case 2: return statement
+	result := !valid
+
+	// Test case 3: binary expression
+	check := ready && !valid
+
+	// Test case 4: assignment
+	ok := !ready
+
+	_ = result
+	_ = check
+	_ = ok
+}
