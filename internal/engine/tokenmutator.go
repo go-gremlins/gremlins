@@ -48,6 +48,9 @@ type TokenMutator struct {
 	status      mutator.Status
 	mutantType  mutator.Type
 	actualToken token.Token
+
+	origSnippet    []byte
+	mutatedSnippet []byte
 }
 
 // NewTokenMutant initialises a TokenMutator.
@@ -116,6 +119,8 @@ func (m *TokenMutator) Apply() error {
 		return err
 	}
 
+	m.origSnippet = extractSnippet(m.origFile, m.Position().Line, 3)
+
 	m.actualToken = m.tokenNode.Tok()
 	m.tokenNode.SetTok(tokenMutations[m.Type()][m.tokenNode.Tok()])
 
@@ -136,16 +141,22 @@ func (m *TokenMutator) writeMutatedFile(filename string) error {
 		return err
 	}
 
-	err = os.WriteFile(filename, w.Bytes(), 0600)
+	payload := w.Bytes()
+
+	err = os.WriteFile(filename, payload, 0o600)
 	if err != nil {
 		return err
 	}
 
+	m.mutatedSnippet = extractSnippet(payload, m.Position().Line, 3)
+
 	return nil
 }
 
-var locks = make(map[string]*sync.Mutex)
-var mutex sync.RWMutex
+var (
+	locks = make(map[string]*sync.Mutex)
+	mutex sync.RWMutex
+)
 
 func fileLock(filename string) *sync.Mutex {
 	lock, ok := cachedLock(filename)
@@ -180,7 +191,7 @@ func (m *TokenMutator) Rollback() error {
 	defer m.resetOrigFile()
 	filename := filepath.Join(m.workDir, m.Position().Filename)
 
-	return os.WriteFile(filename, m.origFile, 0600)
+	return os.WriteFile(filename, m.origFile, 0o600)
 }
 
 // SetWorkdir sets the base path on which to Apply and Rollback operations.
@@ -200,4 +211,35 @@ func (m *TokenMutator) Workdir() string {
 func (m *TokenMutator) resetOrigFile() {
 	var zeroByte []byte
 	m.origFile = zeroByte
+}
+
+// OrigSnippet returns the original code snippet around the mutation point.
+func (m *TokenMutator) OrigSnippet() []byte {
+	return m.origSnippet
+}
+
+// MutatedSnippet returns the mutated code snippet around the mutation point.
+func (m *TokenMutator) MutatedSnippet() []byte {
+	return m.mutatedSnippet
+}
+
+// extractSnippet extracts lines around the target line with the given context size.
+func extractSnippet(content []byte, targetLine, contextLines int) []byte {
+	lines := bytes.Split(content, []byte("\n"))
+
+	start := targetLine - contextLines - 1
+	if start < 0 {
+		start = 0
+	}
+
+	end := targetLine + contextLines
+	if end > len(lines) {
+		end = len(lines)
+	}
+
+	if start > end {
+		start = end
+	}
+
+	return bytes.Join(lines[start:end], []byte("\n"))
 }

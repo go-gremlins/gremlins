@@ -32,13 +32,12 @@ import (
 	"github.com/hectane/go-acl"
 	"github.com/spf13/viper"
 
+	"github.com/go-gremlins/gremlins/internal/configuration"
+	"github.com/go-gremlins/gremlins/internal/execution"
 	"github.com/go-gremlins/gremlins/internal/log"
 	"github.com/go-gremlins/gremlins/internal/mutator"
 	"github.com/go-gremlins/gremlins/internal/report"
 	"github.com/go-gremlins/gremlins/internal/report/internal"
-
-	"github.com/go-gremlins/gremlins/internal/configuration"
-	"github.com/go-gremlins/gremlins/internal/execution"
 )
 
 var fakePosition = newPosition("aFolder/aFile.go", 3, 12)
@@ -293,6 +292,122 @@ func TestAssessment(t *testing.T) {
 	}
 }
 
+func TestMutantNoDiff(t *testing.T) {
+	t.Run("does not print diff even when snippets are non-empty", func(t *testing.T) {
+		out := &bytes.Buffer{}
+		log.Init(out, &bytes.Buffer{})
+		defer log.Reset()
+
+		m := stubMutant{
+			status:         mutator.Lived,
+			mutantType:     mutator.ConditionalsBoundary,
+			position:       fakePosition,
+			originSnippet:  []byte("x > y\n"),
+			mutatedSnippet: []byte("x >= y\n"),
+		}
+		report.Mutant(m)
+
+		want := "       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
+		got := out.String()
+		if !cmp.Equal(got, want) {
+			t.Error(cmp.Diff(want, got))
+		}
+	})
+}
+
+func TestMutantDiff(t *testing.T) {
+	testCases := map[string]struct {
+		originSnippet  []byte
+		mutatedSnippet []byte
+		assertFunc     func(t *testing.T, out, errOut *bytes.Buffer)
+	}{
+		"should_print_nothing_when_both_snippets_are_empty": {
+			assertFunc: func(t *testing.T, out, errOut *bytes.Buffer) {
+				t.Helper()
+				if errOut.Len() > 0 {
+					t.Errorf("unexpected error logged: %q", errOut.String())
+				}
+				if out.Len() > 0 {
+					t.Errorf("expected no output for empty snippets, got: %q", out.String())
+				}
+			},
+		},
+		"should_print_nothing_when_only_origin_snippet_is_empty": {
+			mutatedSnippet: []byte("x >= y\n"),
+			assertFunc: func(t *testing.T, out, errOut *bytes.Buffer) {
+				t.Helper()
+				if errOut.Len() > 0 {
+					t.Errorf("unexpected error logged: %q", errOut.String())
+				}
+				if out.Len() > 0 {
+					t.Errorf("expected no output for empty origin snippet, got: %q", out.String())
+				}
+			},
+		},
+		"should_print_nothing_when_only_mutated_snippet_is_empty": {
+			originSnippet: []byte("x > y\n"),
+			assertFunc: func(t *testing.T, out, errOut *bytes.Buffer) {
+				t.Helper()
+				if errOut.Len() > 0 {
+					t.Errorf("unexpected error logged: %q", errOut.String())
+				}
+				if out.Len() > 0 {
+					t.Errorf("expected no output for empty mutated snippet, got: %q", out.String())
+				}
+			},
+		},
+		"should_print_nothing_when_snippets_are_identical": {
+			originSnippet:  []byte("x > y\n"),
+			mutatedSnippet: []byte("x > y\n"),
+			assertFunc: func(t *testing.T, out, errOut *bytes.Buffer) {
+				t.Helper()
+				if errOut.Len() > 0 {
+					t.Errorf("unexpected error logged: %q", errOut.String())
+				}
+				if out.Len() > 0 {
+					t.Errorf("expected no output for identical snippets, got: %q", out.String())
+				}
+			},
+		},
+		"should_print_diff_when_snippets_differ": {
+			originSnippet:  []byte("if x > y {\n  x = 10"),
+			mutatedSnippet: []byte("if x >= y {\n  x = 10"),
+			assertFunc: func(t *testing.T, out, errOut *bytes.Buffer) {
+				t.Helper()
+				if errOut.Len() > 0 {
+					t.Errorf("unexpected error logged: %q", errOut.String())
+				}
+				want := "       -if x > y {\n       +if x >= y {\n          x = 10\n"
+				got := out.String()
+				if !cmp.Equal(got, want) {
+					t.Error(cmp.Diff(want, got))
+				}
+			},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			out := &bytes.Buffer{}
+			errOut := &bytes.Buffer{}
+
+			log.Init(out, errOut)
+			defer log.Reset()
+
+			m := stubMutant{
+				status:         mutator.Lived,
+				mutantType:     mutator.ConditionalsBoundary,
+				position:       fakePosition,
+				originSnippet:  tc.originSnippet,
+				mutatedSnippet: tc.mutatedSnippet,
+			}
+			report.MutantDiff(m)
+
+			tc.assertFunc(t, out, errOut)
+		})
+	}
+}
+
 func TestMutantLog(t *testing.T) {
 	out := &bytes.Buffer{}
 	defer out.Reset()
@@ -422,15 +537,15 @@ func notWriteableDir(t *testing.T) (string, func()) {
 	t.Helper()
 	tmp := t.TempDir()
 	outPath, _ := os.MkdirTemp(tmp, "test-")
-	_ = os.Chmod(outPath, 0000)
+	_ = os.Chmod(outPath, 0o000)
 	clean := os.Chmod
 	if runtime.GOOS == "windows" {
-		_ = acl.Chmod(outPath, 0000)
+		_ = acl.Chmod(outPath, 0o000)
 		clean = acl.Chmod
 	}
 
 	return outPath, func() {
-		_ = clean(outPath, 0700)
+		_ = clean(outPath, 0o700)
 	}
 }
 
@@ -440,7 +555,6 @@ func sortOutputFile(x, y internal.OutputFile) bool {
 
 func sortMutation(x, y internal.Mutation) bool {
 	if x.Line == y.Line {
-
 		return x.Column < y.Column
 	}
 
@@ -448,9 +562,11 @@ func sortMutation(x, y internal.Mutation) bool {
 }
 
 type stubMutant struct {
-	position   token.Position
-	status     mutator.Status
-	mutantType mutator.Type
+	position       token.Position
+	status         mutator.Status
+	mutantType     mutator.Type
+	originSnippet  []byte
+	mutatedSnippet []byte
 }
 
 func (s stubMutant) Type() mutator.Type {
@@ -495,4 +611,12 @@ func (stubMutant) Apply() error {
 
 func (stubMutant) Rollback() error {
 	panic("implement me")
+}
+
+func (s stubMutant) OrigSnippet() []byte {
+	return s.originSnippet
+}
+
+func (s stubMutant) MutatedSnippet() []byte {
+	return s.mutatedSnippet
 }

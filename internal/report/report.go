@@ -18,18 +18,20 @@ package report
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/aymanbagabas/go-udiff"
 	"github.com/fatih/color"
 	"github.com/hako/durafmt"
 
+	"github.com/go-gremlins/gremlins/internal/configuration"
+	"github.com/go-gremlins/gremlins/internal/execution"
 	"github.com/go-gremlins/gremlins/internal/log"
 	"github.com/go-gremlins/gremlins/internal/mutator"
 	"github.com/go-gremlins/gremlins/internal/report/internal"
-
-	"github.com/go-gremlins/gremlins/internal/configuration"
-	"github.com/go-gremlins/gremlins/internal/execution"
 )
 
 var (
@@ -70,7 +72,6 @@ type reportStatus struct {
 
 func newReport(results Results) (*reportStatus, bool) {
 	if len(results.Mutants) == 0 {
-
 		return nil, false
 	}
 	rep := &reportStatus{
@@ -286,6 +287,66 @@ func Mutant(m mutator.Mutator) {
 		status = fgHiBlack(m.Status())
 	}
 	log.Infof("%s%s %s at %s\n", padding(m.Status()), status, m.Type(), m.Position())
+}
+
+// MutantDiff logs the unified diff between the original and mutated code snippets.
+// This function uses the log package in gremlins to write to the
+// chosen io.Writer, so it is necessary to call log.Init before
+// the report generation.
+func MutantDiff(m mutator.Mutator) {
+	diff, err := generateDiff(m)
+	if err != nil {
+		log.Errorf("failed to generate diff for mutant: %s", err.Error())
+
+		return
+	}
+	for _, line := range diff {
+		log.Infof("%s%s\n", padding(m.Status()), line)
+	}
+}
+
+// generateDiff returns a colored unified diff string for a survived mutant,
+// or an empty string if no diff is available.
+func generateDiff(m mutator.Mutator) ([]string, error) {
+	original := m.OrigSnippet()
+	mutated := m.MutatedSnippet()
+	if len(original) == 0 || len(mutated) == 0 {
+		return nil, nil
+	}
+
+	diffText, err := udiff.ToUnified("Original", "Mutated", string(original), udiff.Bytes(original, mutated), 3)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate diff: %w", err)
+	}
+
+	lines := strings.Split(diffText, "\n")
+	if len(lines) <= 3 {
+		return nil, nil
+	}
+
+	diffBuilder := make([]string, 0, len(lines)-3)
+	for _, line := range lines {
+		switch {
+		case line == "":
+			continue
+		case strings.HasPrefix(line, "---"):
+			continue
+		case strings.HasPrefix(line, "+++"):
+			continue
+		case strings.HasPrefix(line, "@@"):
+			continue
+		case strings.Contains(line, "No newline at end of file"):
+			continue
+		case strings.HasPrefix(line, "-"):
+			diffBuilder = append(diffBuilder, fgRed(line))
+		case strings.HasPrefix(line, "+"):
+			diffBuilder = append(diffBuilder, fgGreen(line))
+		default:
+			diffBuilder = append(diffBuilder, fgHiBlack(line))
+		}
+	}
+
+	return diffBuilder, nil
 }
 
 func padding(s mutator.Status) string {
