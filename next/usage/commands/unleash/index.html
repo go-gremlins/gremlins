@@ -1373,6 +1373,73 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#diff-statuses-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Diff statuses output
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Diff statuses output">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#show-diff-for-survived-mutants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Show diff for survived mutants
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#show-diff-for-both-lived-and-killed-mutants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Show diff for both lived and killed mutants
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filter-letters_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filter letters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#increment-decrement" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1665,6 +1732,30 @@ Alternative to <code>gremlins r | grep LIVED</code> configured from file.</p>
 <li><code>v</code> - NOT VIABLE</li>
 <li><code>s</code> - SKIPPED</li>
 <li><code>r</code> - RUNNABLE</li>
+</ul>
+<h3 id="diff-statuses-output">Diff statuses output<a class="headerlink" href="#diff-statuses-output" title="Permanent link">&para;</a></h3>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg></span> <code>--output-diff-statuses</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2z"/></svg></span> Default: empty - no diffs shown</p>
+<p>Prints a unified diff of the original vs mutated code snippet for mutants whose status matches
+the filter. Only <code>l</code> (LIVED) and <code>k</code> (KILLED) are accepted — other statuses are not valid because
+diffs are only meaningful for mutants that were actually executed and had their source changed.</p>
+<p>This flag works in combination with <code>--output-statuses</code>: a mutant that is hidden by
+<code>--output-statuses</code> will produce no output at all — no status line and no diff.</p>
+<h4 id="examples_1">Examples<a class="headerlink" href="#examples_1" title="Permanent link">&para;</a></h4>
+<h5 id="show-diff-for-survived-mutants">Show diff for survived mutants<a class="headerlink" href="#show-diff-for-survived-mutants" title="Permanent link">&para;</a></h5>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--output-diff-statuses<span class="w"> </span>l
+</code></pre></div>
+<p>Output</p>
+<div class="highlight"><pre><span></span><code>       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3
+       -x &gt; y
+       +x &gt;= y
+</code></pre></div>
+<h5 id="show-diff-for-both-lived-and-killed-mutants">Show diff for both lived and killed mutants<a class="headerlink" href="#show-diff-for-both-lived-and-killed-mutants" title="Permanent link">&para;</a></h5>
+<div class="highlight"><pre><span></span><code>gremlins<span class="w"> </span>unleash<span class="w"> </span>--output-diff-statuses<span class="w"> </span>lk
+</code></pre></div>
+<h3 id="filter-letters_1">Filter letters<a class="headerlink" href="#filter-letters_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>l</code> - LIVED</li>
+<li><code>k</code> - KILLED</li>
 </ul>
 <h3 id="increment-decrement">Increment decrement<a class="headerlink" href="#increment-decrement" title="Permanent link">&para;</a></h3>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg></span> <code>--increment-decrement</code> · <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 12H3.5L6 9.5 3.5 7H11V3l1-1 1 1v4h5l2.5 2.5L18 12h-5v8a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2z"/></svg></span> Default: <code>true</code></p>
