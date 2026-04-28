@@ -1,3 +1,7 @@
+---
+title: Nomutant directive
+---
+
 # Nomutant directive
 
 The `//nomutant` comment directive lets you suppress mutations on individual
