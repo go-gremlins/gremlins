@@ -2,8 +2,6 @@
 title: The //nomutant directive
 ---
 
-# The `//nomutant` directive
-
 The `//nomutant` comment directive lets you suppress mutations on individual
 lines, blocks, or whole files directly from the source code. It is a
 finer-grained alternative to the `exclude-files` configuration option, and is
