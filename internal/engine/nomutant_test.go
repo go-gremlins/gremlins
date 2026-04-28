@@ -129,6 +129,153 @@ func TestNomutantDirective(t *testing.T) {
 	}
 }
 
+// TestNomutantDirective_PartialTypedFilterOnSharedToken verifies that a
+// typed filter naming only one of a token's mutator types suppresses
+// just that type, leaving the others Runnable. The '<' token produces
+// both ConditionalsBoundary and ConditionalsNegation mutants from a
+// single position; the directive must split them by type.
+func TestNomutantDirective_PartialTypedFilterOnSharedToken(t *testing.T) {
+	t.Parallel()
+	viperSet(map[string]any{configuration.UnleashDryRunKey: true})
+	defer viperReset()
+
+	mapFS, mod, c := loadFixture("testdata/fixtures/nomutant_partial_typed_go", ".")
+	defer c()
+
+	cov := fullyCovered("testdata/fixtures/nomutant_partial_typed_go")
+	mut := engine.New(mod, engine.CodeData{Cov: cov.Profile}, newJobDealerStub(t), engine.WithDirFs(mapFS))
+	res := mut.Run(context.Background())
+
+	var (
+		boundaryStatus, negationStatus mutator.Status
+		foundBoundary, foundNegation   bool
+	)
+	for _, m := range res.Mutants {
+		if m.Position().Line != 6 {
+			continue
+		}
+		switch m.Type() { //nolint:exhaustive // only the two types '<' produces are relevant here
+		case mutator.ConditionalsBoundary:
+			foundBoundary = true
+			boundaryStatus = m.Status()
+		case mutator.ConditionalsNegation:
+			foundNegation = true
+			negationStatus = m.Status()
+		}
+	}
+	if !foundBoundary || !foundNegation {
+		t.Fatalf("expected both ConditionalsBoundary and ConditionalsNegation mutants on line 6; got %v", summarize(res.Mutants))
+	}
+	if boundaryStatus != mutator.Skipped {
+		t.Errorf("ConditionalsBoundary on line 6: got %s, want SKIPPED (listed in typed filter)", boundaryStatus)
+	}
+	if negationStatus != mutator.Runnable {
+		t.Errorf("ConditionalsNegation on line 6: got %s, want RUNNABLE (NOT listed in typed filter)", negationStatus)
+	}
+}
+
+// TestNomutantDirective_BlockScopeAboveIf verifies that block-scope
+// attachment works for control-flow statements where many AST nodes
+// share the directive's target line. The largest-span attachment rule
+// must pick the IfStmt (covering its body), not a sub-expression like
+// the BinaryExpr or an Ident.
+func TestNomutantDirective_BlockScopeAboveIf(t *testing.T) {
+	t.Parallel()
+	viperSet(map[string]any{configuration.UnleashDryRunKey: true})
+	defer viperReset()
+
+	mapFS, mod, c := loadFixture("testdata/fixtures/nomutant_block_if_go", ".")
+	defer c()
+
+	cov := fullyCovered("testdata/fixtures/nomutant_block_if_go")
+	mut := engine.New(mod, engine.CodeData{Cov: cov.Profile}, newJobDealerStub(t), engine.WithDirFs(mapFS))
+	res := mut.Run(context.Background())
+
+	// Lines 7-9 are inside the block-scoped if; line 11 is after it.
+	type key struct {
+		line  int
+		mType mutator.Type
+	}
+	got := map[key]mutator.Status{}
+	for _, m := range res.Mutants {
+		got[key{m.Position().Line, m.Type()}] = m.Status()
+	}
+
+	checks := []struct {
+		line  int
+		mType mutator.Type
+		want  mutator.Status
+		why   string
+	}{
+		{7, mutator.ConditionalsBoundary, mutator.Skipped, "'>' inside if-body must be suppressed by block-scope on IfStmt"},
+		{7, mutator.ConditionalsNegation, mutator.Skipped, "'>' inside if-body must be suppressed by block-scope on IfStmt"},
+		{8, mutator.ArithmeticBase, mutator.Skipped, "'+' inside if-body must be suppressed (block scope covers body)"},
+		{11, mutator.ArithmeticBase, mutator.Runnable, "'+' AFTER the if-stmt must NOT be suppressed (outside block)"},
+	}
+	for _, c := range checks {
+		s, ok := got[key{c.line, c.mType}]
+		if !ok {
+			t.Errorf("missing %s mutant on line %d (%s); got %v", c.mType, c.line, c.why, summarize(res.Mutants))
+
+			continue
+		}
+		if s != c.want {
+			t.Errorf("line %d %s: got %s, want %s — %s", c.line, c.mType, s, c.want, c.why)
+		}
+	}
+}
+
+// TestNomutantDirective_EndOfLineMultipleTokens verifies that an untyped
+// end-of-line directive suppresses every applicable mutator on the line,
+// even when those mutators come from different tokens at different
+// columns. The byLine lookup is line-keyed, not column-keyed; this
+// pins down that we don't accidentally narrow it.
+func TestNomutantDirective_EndOfLineMultipleTokens(t *testing.T) {
+	t.Parallel()
+	viperSet(map[string]any{configuration.UnleashDryRunKey: true})
+	defer viperReset()
+
+	mapFS, mod, c := loadFixture("testdata/fixtures/nomutant_eol_multi_token_go", ".")
+	defer c()
+
+	cov := fullyCovered("testdata/fixtures/nomutant_eol_multi_token_go")
+	mut := engine.New(mod, engine.CodeData{Cov: cov.Profile}, newJobDealerStub(t), engine.WithDirFs(mapFS))
+	res := mut.Run(context.Background())
+
+	// Line 4 ('1 + 2 * 3 //nomutant') has both '+' and '*' — both must be Skipped.
+	// Line 5 ('4 + 5') has '+' — must be Runnable.
+	var line4Mutants, line5Mutants []mutator.Mutator
+	for _, m := range res.Mutants {
+		if m.Type() != mutator.ArithmeticBase {
+			continue
+		}
+		switch m.Position().Line {
+		case 4:
+			line4Mutants = append(line4Mutants, m)
+		case 5:
+			line5Mutants = append(line5Mutants, m)
+		}
+	}
+	if len(line4Mutants) != 2 {
+		t.Errorf("expected 2 ArithmeticBase mutants on line 4 (one per operator); got %d: %v",
+			len(line4Mutants), summarize(line4Mutants))
+	}
+	for _, m := range line4Mutants {
+		if m.Status() != mutator.Skipped {
+			t.Errorf("line 4 col %d: got %s, want SKIPPED (untyped EOL directive suppresses every operator on the line)",
+				m.Position().Column, m.Status())
+		}
+	}
+	if len(line5Mutants) != 1 {
+		t.Errorf("expected 1 ArithmeticBase mutant on line 5; got %d", len(line5Mutants))
+	}
+	for _, m := range line5Mutants {
+		if m.Status() != mutator.Runnable {
+			t.Errorf("line 5 ArithmeticBase: got %s, want RUNNABLE (no directive on this line)", m.Status())
+		}
+	}
+}
+
 // TestNomutantDirective_OverridesNotCovered verifies that a //nomutant
 // directive on an uncovered line still produces a Skipped mutant. The
 // directive is evaluated before the coverage-derived status, so an
