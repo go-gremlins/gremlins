@@ -1,6 +1,4 @@
----
-title: The //nomutant directive
----
+# Nomutant directive
 
 The `//nomutant` comment directive lets you suppress mutations on individual
 lines, blocks, or whole files directly from the source code. It is a
