@@ -22,6 +22,7 @@ import (
 
 	"github.com/go-gremlins/gremlins/internal/configuration"
 	"github.com/go-gremlins/gremlins/internal/coverage"
+	"github.com/go-gremlins/gremlins/internal/diff"
 	"github.com/go-gremlins/gremlins/internal/engine"
 	"github.com/go-gremlins/gremlins/internal/mutator"
 )
@@ -125,6 +126,133 @@ func TestNomutantDirective(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestNomutantDirective_OverridesNotCovered verifies that a //nomutant
+// directive on an uncovered line still produces a Skipped mutant. The
+// directive is evaluated before the coverage-derived status, so an
+// explicit "do not test this" wins over an implicit "we couldn't test
+// this anyway." Either status would prevent execution, but we choose
+// Skipped so the user can audit which suppressions actually fired.
+func TestNomutantDirective_OverridesNotCovered(t *testing.T) {
+	t.Parallel()
+	viperSet(map[string]any{configuration.UnleashDryRunKey: true})
+	defer viperReset()
+
+	mapFS, mod, c := loadFixture("testdata/fixtures/nomutant_eol_go", ".")
+	defer c()
+
+	// Empty coverage profile → every position is "not covered".
+	emptyCov := coverage.Result{Profile: coverage.Profile{}}
+	mut := engine.New(mod, engine.CodeData{Cov: emptyCov.Profile}, newJobDealerStub(t), engine.WithDirFs(mapFS))
+	res := mut.Run(context.Background())
+
+	var (
+		foundSuppressed, foundUnsuppressed bool
+	)
+	for _, m := range res.Mutants {
+		if m.Type() != mutator.ArithmeticBase {
+			continue
+		}
+		switch m.Position().Line {
+		case 4:
+			foundSuppressed = true
+			if m.Status() != mutator.Skipped {
+				t.Errorf("line 4 (directive on uncovered line): got %s, want SKIPPED (directive must win over coverage)", m.Status())
+			}
+		case 5:
+			foundUnsuppressed = true
+			if m.Status() != mutator.NotCovered {
+				t.Errorf("line 5 (no directive, no coverage): got %s, want NOT COVERED", m.Status())
+			}
+		}
+	}
+	if !foundSuppressed || !foundUnsuppressed {
+		t.Errorf("expected to find both line-4 and line-5 ArithmeticBase mutants; got %v", summarize(res.Mutants))
+	}
+}
+
+// TestNomutantDirective_WithDiffMode verifies that the directive and
+// diff-mode coexist without panicking. Both end up assigning Skipped to
+// the same mutants, so the assertion is mostly that nothing blows up
+// and both code paths still emit mutants.
+func TestNomutantDirective_WithDiffMode(t *testing.T) {
+	t.Parallel()
+	viperSet(map[string]any{configuration.UnleashDryRunKey: true})
+	defer viperReset()
+
+	mapFS, mod, c := loadFixture("testdata/fixtures/nomutant_eol_go", ".")
+	defer c()
+
+	// Non-empty diff that lacks an entry for our file → IsChanged returns
+	// false for every position in this file, so mutationStatus would
+	// already assign Skipped. The directive on line 4 also says Skipped.
+	// Both code paths agree; the test pins down that they coexist.
+	// (An empty diff.Diff{} means "diff-mode off" — IsChanged returns
+	// true for everything in that case, which would defeat the test.)
+	codeData := engine.CodeData{
+		Cov:  fullyCovered("testdata/fixtures/nomutant_eol_go").Profile,
+		Diff: diff.Diff{"unrelated.go": nil},
+	}
+	mut := engine.New(mod, codeData, newJobDealerStub(t), engine.WithDirFs(mapFS))
+	res := mut.Run(context.Background())
+
+	if len(res.Mutants) == 0 {
+		t.Fatalf("expected mutants to be emitted, got none")
+	}
+	for _, m := range res.Mutants {
+		if m.Status() != mutator.Skipped {
+			t.Errorf("with empty diff every mutant should be Skipped; got %s at line %d",
+				m.Status(), m.Position().Line)
+		}
+	}
+}
+
+// TestNomutantDirective_AdjacentTypedLines verifies that two end-of-line
+// directives with different typed filters on adjacent lines do not bleed
+// into each other.
+func TestNomutantDirective_AdjacentTypedLines(t *testing.T) {
+	t.Parallel()
+	viperSet(map[string]any{configuration.UnleashDryRunKey: true})
+	defer viperReset()
+
+	mapFS, mod, c := loadFixture("testdata/fixtures/nomutant_adjacent_typed_go", ".")
+	defer c()
+
+	cov := fullyCovered("testdata/fixtures/nomutant_adjacent_typed_go")
+	mut := engine.New(mod, engine.CodeData{Cov: cov.Profile}, newJobDealerStub(t), engine.WithDirFs(mapFS))
+	res := mut.Run(context.Background())
+
+	// Line 4 has //nomutant:arithmetic-base — only ArithmeticBase suppressed.
+	// Line 5 has //nomutant:invert-bitwise — InvertBitwise listed but does
+	// not apply to '+'. ArithmeticBase still applies to '+' on line 5 and
+	// must NOT be suppressed (would indicate cross-line bleed).
+	var (
+		line4Status, line5Status mutator.Status
+		foundLine4, foundLine5   bool
+	)
+	for _, m := range res.Mutants {
+		if m.Type() != mutator.ArithmeticBase {
+			continue
+		}
+		switch m.Position().Line {
+		case 4:
+			foundLine4 = true
+			line4Status = m.Status()
+		case 5:
+			foundLine5 = true
+			line5Status = m.Status()
+		}
+	}
+	if !foundLine4 || !foundLine5 {
+		t.Fatalf("expected ArithmeticBase mutants on both line 4 and line 5; got %v", summarize(res.Mutants))
+	}
+	if line4Status != mutator.Skipped {
+		t.Errorf("line 4 ArithmeticBase: got %s, want SKIPPED (typed filter includes arithmetic-base)", line4Status)
+	}
+	if line5Status != mutator.Runnable {
+		t.Errorf("line 5 ArithmeticBase: got %s, want RUNNABLE (line 5's filter targets invert-bitwise only — directive must NOT bleed from line 4)", line5Status)
 	}
 }
 

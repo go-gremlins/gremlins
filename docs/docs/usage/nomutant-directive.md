@@ -89,6 +89,27 @@ The typed filter applies at file scope as well:
 package apackage
 ```
 
+## Nesting
+
+Directives compose **additively**: a mutation is suppressed if any
+enclosing scope (file, block, or end-of-line) suppresses its type. An
+inner directive adds to outer ones rather than replacing them.
+
+```go
+//nomutant:invert-bitwise
+func F() {
+    //nomutant:arithmetic-base
+    a := 1 + 2 // BOTH arithmetic-base AND invert-bitwise are suppressed
+    b := 3 * 4 // only invert-bitwise is suppressed (outer scope still applies)
+}
+```
+
+This means an untyped outer directive (`//nomutant`, suppressing every
+type) cannot be narrowed by an inner typed directive — the outer one
+already covers everything. To opt back in to a specific mutator inside
+a broadly-suppressed region, restructure the code rather than relying
+on directive composition.
+
 ## Malformed directives
 
 A directive whose typed filter is empty (`//nomutant:`) or names only unknown

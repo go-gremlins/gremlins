@@ -245,6 +245,45 @@ func F() int {
 	}
 }
 
+func TestBuildDirectiveIndex_NestedBlocks_Additive(t *testing.T) {
+	t.Parallel()
+
+	// Outer block-scope on the func suppresses InvertBitwise everywhere
+	// inside F. Inner block-scope on the assignment additionally suppresses
+	// ArithmeticBase on that statement only.
+	src := `package p
+
+//nomutant:invert-bitwise
+func F() int {
+	//nomutant:arithmetic-base
+	a := 1 + 2
+	b := 3 + 4
+	return a + b
+}
+`
+	set, file := parseSrc(t, src)
+	idx := buildDirectiveIndex(set, file)
+
+	// Position of the first '+' (inside the inner block-scope). Both the
+	// outer and the inner directive cover this position.
+	posInner := positionOfNth(t, set, src, "+", 1)
+	if !idx.isSuppressed(posInner, mutator.ArithmeticBase) {
+		t.Errorf("inner block must suppress ArithmeticBase on its own statement")
+	}
+	if !idx.isSuppressed(posInner, mutator.InvertBitwise) {
+		t.Errorf("outer block must STILL suppress InvertBitwise inside the inner block (additive)")
+	}
+
+	// Position of the second '+' (outside the inner block, still inside outer).
+	posOuter := positionOfNth(t, set, src, "+", 2)
+	if idx.isSuppressed(posOuter, mutator.ArithmeticBase) {
+		t.Errorf("inner block should NOT suppress ArithmeticBase outside its range")
+	}
+	if !idx.isSuppressed(posOuter, mutator.InvertBitwise) {
+		t.Errorf("outer block must suppress InvertBitwise outside inner block too")
+	}
+}
+
 func TestBuildDirectiveIndex_TypedFilterNonApplicableType(t *testing.T) {
 	t.Parallel()
 

@@ -70,25 +70,14 @@ func (idx *directiveIndex) isSuppressed(pos token.Position, mt mutator.Type) boo
 	if idx.fileScope != nil && idx.fileScope.matches(mt) {
 		return true
 	}
-	// Pick the smallest enclosing block-scope range, so an inner directive
-	// wins over an outer one when they overlap.
-	var (
-		bestScope directiveScope
-		bestSpan  int
-		hasBest   bool
-	)
+	// Block scopes compose additively: if any enclosing block suppresses
+	// the type, the mutant is suppressed. This lets an inner directive
+	// add to (rather than replace) an outer one, which is the natural
+	// reading of nested //nomutant comments.
 	for _, b := range idx.blocks {
-		if pos.Offset >= b.startOffset && pos.Offset <= b.endOffset {
-			span := b.endOffset - b.startOffset
-			if !hasBest || span < bestSpan {
-				bestScope = b.scope
-				bestSpan = span
-				hasBest = true
-			}
+		if pos.Offset >= b.startOffset && pos.Offset <= b.endOffset && b.scope.matches(mt) {
+			return true
 		}
-	}
-	if hasBest && bestScope.matches(mt) {
-		return true
 	}
 	if s, ok := idx.byLine[pos.Line]; ok && s.matches(mt) {
 		return true
