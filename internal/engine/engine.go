@@ -126,18 +126,20 @@ func (mu *Engine) runOnFile(fileName string) {
 	file, _ := parser.ParseFile(set, fileName, src, parser.ParseComments)
 	_ = src.Close()
 
+	directives := buildDirectiveIndex(set, file)
+
 	ast.Inspect(file, func(node ast.Node) bool {
 		n, ok := NewTokenNode(node)
 		if !ok {
 			return true
 		}
-		mu.findMutations(fileName, set, file, n)
+		mu.findMutations(fileName, set, file, n, directives)
 
 		return true
 	})
 }
 
-func (mu *Engine) findMutations(fileName string, set *token.FileSet, file *ast.File, node *NodeToken) {
+func (mu *Engine) findMutations(fileName string, set *token.FileSet, file *ast.File, node *NodeToken, directives *directiveIndex) {
 	mutantTypes, ok := TokenMutantType[node.Tok()]
 	if !ok {
 		return
@@ -151,7 +153,12 @@ func (mu *Engine) findMutations(fileName string, set *token.FileSet, file *ast.F
 		mutantType := mt
 		tm := NewTokenMutant(pkg, set, file, node)
 		tm.SetType(mutantType)
-		tm.SetStatus(mu.mutationStatus(set.Position(node.TokPos)))
+		pos := set.Position(node.TokPos)
+		if directives.isSuppressed(pos, mutantType) {
+			tm.SetStatus(mutator.Skipped)
+		} else {
+			tm.SetStatus(mu.mutationStatus(pos))
+		}
 
 		mu.mutantStream <- tm
 	}
