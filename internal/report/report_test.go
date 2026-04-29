@@ -199,55 +199,103 @@ func TestAssessment(t *testing.T) {
 	}{
 		// Efficacy-threshold as float64
 		{
-			name:        "efficacy < efficacy-threshold",
+			name:        "efficacy < efficacy-threshold float64",
 			confKey:     configuration.UnleashThresholdEfficacyKey,
 			value:       float64(51),
 			expectError: true,
 		},
 		{
-			name:        "efficacy >= efficacy-threshold",
+			name:        "efficacy == efficacy-threshold float64",
 			confKey:     configuration.UnleashThresholdEfficacyKey,
 			value:       float64(50),
 			expectError: false,
 		},
 		{
-			name:        "efficacy-threshold == 0",
+			name:        "efficacy > efficacy-threshold float64",
+			confKey:     configuration.UnleashThresholdEfficacyKey,
+			value:       float64(49),
+			expectError: false,
+		},
+		{
+			name:        "efficacy-threshold == 0 float64",
 			confKey:     configuration.UnleashThresholdEfficacyKey,
 			value:       float64(0),
 			expectError: false,
 		},
-		// Efficacy-threshold as float64
+		// Efficacy-threshold as int
 		{
-			name:        "efficacy < efficacy-threshold",
+			name:        "efficacy < efficacy-threshold int",
 			confKey:     configuration.UnleashThresholdEfficacyKey,
 			value:       51,
 			expectError: true,
 		},
-		// Mutator coverage-threshold as float
 		{
-			name:        "coverage < coverage-threshold",
+			name:        "efficacy == efficacy-threshold int",
+			confKey:     configuration.UnleashThresholdEfficacyKey,
+			value:       50,
+			expectError: false,
+		},
+		{
+			name:        "efficacy > efficacy-threshold int",
+			confKey:     configuration.UnleashThresholdEfficacyKey,
+			value:       49,
+			expectError: false,
+		},
+		{
+			name:        "efficacy-threshold == 0 int",
+			confKey:     configuration.UnleashThresholdEfficacyKey,
+			value:       0,
+			expectError: false,
+		},
+		// Mutator coverage-threshold as float64
+		{
+			name:        "coverage < coverage-threshold float64",
 			confKey:     configuration.UnleashThresholdMCoverageKey,
 			value:       float64(51),
 			expectError: true,
 		},
 		{
-			name:        "coverage >= coverage-threshold",
+			name:        "coverage == coverage-threshold float64",
 			confKey:     configuration.UnleashThresholdMCoverageKey,
 			value:       float64(50),
 			expectError: false,
 		},
 		{
-			name:        "coverage-threshold == 0",
+			name:        "coverage > coverage-threshold float64",
+			confKey:     configuration.UnleashThresholdMCoverageKey,
+			value:       float64(49),
+			expectError: false,
+		},
+		{
+			name:        "coverage-threshold == 0 float64",
 			confKey:     configuration.UnleashThresholdMCoverageKey,
 			value:       float64(0),
 			expectError: false,
 		},
 		// Mutator coverage-threshold as int
 		{
-			name:        "coverage < coverage-threshold",
+			name:        "coverage < coverage-threshold int",
 			confKey:     configuration.UnleashThresholdMCoverageKey,
 			value:       51,
 			expectError: true,
+		},
+		{
+			name:        "coverage == coverage-threshold int",
+			confKey:     configuration.UnleashThresholdMCoverageKey,
+			value:       50,
+			expectError: false,
+		},
+		{
+			name:        "coverage > coverage-threshold int",
+			confKey:     configuration.UnleashThresholdMCoverageKey,
+			value:       49,
+			expectError: false,
+		},
+		{
+			name:        "coverage-threshold == 0 int",
+			confKey:     configuration.UnleashThresholdMCoverageKey,
+			value:       0,
+			expectError: false,
 		},
 	}
 
@@ -278,6 +326,10 @@ func TestAssessment(t *testing.T) {
 				t.Fatal("expected an error")
 			}
 			if !tc.expectError {
+				if err != nil {
+					t.Fatalf("expected no error, got %v", err)
+				}
+
 				return
 			}
 			var exitErr *execution.ExitError
