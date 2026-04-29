@@ -90,7 +90,10 @@ mutants:
 2. By default `0`, which means that no test process CPU will be enforced.
 3. By default `0`, which means a default coefficient of `5` will be enforced.
 4. Thresholds are set by default to `0`, which means they are not enforced.
-5. Excluded files are set by default to empty list, which means no files skipped except tests.
+5. Excluded files are set by default to empty list, which means no files
+   skipped except tests. To suppress mutations at a finer granularity
+   (single statement, block, or file) without editing the configuration,
+   see the [`//nomutant` directive](nomutant-directive.md).
 
 For further information check the specific command documentation.
 
