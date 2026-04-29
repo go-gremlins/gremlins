@@ -390,9 +390,11 @@ gremlins unleash --test-cpu=1
 
 :material-flag: `--threshold-efficacy` · :material-sign-direction: Default: 0
 
-When set, it makes Gremlins exit with an error (code 10) if the _test efficacy_ is below the threshold. The threshold is
-satisfied when the actual efficacy is greater than or equal to the configured value (so `--threshold-efficacy 100` is
-met when every reached mutant is killed). By default it is zero, which means Gremlins never exits with an error.
+When set, it makes Gremlins exit with an error (code 10) if the _test efficacy_
+is below the threshold. The threshold is satisfied when the actual efficacy is
+greater than or equal to the configured value (so `--threshold-efficacy 100`
+is met when every reached mutant is killed). By default it is zero, which
+means Gremlins never exits with an error.
 
 The _test efficacy_ is calculated as `KILLED / (KILLED + LIVED)` and assesses how effective are the tests.
 
@@ -404,9 +406,10 @@ gremlins unleash --threshold-efficacy 80
 
 :material-flag: `--threshold-mcover` · :material-sign-direction: Default: 0
 
-When set, it makes Gremlins exit with an error (code 11) if the _mutant coverage_ is below the threshold. The threshold
-is satisfied when the actual coverage is greater than or equal to the configured value. By default it is zero, which
-means Gremlins never exits with an error.
+When set, it makes Gremlins exit with an error (code 11) if the
+_mutant coverage_ is below the threshold. The threshold is satisfied when the
+actual coverage is greater than or equal to the configured value. By default
+it is zero, which means Gremlins never exits with an error.
 
 The _mutant coverage_ is calculated as `(KILLED + LIVED) / (KILLED + LIVED + NOT_COVERED)` and assesses how many mutants
 are covered by tests.
