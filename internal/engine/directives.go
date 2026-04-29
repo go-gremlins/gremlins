@@ -203,14 +203,12 @@ func configKeyForType(mt mutator.Type) string {
 
 // collectTokenLines returns the set of source lines that contain at least
 // one non-comment AST node, used to distinguish end-of-line directives from
-// own-line ones.
+// own-line ones. Returning false on *ast.CommentGroup stops the walk before
+// it reaches the *ast.Comment children, so no Comment guard is needed.
 func collectTokenLines(set *token.FileSet, file *ast.File) map[int]bool {
 	lines := map[int]bool{}
 	ast.Inspect(file, func(n ast.Node) bool {
 		if n == nil {
-			return false
-		}
-		if _, isComment := n.(*ast.Comment); isComment {
 			return false
 		}
 		if _, isCG := n.(*ast.CommentGroup); isCG {
@@ -262,9 +260,6 @@ func largestNodeStartingAtLine(set *token.FileSet, file *ast.File, line int) (as
 			return false
 		}
 		if _, isCG := n.(*ast.CommentGroup); isCG {
-			return false
-		}
-		if _, isC := n.(*ast.Comment); isC {
 			return false
 		}
 		if set.Position(n.Pos()).Line != line {

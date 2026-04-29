@@ -245,6 +245,46 @@ func F() int {
 	}
 }
 
+func TestDirectiveIndex_NilReceiverIsSafe(t *testing.T) {
+	t.Parallel()
+
+	// A nil index must answer "not suppressed" without panicking. The
+	// engine relies on this so it can call isSuppressed unconditionally
+	// even when no index has been built (currently never happens, but
+	// the guard is cheap and protects future call sites).
+	var idx *directiveIndex
+	if idx.isSuppressed(token.Position{Line: 1}, mutator.ArithmeticBase) {
+		t.Errorf("nil directiveIndex must return false from isSuppressed")
+	}
+}
+
+func TestBuildDirectiveIndex_TypedFilterWithEmptyEntries(t *testing.T) {
+	t.Parallel()
+
+	// Doubled commas / leading commas leave empty strings in the comma-
+	// split type list. Each empty entry should be skipped silently and
+	// the surrounding valid types still parsed.
+	src := `package p
+
+func F() int {
+	return 1 + 2 //nomutant:arithmetic-base,,invert-bitwise
+}
+`
+	set, file := parseSrc(t, src)
+	idx := buildDirectiveIndex(set, file)
+
+	pos := positionOf(t, set, src, "+")
+	if !idx.isSuppressed(pos, mutator.ArithmeticBase) {
+		t.Errorf("expected ArithmeticBase to be suppressed (valid type before doubled comma)")
+	}
+	if !idx.isSuppressed(pos, mutator.InvertBitwise) {
+		t.Errorf("expected InvertBitwise to be suppressed (valid type after doubled comma)")
+	}
+	if idx.isSuppressed(pos, mutator.ConditionalsBoundary) {
+		t.Errorf("did NOT expect ConditionalsBoundary to be suppressed (not in filter)")
+	}
+}
+
 func TestBuildDirectiveIndex_NestedBlocks_Additive(t *testing.T) {
 	t.Parallel()
 
