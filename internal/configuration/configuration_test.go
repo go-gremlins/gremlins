@@ -24,10 +24,66 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/mitchellh/go-homedir"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
 	"github.com/go-gremlins/gremlins/internal/mutator"
 )
+
+func TestGetFromBoundPFlag(t *testing.T) {
+	testCases := []struct {
+		register func(fs *pflag.FlagSet, name string)
+		check    func(t *testing.T, cfgKey string)
+		name     string
+		flagName string
+		cfgKey   string
+		args     []string
+	}{
+		{
+			name:     "float64",
+			flagName: "efficacy",
+			cfgKey:   "unleash.threshold.efficacy",
+			args:     []string{"--efficacy", "50"},
+			register: func(fs *pflag.FlagSet, name string) { fs.Float64(name, 0, "") },
+			check: func(t *testing.T, cfgKey string) {
+				t.Helper()
+				if got := Get[float64](cfgKey); got != 50.0 {
+					t.Errorf("Get[float64](%q) = %v, want 50.0", cfgKey, got)
+				}
+			},
+		},
+		{
+			name:     "int",
+			flagName: "workers",
+			cfgKey:   "unleash.workers",
+			args:     []string{"--workers", "4"},
+			register: func(fs *pflag.FlagSet, name string) { fs.Int(name, 0, "") },
+			check: func(t *testing.T, cfgKey string) {
+				t.Helper()
+				if got := Get[int](cfgKey); got != 4 {
+					t.Errorf("Get[int](%q) = %v, want 4", cfgKey, got)
+				}
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+			tc.register(fs, tc.flagName)
+			if err := viper.BindPFlag(tc.cfgKey, fs.Lookup(tc.flagName)); err != nil {
+				t.Fatal("BindPFlag should not fail")
+			}
+			if err := fs.Parse(tc.args); err != nil {
+				t.Fatal("Parse should not fail")
+			}
+
+			tc.check(t, tc.cfgKey)
+			viper.Reset()
+		})
+	}
+}
 
 type envEntry struct {
 	name  string
