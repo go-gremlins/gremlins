@@ -205,12 +205,9 @@ func TestConfigPaths(t *testing.T) {
 			filepath.Join(home, ".gremlins"),
 		)
 
-		// Then module root
+		// Then module root, then current folder
 		moduleRoot, _ := os.Getwd()
-		want = append(want, moduleRoot)
-
-		// Last current folder
-		want = append(want, ".")
+		want = append(want, moduleRoot, ".")
 
 		got := defaultConfigPaths()
 
@@ -233,14 +230,12 @@ func TestConfigPaths(t *testing.T) {
 			want = append(want, "/etc/gremlins")
 		}
 
-		// Then $XDG_CONFIG_HOME and $HOME
+		// Then $XDG_CONFIG_HOME and $HOME, then current folder
 		want = append(want,
 			filepath.Join(home, ".config", "gremlins", "gremlins"),
 			filepath.Join(home, ".gremlins"),
+			".",
 		)
-
-		// Last current folder
-		want = append(want, ".")
 
 		got := defaultConfigPaths()
 
@@ -271,12 +266,9 @@ func TestConfigPaths(t *testing.T) {
 			filepath.Join(customPath, "gremlins", "gremlins"),
 			filepath.Join(home, ".gremlins"))
 
-		// Then Go module root
+		// Then Go module root, then current directory
 		moduleRoot, _ := os.Getwd()
-		want = append(want, moduleRoot)
-
-		// Last the current directory
-		want = append(want, ".")
+		want = append(want, moduleRoot, ".")
 
 		got := defaultConfigPaths()
 
