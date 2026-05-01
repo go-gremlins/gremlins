@@ -26,6 +26,7 @@ import (
 	"sync"
 
 	"github.com/mitchellh/go-homedir"
+	"github.com/spf13/cast"
 	"github.com/spf13/viper"
 
 	"github.com/go-gremlins/gremlins/internal/mutator"
@@ -180,11 +181,37 @@ func Set[T any](k string, v T) {
 }
 
 // Get offers synchronised access to Viper.
+//
+// Values bound from pflag may surface through viper.Get as their string
+// representation rather than the native Go type, so a plain type assertion
+// would silently yield the zero value. Coerce via spf13/cast for the
+// numeric and string types Gremlins uses, falling back to the assertion
+// for anything else (slices, custom types).
 func Get[T any](k string) T {
-	var r T
 	mutex.RLock()
 	defer mutex.RUnlock()
-	r, _ = viper.Get(k).(T)
+
+	v := viper.Get(k)
+	var zero T
+	if v == nil {
+		return zero
+	}
+
+	var coerced any
+	switch any(zero).(type) {
+	case float64:
+		coerced = cast.ToFloat64(v)
+	case int:
+		coerced = cast.ToInt(v)
+	case bool:
+		coerced = cast.ToBool(v)
+	case string:
+		coerced = cast.ToString(v)
+	default:
+		coerced = v
+	}
+
+	r, _ := coerced.(T)
 
 	return r
 }

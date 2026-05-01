@@ -22,6 +22,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
 	"github.com/go-gremlins/gremlins/internal/configuration"
 	"github.com/go-gremlins/gremlins/internal/mutator"
 )
@@ -200,4 +203,49 @@ func TestUnleash(t *testing.T) {
 			t.Errorf("expected %q have default %q, got %q", s, wantDef, mtf.DefValue)
 		}
 	}
+}
+
+func TestUnleashFlagsPropagateToConfiguration(t *testing.T) {
+	c, err := newUnleashCmd(context.Background())
+	if err != nil {
+		t.Fatal("newUnleashCmd should not fail")
+	}
+	c.cmd.RunE = func(_ *cobra.Command, _ []string) error { return nil }
+	c.cmd.SetArgs([]string{"--threshold-efficacy", "50", "--threshold-mcover", "25", "--workers", "4"})
+	if err := c.cmd.Execute(); err != nil {
+		t.Fatal("Execute should not fail")
+	}
+
+	testCases := []struct {
+		got  any
+		want any
+		key  string
+	}{
+		{
+			key:  configuration.UnleashThresholdEfficacyKey,
+			got:  configuration.Get[float64](configuration.UnleashThresholdEfficacyKey),
+			want: float64(50),
+		},
+		{
+			key:  configuration.UnleashThresholdMCoverageKey,
+			got:  configuration.Get[float64](configuration.UnleashThresholdMCoverageKey),
+			want: float64(25),
+		},
+		{
+			key:  configuration.UnleashWorkersKey,
+			got:  configuration.Get[int](configuration.UnleashWorkersKey),
+			want: 4,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.key, func(t *testing.T) {
+			if tc.got != tc.want {
+				t.Errorf("expected %q to be %v, got %v", tc.key, tc.want, tc.got)
+			}
+		})
+	}
+
+	viper.Reset()
 }

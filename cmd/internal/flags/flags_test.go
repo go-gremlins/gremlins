@@ -21,7 +21,64 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/go-gremlins/gremlins/internal/configuration"
 )
+
+type cliCase struct {
+	want      any
+	getResult func(string) any
+	flag      Flag
+	args      []string
+}
+
+func TestSetBindsTypedValueFromCLI(t *testing.T) {
+	testCases := []cliCase{
+		{
+			flag: Flag{
+				Name:     "threshold-efficacy",
+				CfgKey:   "unleash.threshold.efficacy",
+				DefaultV: float64(0),
+				Usage:    "test usage",
+			},
+			args:      []string{"--threshold-efficacy", "50"},
+			getResult: func(k string) any { return configuration.Get[float64](k) },
+			want:      float64(50),
+		},
+		{
+			flag: Flag{
+				Name:     "workers",
+				CfgKey:   "unleash.workers",
+				DefaultV: 0,
+				Usage:    "test usage",
+			},
+			args:      []string{"--workers", "4"},
+			getResult: func(k string) any { return configuration.Get[int](k) },
+			want:      4,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.flag.Name, func(t *testing.T) {
+			defer viper.Reset()
+
+			cmd := &cobra.Command{Use: "test", Run: func(_ *cobra.Command, _ []string) {}}
+			// #nosec G601 - We are in tests, we don't care
+			if err := Set(cmd, &tc.flag); err != nil {
+				t.Fatal("Set should not fail")
+			}
+			cmd.SetArgs(tc.args)
+			if err := cmd.Execute(); err != nil {
+				t.Fatal("Execute should not fail")
+			}
+
+			if got := tc.getResult(tc.flag.CfgKey); got != tc.want {
+				t.Errorf("expected configuration.Get(%q) to be %T(%v), got %T(%v)", tc.flag.CfgKey, tc.want, tc.want, got, got)
+			}
+		})
+	}
+}
 
 type unsupportedType int
 
