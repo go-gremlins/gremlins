@@ -34,6 +34,7 @@ import (
 	"github.com/go-gremlins/gremlins/internal/diff"
 	"github.com/go-gremlins/gremlins/internal/engine/workerpool"
 	"github.com/go-gremlins/gremlins/internal/exclusion"
+	"github.com/go-gremlins/gremlins/internal/log"
 	"github.com/go-gremlins/gremlins/internal/mutator"
 	"github.com/go-gremlins/gremlins/internal/report"
 
@@ -95,13 +96,21 @@ func WithDirFs(dirFS fs.FS) Option {
 
 // Run executes the mutation testing.
 //
-// It walks the fs.FS provided and checks every .go file which is not a test.
-// For each file it will scan for tokenMutations and gather all the mutants found.
+// It walks the fs.FS provided and checks every .go file which is not a test,
+// except for files in 'testdata' and 'vendor' subdirectories. For each file it
+// will scan for tokenMutations and gather all the mutants found.
 func (mu *Engine) Run(ctx context.Context) report.Results {
 	mu.mutantStream = make(chan mutator.Mutator)
 	go func() {
 		defer close(mu.mutantStream)
-		_ = fs.WalkDir(mu.fs, ".", func(path string, _ fs.DirEntry, _ error) error {
+		_ = fs.WalkDir(mu.fs, ".", func(path string, d fs.DirEntry, _ error) error {
+			// testdata and vendor directories are not part of the module's own
+			// source: testdata routinely holds intentionally-malformed Go fixtures
+			// and vendor holds third-party code.
+			if d != nil && d.IsDir() && (d.Name() == "testdata" || d.Name() == "vendor") {
+				return fs.SkipDir
+			}
+
 			isGoCode := filepath.Ext(path) == ".go" && !strings.HasSuffix(path, "_test.go")
 
 			if isGoCode && !mu.codeData.Exclusion.IsFileExcluded(path) {
@@ -121,10 +130,22 @@ func (mu *Engine) Run(ctx context.Context) report.Results {
 }
 
 func (mu *Engine) runOnFile(fileName string) {
-	src, _ := mu.fs.Open(fileName)
+	src, err := mu.fs.Open(fileName)
+	if err != nil {
+		log.Errorf("could not open %s, skipping: %v\n", fileName, err)
+		return
+	}
+	defer func() { _ = src.Close() }()
+
 	set := token.NewFileSet()
-	file, _ := parser.ParseFile(set, fileName, src, parser.ParseComments)
-	_ = src.Close()
+	file, err := parser.ParseFile(set, fileName, src, parser.ParseComments)
+	if file == nil {
+		// ParseFile normally returns a partial AST even when err is non-nil
+		// (recoverable syntax errors); a nil file means the source was too
+		// corrupted for go/ast to produce anything. Surface it and skip.
+		log.Errorf("could not parse %s, skipping: %v\n", fileName, err)
+		return
+	}
 
 	ast.Inspect(file, func(node ast.Node) bool {
 		n, ok := NewTokenNode(node)
