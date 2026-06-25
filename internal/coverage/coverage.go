@@ -150,7 +150,10 @@ func (c *Coverage) executeCoverage() (time.Duration, error) {
 		args = append(args, "-coverpkg", c.coverPkg)
 	}
 
-	args = append(args, "-cover", "-coverprofile", c.filePath(), c.scanPath())
+	// -count=1 defeats Go's test cache so the baseline reflects a real compile-and-run.
+	// A cached baseline returns in milliseconds, yielding mutant timeouts so low that
+	// every mutant spuriously times out.
+	args = append(args, "-count=1", "-cover", "-coverprofile", c.filePath(), c.scanPath())
 	cmd := c.cmdContext("go", args...)
 
 	start := time.Now()
