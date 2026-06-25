@@ -37,42 +37,42 @@ func TestGetTestArgs(t *testing.T) {
 		"should_not_include_tags_flag_when_build_tags_are_empty": {
 			testExecutionTime: 10 * time.Second,
 			pkg:               "example.com/my/package",
-			want:              []string{"test", "-timeout", "12s", "-failfast", "example.com/my/package"},
+			want:              []string{"test", "-timeout", "12s", "-failfast", "-count=1", "example.com/my/package"},
 		},
 		"should_include_tags_flag_when_build_tags_are_set": {
 			buildTags:         "tag1,tag2",
 			testExecutionTime: 10 * time.Second,
 			pkg:               "example.com/my/package",
-			want:              []string{"test", "-tags", "tag1,tag2", "-timeout", "12s", "-failfast", "example.com/my/package"},
+			want:              []string{"test", "-tags", "tag1,tag2", "-timeout", "12s", "-failfast", "-count=1", "example.com/my/package"},
 		},
 		"should_compute_timeout_as_two_seconds_plus_execution_time": {
 			testExecutionTime: 30 * time.Second,
 			pkg:               "example.com/my/package",
-			want:              []string{"test", "-timeout", "32s", "-failfast", "example.com/my/package"},
+			want:              []string{"test", "-timeout", "32s", "-failfast", "-count=1", "example.com/my/package"},
 		},
 		"should_not_include_cpu_flag_when_test_cpu_is_zero": {
 			testExecutionTime: 10 * time.Second,
 			testCPU:           0,
 			pkg:               "example.com/my/package",
-			want:              []string{"test", "-timeout", "12s", "-failfast", "example.com/my/package"},
+			want:              []string{"test", "-timeout", "12s", "-failfast", "-count=1", "example.com/my/package"},
 		},
 		"should_include_cpu_flag_when_test_cpu_is_nonzero": {
 			testExecutionTime: 10 * time.Second,
 			testCPU:           4,
 			pkg:               "example.com/my/package",
-			want:              []string{"test", "-timeout", "12s", "-failfast", "-cpu", "4", "example.com/my/package"},
+			want:              []string{"test", "-timeout", "12s", "-failfast", "-count=1", "-cpu", "4", "example.com/my/package"},
 		},
 		"should_use_package_path_when_integration_mode_is_disabled": {
 			testExecutionTime: 10 * time.Second,
 			integrationMode:   false,
 			pkg:               "example.com/my/package",
-			want:              []string{"test", "-timeout", "12s", "-failfast", "example.com/my/package"},
+			want:              []string{"test", "-timeout", "12s", "-failfast", "-count=1", "example.com/my/package"},
 		},
 		"should_use_dot_dot_dot_path_when_integration_mode_is_enabled": {
 			testExecutionTime: 10 * time.Second,
 			integrationMode:   true,
 			pkg:               "example.com/my/package",
-			want:              []string{"test", "-timeout", "12s", "-failfast", "./..."},
+			want:              []string{"test", "-timeout", "12s", "-failfast", "-count=1", "./..."},
 		},
 		"should_include_all_flags_when_all_options_are_configured": {
 			buildTags:         "integration",
@@ -80,7 +80,7 @@ func TestGetTestArgs(t *testing.T) {
 			testCPU:           2,
 			integrationMode:   true,
 			pkg:               "example.com/my/package",
-			want:              []string{"test", "-tags", "integration", "-timeout", "12s", "-failfast", "-cpu", "2", "./..."},
+			want:              []string{"test", "-tags", "integration", "-timeout", "12s", "-failfast", "-count=1", "-cpu", "2", "./..."},
 		},
 	}
 
@@ -97,6 +97,51 @@ func TestGetTestArgs(t *testing.T) {
 
 			if diff := cmp.Diff(tc.want, sut.getTestArgs(tc.pkg)); diff != "" {
 				t.Errorf("getTestArgs() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestOutputContainsFail(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		output string
+		want   bool
+	}{
+		"empty output returns false": {
+			output: "",
+			want:   false,
+		},
+		"ok output returns false": {
+			output: "ok  \texample.com/my/package\t0.123s\n",
+			want:   false,
+		},
+		"FAIL line returns true": {
+			output: "FAIL\texample.com/my/package\t0.456s\n",
+			want:   true,
+		},
+		"FAIL at start of line with leading whitespace returns true": {
+			output: "  FAIL\texample.com/my/package\t0.456s\n",
+			want:   true,
+		},
+		"mixed output with FAIL line returns true": {
+			output: "ok  \texample.com/other\t0.010s\nFAIL\texample.com/my/package\t0.456s\n",
+			want:   true,
+		},
+		"word containing FAIL but not at start returns false": {
+			output: "some text FAILURE here\n",
+			want:   false,
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			got := outputContainsFail(tc.output)
+			if got != tc.want {
+				t.Errorf("outputContainsFail(%q) = %v, want %v", tc.output, got, tc.want)
 			}
 		})
 	}

@@ -17,12 +17,14 @@
 package engine
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -210,6 +212,10 @@ func (m *mutantExecutor) runTests(rootDir, pkg string) mutator.Status {
 	cmd.Env = append(cmd.Env, os.Environ()...)
 	cmd.Env = append(cmd.Env, fmt.Sprintf("GOTMPDIR=%s", m.wdDealer.WorkDir()))
 
+	var buf bytes.Buffer
+	cmd.Stdout = &buf
+	cmd.Stderr = &buf
+
 	// Set up process group for killing entire process tree
 	setupProcessGroup(cmd)
 
@@ -223,6 +229,13 @@ func (m *mutantExecutor) runTests(rootDir, pkg string) mutator.Status {
 		return getTestFailedStatus(exitErr.ExitCode())
 	}
 
+	// Go 1.26 has a bug where `go test -failfast ./...` exits with code 0 even
+	// when a t.Parallel() test panics in a multi-package run. Scanning the output
+	// for a FAIL line catches these false-negative results.
+	if outputContainsFail(buf.String()) {
+		return mutator.Killed
+	}
+
 	return mutator.Lived
 }
 
@@ -234,8 +247,7 @@ func (m *mutantExecutor) getTestArgs(pkg string) []string {
 	// Here we add some seconds to the timeout to be sure it's gremlins that catches the test
 	// timeout and not the test itself. The timeout on the test prevents the test.* processes
 	// from hanging forever.
-	args = append(args, "-timeout", (2*time.Second + m.testExecutionTime).String())
-	args = append(args, "-failfast")
+	args = append(args, "-timeout", (2*time.Second + m.testExecutionTime).String(), "-failfast", "-count=1")
 
 	if m.testCPU != 0 {
 		args = append(args, "-cpu", fmt.Sprintf("%d", m.testCPU))
@@ -285,6 +297,16 @@ func run(ctx context.Context, cmd *exec.Cmd) error {
 		// Process completed normally
 		return err
 	}
+}
+
+func outputContainsFail(output string) bool {
+	for _, line := range strings.Split(output, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "FAIL") {
+			return true
+		}
+	}
+
+	return false
 }
 
 func getTestFailedStatus(exitCode int) mutator.Status {

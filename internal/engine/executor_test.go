@@ -151,6 +151,12 @@ func TestMutatorTestExecution(t *testing.T) {
 			mutantStatus:  mutator.Runnable,
 			wantMutStatus: mutator.NotViable,
 		},
+		{
+			name:          "if tests exit 0 but output contains FAIL then mutation is KILLED",
+			testResult:    fakeExecCommandZeroExitWithFAILOutput,
+			mutantStatus:  mutator.Runnable,
+			wantMutStatus: mutator.Killed,
+		},
 	}
 	for _, tc := range testCases {
 		tc := tc
@@ -308,7 +314,7 @@ func TestMutatorRun(t *testing.T) {
 			if tc.timeoutCoefficient != 0 {
 				wantTimeout = 2*time.Second + expectedTimeout*time.Duration(tc.timeoutCoefficient)
 			}
-			want := fmt.Sprintf("go test -tags %s -timeout %s -failfast %s", tc.tags, wantTimeout, tc.wantPath)
+			want := fmt.Sprintf("go test -tags %s -timeout %s -failfast -count=1 %s", tc.tags, wantTimeout, tc.wantPath)
 			got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
 
 			if !cmp.Equal(got, want) {
@@ -440,6 +446,14 @@ func TestProcessBuildFailure(_ *testing.T) {
 		return
 	}
 	os.Exit(2) // skipcq: RVV-A0003
+}
+
+func TestProcessZeroExitWithFAILOutput(_ *testing.T) {
+	if os.Getenv("GO_TEST_PROCESS") != "1" {
+		return
+	}
+	fmt.Fprintln(os.Stdout, "FAIL\texample.com/my/package\t0.456s")
+	os.Exit(0) // skipcq: RVV-A0003
 }
 
 func TestMutatorRunInTheCorrectFolder(t *testing.T) {
@@ -580,6 +594,13 @@ func fakeExecCommandTestsFailure(ctx context.Context, command string, args ...st
 
 func fakeExecCommandBuildFailure(ctx context.Context, command string, args ...string) *exec.Cmd {
 	cs := []string{"-test.run=TestProcessBuildFailure", "--", command}
+	cs = append(cs, args...)
+
+	return getCmd(ctx, cs)
+}
+
+func fakeExecCommandZeroExitWithFAILOutput(ctx context.Context, command string, args ...string) *exec.Cmd {
+	cs := []string{"-test.run=TestProcessZeroExitWithFAILOutput", "--", command}
 	cs = append(cs, args...)
 
 	return getCmd(ctx, cs)
