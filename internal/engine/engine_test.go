@@ -618,6 +618,32 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 	}
 }
 
+func TestSkipsTestdataAndVendorDirs(t *testing.T) {
+	t.Parallel()
+	f, _ := os.Open("testdata/fixtures/geq_go")
+	file, _ := io.ReadAll(f)
+
+	// Valid Go files that would yield mutants if walked; they must be skipped
+	// because they live under testdata/ and vendor/.
+	sys := fstest.MapFS{
+		"testdata/file.go":          {Data: file},
+		"vendor/example.com/lib.go": {Data: file},
+	}
+	mod := gomodule.GoModule{
+		Name:       "example.com",
+		Root:       ".",
+		CallingDir: ".",
+	}
+	viperSet(map[string]any{configuration.UnleashDryRunKey: true})
+	defer viperReset()
+	mut := engine.New(mod, engine.CodeData{}, newJobDealerStub(t), engine.WithDirFs(sys))
+	res := mut.Run(context.Background())
+
+	if got := res.Mutants; len(got) != 0 {
+		t.Errorf("expected files under testdata/ and vendor/ to be skipped, got %d mutants", len(got))
+	}
+}
+
 func TestDoesNotPanicOnUnparseableFile(t *testing.T) {
 	t.Parallel()
 	// A file that opens but cannot be read makes go/parser return a nil AST.

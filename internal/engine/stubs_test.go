@@ -21,6 +21,7 @@ import (
 	"go/token"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -73,7 +74,9 @@ func loadFixture(fixture, fromPackage string) (fstest.MapFS, gomodule.GoModule, 
 }
 
 func filenameFromFixture(fix string) string {
-	return strings.ReplaceAll(fix, "_go", ".go")
+	// Use only the base name so the in-memory fixture fs places the file at the
+	// module root rather than under a "testdata/" path, which Run now skips.
+	return strings.ReplaceAll(filepath.Base(fix), "_go", ".go")
 }
 
 type dealerStub struct {

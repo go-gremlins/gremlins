@@ -96,13 +96,21 @@ func WithDirFs(dirFS fs.FS) Option {
 
 // Run executes the mutation testing.
 //
-// It walks the fs.FS provided and checks every .go file which is not a test.
-// For each file it will scan for tokenMutations and gather all the mutants found.
+// It walks the fs.FS provided and checks every .go file which is not a test,
+// except for files in 'testdata' and 'vendor' subdirectories. For each file it
+// will scan for tokenMutations and gather all the mutants found.
 func (mu *Engine) Run(ctx context.Context) report.Results {
 	mu.mutantStream = make(chan mutator.Mutator)
 	go func() {
 		defer close(mu.mutantStream)
-		_ = fs.WalkDir(mu.fs, ".", func(path string, _ fs.DirEntry, _ error) error {
+		_ = fs.WalkDir(mu.fs, ".", func(path string, d fs.DirEntry, _ error) error {
+			// testdata and vendor directories are not part of the module's own
+			// source: testdata routinely holds intentionally-malformed Go fixtures
+			// and vendor holds third-party code.
+			if d != nil && d.IsDir() && (d.Name() == "testdata" || d.Name() == "vendor") {
+				return fs.SkipDir
+			}
+
 			isGoCode := filepath.Ext(path) == ".go" && !strings.HasSuffix(path, "_test.go")
 
 			if isGoCode && !mu.codeData.Exclusion.IsFileExcluded(path) {
