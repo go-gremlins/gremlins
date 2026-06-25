@@ -18,8 +18,10 @@ package engine_test
 
 import (
 	"context"
+	"errors"
 	"go/token"
 	"io"
+	"io/fs"
 	"os"
 	"testing"
 	"testing/fstest"
@@ -615,6 +617,52 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 		t.Errorf("should not receive results")
 	}
 }
+
+func TestDoesNotPanicOnUnparseableFile(t *testing.T) {
+	t.Parallel()
+	// A file that opens but cannot be read makes go/parser return a nil AST.
+	// Run must skip it instead of dereferencing the nil file (regression test
+	// for SIGSEGV in runOnFile).
+	sys := unreadableFS{
+		MapFS:   fstest.MapFS{"broken.go": {Data: []byte("package main\n")}},
+		failing: "broken.go",
+	}
+	mod := gomodule.GoModule{
+		Name:       "example.com",
+		Root:       ".",
+		CallingDir: ".",
+	}
+	viperSet(map[string]any{configuration.UnleashDryRunKey: true})
+	defer viperReset()
+	mut := engine.New(mod, engine.CodeData{}, newJobDealerStub(t), engine.WithDirFs(sys))
+
+	res := mut.Run(context.Background())
+
+	if got := res.Mutants; len(got) != 0 {
+		t.Errorf("expected unparseable file to be skipped, got %d mutants", len(got))
+	}
+}
+
+// unreadableFS wraps a MapFS but returns a file that errors on Read for the
+// named path, simulating a file go/parser cannot turn into an AST.
+type unreadableFS struct {
+	fstest.MapFS
+	failing string
+}
+
+func (u unreadableFS) Open(name string) (fs.File, error) {
+	if name == u.failing {
+		return unreadableFile{}, nil
+	}
+
+	return u.MapFS.Open(name)
+}
+
+type unreadableFile struct{}
+
+func (unreadableFile) Stat() (fs.FileInfo, error) { return nil, errors.New("stat failed") }
+func (unreadableFile) Read([]byte) (int, error)   { return 0, errors.New("read failed") }
+func (unreadableFile) Close() error               { return nil }
 
 func TestSkipNotDiffMutants(t *testing.T) {
 	t.Parallel()

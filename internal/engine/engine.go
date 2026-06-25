@@ -34,6 +34,7 @@ import (
 	"github.com/go-gremlins/gremlins/internal/diff"
 	"github.com/go-gremlins/gremlins/internal/engine/workerpool"
 	"github.com/go-gremlins/gremlins/internal/exclusion"
+	"github.com/go-gremlins/gremlins/internal/log"
 	"github.com/go-gremlins/gremlins/internal/mutator"
 	"github.com/go-gremlins/gremlins/internal/report"
 
@@ -121,10 +122,22 @@ func (mu *Engine) Run(ctx context.Context) report.Results {
 }
 
 func (mu *Engine) runOnFile(fileName string) {
-	src, _ := mu.fs.Open(fileName)
+	src, err := mu.fs.Open(fileName)
+	if err != nil {
+		log.Errorf("could not open %s, skipping: %v\n", fileName, err)
+		return
+	}
+	defer func() { _ = src.Close() }()
+
 	set := token.NewFileSet()
-	file, _ := parser.ParseFile(set, fileName, src, parser.ParseComments)
-	_ = src.Close()
+	file, err := parser.ParseFile(set, fileName, src, parser.ParseComments)
+	if file == nil {
+		// ParseFile normally returns a partial AST even when err is non-nil
+		// (recoverable syntax errors); a nil file means the source was too
+		// corrupted for go/ast to produce anything. Surface it and skip.
+		log.Errorf("could not parse %s, skipping: %v\n", fileName, err)
+		return
+	}
 
 	ast.Inspect(file, func(node ast.Node) bool {
 		n, ok := NewTokenNode(node)
