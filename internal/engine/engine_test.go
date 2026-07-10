@@ -632,9 +632,9 @@ func TestSkipNotDiffMutants(t *testing.T) {
 	viperSet(map[string]any{configuration.UnleashDryRunKey: true})
 	defer viperReset()
 
-	codeData := engine.CodeData{Diff: diff.Diff{
+	codeData := engine.CodeData{Diff: diff.FromChanges(map[diff.FileName][]diff.Change{
 		"file.go": nil,
-	}}
+	})}
 	mut := engine.New(mod, codeData, newJobDealerStub(t), engine.WithDirFs(sys))
 	res := mut.Run(context.Background())
 
@@ -645,6 +645,72 @@ func TestSkipNotDiffMutants(t *testing.T) {
 	for _, mutant := range res.Mutants {
 		if mutant.Status() != mutator.Skipped {
 			t.Errorf("all mutants should be skipped")
+		}
+	}
+}
+
+func TestSkipNotDiffMutants_Monorepo(t *testing.T) {
+	t.Parallel()
+	f, _ := os.Open("testdata/fixtures/geq_go")
+	file, _ := io.ReadAll(f)
+
+	sys := fstest.MapFS{
+		"main.go": {Data: file},
+	}
+	mod := gomodule.GoModule{
+		Name:       "example.com",
+		Root:       ".",
+		CallingDir: ".",
+	}
+	viperSet(map[string]any{configuration.UnleashDryRunKey: true})
+	defer viperReset()
+
+	codeData := engine.CodeData{Diff: diff.FromChanges(map[diff.FileName][]diff.Change{
+		"service-a/main.go": nil,
+	}).WithModuleRel("service-a")}
+	mut := engine.New(mod, codeData, newJobDealerStub(t), engine.WithDirFs(sys))
+	res := mut.Run(context.Background())
+
+	if got := res.Mutants; len(got) == 0 {
+		t.Errorf("should receive mutants")
+	}
+
+	for _, mutant := range res.Mutants {
+		if mutant.Status() != mutator.Skipped {
+			t.Errorf("all mutants should be skipped in monorepo mode")
+		}
+	}
+}
+
+func TestSkipNotDiffMutants_Monorepo_Match(t *testing.T) {
+	t.Parallel()
+	f, _ := os.Open("testdata/fixtures/geq_go")
+	file, _ := io.ReadAll(f)
+
+	sys := fstest.MapFS{
+		"main.go": {Data: file},
+	}
+	mod := gomodule.GoModule{
+		Name:       "example.com",
+		Root:       ".",
+		CallingDir: ".",
+	}
+	viperSet(map[string]any{configuration.UnleashDryRunKey: true})
+	defer viperReset()
+
+	codeData := engine.CodeData{Diff: diff.FromChanges(map[diff.FileName][]diff.Change{
+		"service-a/main.go": {{StartLine: 1, EndLine: 100}},
+	}).WithModuleRel("service-a")}
+	mut := engine.New(mod, codeData, newJobDealerStub(t), engine.WithDirFs(sys))
+	res := mut.Run(context.Background())
+
+	if got := res.Mutants; len(got) == 0 {
+		t.Errorf("should receive mutants")
+	}
+
+	for _, mutant := range res.Mutants {
+		if mutant.Status() == mutator.Skipped {
+			t.Errorf("mutants in changed monorepo file should not be skipped, got %v", mutant.Status())
 		}
 	}
 }
