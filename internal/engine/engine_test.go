@@ -53,6 +53,13 @@ func notCoveredPosition(fixture string) coverage.Result {
 	return coverage.Result{Profile: p, Elapsed: 10}
 }
 
+func coveredSwitchCaseBody(fixture string) coverage.Result {
+	fn := filenameFromFixture(fixture)
+	p := coverage.Profile{fn: {{StartLine: 5, EndLine: 6, StartCol: 26, EndCol: 11}}}
+
+	return coverage.Result{Profile: p, Elapsed: 10}
+}
+
 type mutationsTest struct {
 	name       string
 	fixture    string
@@ -60,6 +67,7 @@ type mutationsTest struct {
 	mutantType mutator.Type
 	token      token.Token
 	mutStatus  mutator.Status
+	line       int
 }
 
 var mutationsTests = []mutationsTest{
@@ -489,6 +497,32 @@ var mutationsTests = []mutationsTest{
 		token:      token.ILLEGAL,
 		covResult:  notCoveredPosition("testdata/fixtures/illegal_go"),
 	},
+	{
+		name:       "it runs mutations in constant expressions without direct coverage",
+		fixture:    "testdata/fixtures/const_add_go",
+		mutantType: mutator.ArithmeticBase,
+		token:      token.ADD,
+		mutStatus:  mutator.Runnable,
+		line:       3,
+	},
+	{
+		name:       "it runs mutations in predicates whose switch case body is covered",
+		fixture:    "testdata/fixtures/switch_cases_go",
+		mutantType: mutator.ConditionalsNegation,
+		token:      token.EQL,
+		covResult:  coveredSwitchCaseBody("testdata/fixtures/switch_cases_go"),
+		mutStatus:  mutator.Runnable,
+		line:       5,
+	},
+	{
+		name:       "it leaves predicates uncovered when their switch case body is uncovered",
+		fixture:    "testdata/fixtures/switch_cases_go",
+		mutantType: mutator.ConditionalsNegation,
+		token:      token.EQL,
+		covResult:  coveredSwitchCaseBody("testdata/fixtures/switch_cases_go"),
+		mutStatus:  mutator.NotCovered,
+		line:       7,
+	},
 }
 
 func TestMutations(t *testing.T) {
@@ -520,7 +554,8 @@ func TestMutations(t *testing.T) {
 			}
 
 			for _, g := range got {
-				if g.Type() == tc.mutantType && g.Status() == tc.mutStatus && g.Pos() > 0 {
+				lineMatches := tc.line == 0 || g.Position().Line == tc.line
+				if g.Type() == tc.mutantType && g.Status() == tc.mutStatus && g.Pos() > 0 && lineMatches {
 					// PASS
 					return
 				}

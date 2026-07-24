@@ -1,0 +1,3 @@
+package main
+
+const timeout = 10 + 5

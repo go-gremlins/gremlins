@@ -85,7 +85,11 @@ gremlins unleash -E "_(gen|wrap).go$" -E "^(generate|wrap)/" -E "internal/super_
 :material-flag: `--diff`/`-D` · :material-sign-direction: Default: empty
 
 Run tests only for mutants inside code changes between current state and git reference (branch or commit).
-The default is each mutant covered by tests.
+By default, Gremlins tests:
+
+- each mutant covered by tests;
+- each constant mutant;
+- each switch case condition whose body is covered.
 
 #### Branch merge base
 

@@ -32,7 +32,7 @@ catch their damage?
 ## Features
 
 - Discovers mutant candidates and tests them
-- Only tests mutants covered by tests
+- Tests covered mutants plus constants and conditions for covered switch cases
 - Can test mutants only in PR changes
 - Supports five mutant types
 - Yaml-based configuration

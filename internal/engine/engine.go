@@ -126,18 +126,25 @@ func (mu *Engine) runOnFile(fileName string) {
 	file, _ := parser.ParseFile(set, fileName, src, parser.ParseComments)
 	_ = src.Close()
 
+	var parents []ast.Node
 	ast.Inspect(file, func(node ast.Node) bool {
-		n, ok := NewTokenNode(node)
-		if !ok {
+		if node == nil {
+			parents = parents[:len(parents)-1]
+
 			return true
 		}
-		mu.findMutations(fileName, set, file, n)
+
+		n, ok := NewTokenNode(node)
+		if ok {
+			mu.findMutations(fileName, set, file, n, parents)
+		}
+		parents = append(parents, node)
 
 		return true
 	})
 }
 
-func (mu *Engine) findMutations(fileName string, set *token.FileSet, file *ast.File, node *NodeToken) {
+func (mu *Engine) findMutations(fileName string, set *token.FileSet, file *ast.File, node *NodeToken, parents []ast.Node) {
 	mutantTypes, ok := TokenMutantType[node.Tok()]
 	if !ok {
 		return
@@ -151,7 +158,7 @@ func (mu *Engine) findMutations(fileName string, set *token.FileSet, file *ast.F
 		mutantType := mt
 		tm := NewTokenMutant(pkg, set, file, node)
 		tm.SetType(mutantType)
-		tm.SetStatus(mu.mutationStatus(set.Position(node.TokPos)))
+		tm.SetStatus(mu.mutationStatus(set, node.TokPos, parents))
 
 		mu.mutantStream <- tm
 	}
@@ -185,18 +192,42 @@ func normalisePkgPath(pkg string) string {
 	return strings.ReplaceAll(pkg, sep, "/")
 }
 
-func (mu *Engine) mutationStatus(pos token.Position) mutator.Status {
+func (mu *Engine) mutationStatus(set *token.FileSet, pos token.Pos, parents []ast.Node) mutator.Status {
 	var status mutator.Status
+	position := set.Position(pos)
 
-	if mu.codeData.Cov.IsCovered(pos) {
+	if mu.codeData.Cov.IsCovered(position) || mu.isRunnableBySyntax(set, pos, parents) {
 		status = mutator.Runnable
 	}
 
-	if !mu.codeData.Diff.IsChanged(pos) {
+	if !mu.codeData.Diff.IsChanged(position) {
 		status = mutator.Skipped
 	}
 
 	return status
+}
+
+func (mu *Engine) isRunnableBySyntax(set *token.FileSet, pos token.Pos, parents []ast.Node) bool {
+	for i := len(parents) - 1; i >= 0; i-- {
+		switch parent := parents[i].(type) {
+		case *ast.GenDecl:
+			return parent.Tok == token.CONST
+		case *ast.CaseClause:
+			if pos >= parent.Colon {
+				return false
+			}
+
+			for _, statement := range parent.Body {
+				if mu.codeData.Cov.IsCovered(set.Position(statement.Pos())) {
+					return true
+				}
+			}
+
+			return false
+		}
+	}
+
+	return false
 }
 
 func (mu *Engine) executeTests(ctx context.Context) report.Results {

@@ -8,8 +8,9 @@ $ gremlins unleash #(1)
 
 1. If `unleash` is too long to type for you, you can use `run` or `r` which will do the same.
 
-Gremlins only tests mutations of parts of the code already covered by test cases. If a mutant is not covered, why bother
-testing? You already know it will not be caught. In any case, Gremlins will report which mutations aren't covered.
+Gremlins uses Go's coverage profile to avoid testing mutations in code that the test suite does not execute. It also
+tests mutations in constant declarations, which Go coverage cannot instrument, and switch case conditions whose case
+body is covered. Gremlins reports the remaining mutations as not covered.
 
 Gremlins will report each mutation as:
 

@@ -1,0 +1,12 @@
+package main
+
+func classify(value string) int {
+	switch {
+	case value == "covered":
+		return 1
+	case value == "uncovered":
+		return 2
+	default:
+		return 0
+	}
+}
