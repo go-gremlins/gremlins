@@ -30,7 +30,13 @@ func NewWithCmd[T execCmd](cmdContext func(name string, args ...string) T) (Diff
 
 	log.Infoln("Gathering files diff...")
 
-	cmd := cmdContext("git", "diff", "--merge-base", diffRef)
+	// --relative makes git emit paths relative to the current working directory
+	// rather than the repository root. gremlins runs from a Go module root, which
+	// in a monorepo is a repository subdirectory, and keys the diff by these paths
+	// to match the module-relative token.Position filenames it parses; without
+	// --relative the repo-root-relative keys never match and every mutant in a
+	// subdirectory module is skipped.
+	cmd := cmdContext("git", "diff", "--merge-base", diffRef, "--relative")
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
