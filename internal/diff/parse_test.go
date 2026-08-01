@@ -37,7 +37,7 @@ func TestNewWithCmd(t *testing.T) {
 			t.Fatal("cmd not called")
 		}
 
-		expectedArgs := []string{"diff", "--merge-base", "test"}
+		expectedArgs := []string{"diff", "--merge-base", "test", "--relative"}
 
 		if m.callName != "git" || !reflect.DeepEqual(m.callArgs, expectedArgs) {
 			t.Log("name", m.callName)
