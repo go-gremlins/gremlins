@@ -39,12 +39,34 @@ func newChanges(file *gitdiff.File) (FileName, []Change) {
 			continue
 		}
 
-		startLine := int(fragment.NewPosition + fragment.LeadingContext)
+		newLine := fragment.NewPosition
+		var current *Change
 
-		changes = append(changes, Change{
-			StartLine: startLine,
-			EndLine:   startLine + int(fragment.LinesAdded-1),
-		})
+		for _, line := range fragment.Lines {
+			switch line.Op {
+			case gitdiff.OpAdd:
+				if current == nil {
+					current = &Change{StartLine: int(newLine), EndLine: int(newLine)}
+				} else {
+					current.EndLine = int(newLine)
+				}
+				newLine++
+			case gitdiff.OpContext:
+				if current != nil {
+					changes = append(changes, *current)
+					current = nil
+				}
+				newLine++
+			case gitdiff.OpDelete:
+				// Deleted lines don't exist in the new file and don't close
+				// an open run: they can sit between two adds that together
+				// form one replacement region.
+			}
+		}
+
+		if current != nil {
+			changes = append(changes, *current)
+		}
 	}
 
 	return FileName(file.NewName), changes
