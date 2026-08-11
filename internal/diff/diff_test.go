@@ -96,6 +96,15 @@ func Test_newChanges(t *testing.T) {
 		fragment(21, 2),
 		fragment(44, 4),
 		fragment(231, 201),
+		multiRunFragment(600,
+			lineSegment{gitdiff.OpContext, 4},
+			lineSegment{gitdiff.OpDelete, 2},
+			lineSegment{gitdiff.OpAdd, 2},
+			lineSegment{gitdiff.OpContext, 3},
+			lineSegment{gitdiff.OpDelete, 2},
+			lineSegment{gitdiff.OpAdd, 3},
+			lineSegment{gitdiff.OpContext, 4},
+		),
 	}
 	file := &gitdiff.File{
 		NewName:       "test",
@@ -107,6 +116,8 @@ func Test_newChanges(t *testing.T) {
 		{StartLine: 25, EndLine: 26},
 		{StartLine: 48, EndLine: 51},
 		{StartLine: 235, EndLine: 435},
+		{StartLine: 604, EndLine: 605},
+		{StartLine: 609, EndLine: 611},
 	}
 
 	name, changes := newChanges(file)
@@ -118,6 +129,57 @@ func Test_newChanges(t *testing.T) {
 		t.Log("want", expect)
 		t.Log("got", changes)
 		t.Fatalf("unexpected newChanges result")
+	}
+}
+
+// lineSegment describes a run of lines sharing the same diff operation,
+// used to build fragments with more than one added-line run.
+type lineSegment struct {
+	op    gitdiff.LineOp
+	count int
+}
+
+// multiRunFragment builds a fragment from an arbitrary ordered sequence of
+// context/delete/add segments, unlike fragment which always places a single
+// delete run immediately before a single add run. It reproduces hunks where
+// git's context radius merges two separate, non-contiguous edits into one
+// fragment.
+func multiRunFragment(startLine int, segments ...lineSegment) *gitdiff.TextFragment {
+	var lines []gitdiff.Line
+
+	var added, deleted int64
+
+	for _, seg := range segments {
+		lines = append(lines, opLines(seg.op, seg.count)...)
+
+		switch seg.op {
+		case gitdiff.OpAdd:
+			added += int64(seg.count)
+		case gitdiff.OpDelete:
+			deleted += int64(seg.count)
+		case gitdiff.OpContext:
+		}
+	}
+
+	var leadingContext, trailingContext int64
+	if len(segments) > 0 && segments[0].op == gitdiff.OpContext {
+		leadingContext = int64(segments[0].count)
+	}
+
+	if len(segments) > 0 && segments[len(segments)-1].op == gitdiff.OpContext {
+		trailingContext = int64(segments[len(segments)-1].count)
+	}
+
+	line := int64(startLine)
+
+	return &gitdiff.TextFragment{
+		OldLines:        line - 1,
+		NewPosition:     line,
+		LinesAdded:      added,
+		LinesDeleted:    deleted,
+		LeadingContext:  leadingContext,
+		TrailingContext: trailingContext,
+		Lines:           lines,
 	}
 }
 
