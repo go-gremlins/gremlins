@@ -14,7 +14,7 @@ func TestNewWithCmd(t *testing.T) {
 	t.Run("must return nil on empty flag", func(t *testing.T) {
 		m := &mock{}
 
-		d, err := NewWithCmd(m.call)
+		d, err := NewWithCmd(m.call, ".")
 
 		if d != nil && err != nil {
 			t.Fatal("incorrect result")
@@ -28,7 +28,7 @@ func TestNewWithCmd(t *testing.T) {
 			outputErr: errors.New("test"),
 		}
 
-		_, err := NewWithCmd(m.call)
+		_, err := NewWithCmd(m.call, ".")
 		if err == nil {
 			t.Error("must return error")
 		}
@@ -37,7 +37,12 @@ func TestNewWithCmd(t *testing.T) {
 			t.Fatal("cmd not called")
 		}
 
-		expectedArgs := []string{"diff", "--merge-base", "test"}
+		// --relative is load-bearing, not cosmetic: without it git
+		// reports paths relative to the repository root while gremlins
+		// reports mutant positions relative to the module, so for a
+		// module in a subdirectory every lookup in Diff.IsChanged
+		// misses and every mutant is SKIPPED. That reads as a pass.
+		expectedArgs := []string{"-C", ".", "diff", "--relative", "--merge-base", "test"}
 
 		if m.callName != "git" || !reflect.DeepEqual(m.callArgs, expectedArgs) {
 			t.Log("name", m.callName)
@@ -53,7 +58,7 @@ func TestNewWithCmd(t *testing.T) {
 			output: []byte(testErrDiff),
 		}
 
-		_, err := NewWithCmd(m.call)
+		_, err := NewWithCmd(m.call, ".")
 		if err == nil {
 			t.Error("must return error")
 		}
@@ -70,7 +75,7 @@ func TestNewWithCmd(t *testing.T) {
 			"test/test": {{StartLine: 44, EndLine: 44}},
 		}
 
-		result, err := NewWithCmd(m.call)
+		result, err := NewWithCmd(m.call, ".")
 
 		if err != nil || !reflect.DeepEqual(result, expected) {
 			t.Log("err", err)
