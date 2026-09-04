@@ -192,11 +192,24 @@ func (mu *Engine) mutationStatus(pos token.Position) mutator.Status {
 		status = mutator.Runnable
 	}
 
-	if !mu.codeData.Diff.IsChanged(pos) {
+	diffPos := pos
+	diffPos.Filename = joinCallingDir(mu.module.CallingDir, pos.Filename)
+	if !mu.codeData.Diff.IsChanged(diffPos) {
 		status = mutator.Skipped
 	}
 
 	return status
+}
+
+// joinCallingDir returns the repo-root-relative path of a file found while
+// walking the CallingDir, so it can be looked up in the diff which is keyed
+// by repo-root-relative paths from git.
+func joinCallingDir(callingDir, filename string) string {
+	if callingDir == "" || callingDir == "." {
+		return filename
+	}
+
+	return filepath.ToSlash(filepath.Join(callingDir, filename))
 }
 
 func (mu *Engine) executeTests(ctx context.Context) report.Results {

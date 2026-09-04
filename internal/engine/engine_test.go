@@ -649,6 +649,81 @@ func TestSkipNotDiffMutants(t *testing.T) {
 	}
 }
 
+func TestDiffWithSubdirCallingDir(t *testing.T) {
+	t.Parallel()
+	f, _ := os.Open("testdata/fixtures/geq_go")
+	file, _ := io.ReadAll(f)
+	_ = f.Close()
+
+	const fileName = "file.go"
+
+	testCases := []struct {
+		name        string
+		callingDir  string
+		diff        diff.Diff
+		wantSkipped bool
+	}{
+		{
+			name:       "root-relative diff matches subdir walk",
+			callingDir: "internal/somepkg",
+			diff: diff.Diff{
+				"internal/somepkg/" + fileName: {{StartLine: 1, EndLine: 9}},
+			},
+			wantSkipped: false,
+		},
+		{
+			name:       "diff in another dir stays skipped",
+			callingDir: "internal/somepkg",
+			diff: diff.Diff{
+				"internal/other/" + fileName: {{StartLine: 1, EndLine: 9}},
+			},
+			wantSkipped: true,
+		},
+		{
+			name:       "root calling dir still matches",
+			callingDir: ".",
+			diff: diff.Diff{
+				fileName: {{StartLine: 1, EndLine: 9}},
+			},
+			wantSkipped: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			sys := fstest.MapFS{
+				fileName: {Data: file},
+			}
+			mod := gomodule.GoModule{
+				Name:       expectedModule,
+				Root:       ".",
+				CallingDir: tc.callingDir,
+			}
+			viperSet(map[string]any{configuration.UnleashDryRunKey: true})
+			defer viperReset()
+
+			codeData := engine.CodeData{Diff: tc.diff}
+			mut := engine.New(mod, codeData, newJobDealerStub(t), engine.WithDirFs(sys))
+			res := mut.Run(context.Background())
+
+			if got := res.Mutants; len(got) == 0 {
+				t.Fatalf("should receive mutants")
+			}
+
+			for _, mutant := range res.Mutants {
+				if tc.wantSkipped && mutant.Status() != mutator.Skipped {
+					t.Errorf("expected skipped mutant, got %v", mutant.Status())
+				}
+				if !tc.wantSkipped && mutant.Status() == mutator.Skipped {
+					t.Errorf("expected mutant not to be skipped")
+				}
+			}
+		})
+	}
+}
+
 func TestStopsOnCancel(t *testing.T) {
 	mapFS, mod, c := loadFixture(defaultFixture, ".")
 	defer c()

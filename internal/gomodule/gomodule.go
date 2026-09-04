@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // GoModule represents the current execution context in Gremlins.
@@ -47,12 +48,31 @@ func Init(path string) (GoModule, error) {
 		return GoModule{}, err
 	}
 	path, _ = filepath.Rel(root, path)
+	path = sanitizeCallingDir(path)
 
 	return GoModule{
 		Name:       mod,
 		Root:       root,
 		CallingDir: path,
 	}, nil
+}
+
+// sanitizeCallingDir normalizes the CallingDir to a clean directory path.
+// It strips Go package-pattern suffixes (e.g. "pkg/..." becomes "pkg") so
+// that downstream consumers (DirFS, coverage, diff lookup, workdir) receive
+// a real directory path.
+func sanitizeCallingDir(dir string) string {
+	dir = filepath.Clean(dir)
+	dir = strings.TrimSuffix(dir, string(filepath.Separator)+"...")
+	if dir == "..." {
+		dir = "."
+	}
+	dir = filepath.Clean(dir)
+	if dir == "" {
+		return "."
+	}
+
+	return dir
 }
 
 func modPkg(path string) (string, string, error) {

@@ -81,3 +81,64 @@ func TestDetectsModule(t *testing.T) {
 		}
 	})
 }
+
+func TestInitSanitizesCallingDir(t *testing.T) {
+	const modName = "example.com"
+	rootDir := t.TempDir()
+	pkgDir := filepath.Join("internal", "somepkg")
+	absPkgDir := filepath.Join(rootDir, pkgDir)
+	if err := os.MkdirAll(absPkgDir, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(rootDir, "go.mod"), []byte("module "+modName), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	testCases := []struct {
+		name string
+		path string
+		want string
+	}{
+		{
+			name: "clean subdir",
+			path: absPkgDir,
+			want: pkgDir,
+		},
+		{
+			name: "subdir with package pattern",
+			path: absPkgDir + string(filepath.Separator) + "...",
+			want: pkgDir,
+		},
+		{
+			name: "nested pattern is stripped",
+			path: filepath.Join(rootDir, "internal", "somepkg", "..."),
+			want: pkgDir,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mod, err := gomodule.Init(tc.path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if mod.CallingDir != tc.want {
+				t.Errorf("expected CallingDir to be %q, got %q", tc.want, mod.CallingDir)
+			}
+		})
+	}
+
+	t.Run("name ending with dots is preserved", func(t *testing.T) {
+		dotDir := filepath.Join(rootDir, "foo...")
+		if err := os.MkdirAll(dotDir, 0o750); err != nil {
+			t.Fatal(err)
+		}
+		mod, err := gomodule.Init(dotDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if mod.CallingDir != "foo..." {
+			t.Errorf("expected CallingDir to be %q, got %q", "foo...", mod.CallingDir)
+		}
+	})
+}
