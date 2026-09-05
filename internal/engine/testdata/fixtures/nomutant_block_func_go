@@ -1,0 +1,11 @@
+package main
+
+//nomutant
+func suppressed() int {
+	a := 1 + 2
+	return a
+}
+
+func notSuppressed() int {
+	return 3 + 4
+}

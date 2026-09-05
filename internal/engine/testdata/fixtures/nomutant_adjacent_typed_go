@@ -1,0 +1,8 @@
+package main
+
+func main() {
+	a := 1 + 2 //nomutant:arithmetic-base
+	b := 3 + 4 //nomutant:invert-bitwise
+	_ = a
+	_ = b
+}

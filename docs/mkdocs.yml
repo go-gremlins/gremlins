@@ -49,6 +49,7 @@ nav:
             - usage/commands/unleash/index.md
             - usage/commands/unleash/workers.md
       - usage/configuration.md
+      - usage/nomutant-directive.md
       - Mutations:
           - usage/mutations/index.md
           - usage/mutations/arithmetic_base.md
