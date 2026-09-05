@@ -53,6 +53,12 @@ type Coverage struct {
 	buildTags       string
 	coverPkg        string
 	integrationMode bool
+
+	// When profilePath is set, Run parses that pre-computed profile instead
+	// of gathering coverage itself, and reports profileElapsed as the test
+	// suite duration.
+	profilePath    string
+	profileElapsed string
 }
 
 // Option for the Coverage initialization.
@@ -71,6 +77,8 @@ func NewWithCmd(cmdContext execContext, workdir string, mod gomodule.GoModule, o
 	buildTags := configuration.Get[string](configuration.UnleashTagsKey)
 	coverPkg := configuration.Get[string](configuration.UnleashCoverPkgKey)
 	integrationMode := configuration.Get[bool](configuration.UnleashIntegrationMode)
+	profilePath := configuration.Get[string](configuration.UnleashCoverageProfileKey)
+	profileElapsed := configuration.Get[string](configuration.UnleashCoverageElapsedKey)
 
 	c := &Coverage{
 		cmdContext:      cmdContext,
@@ -81,6 +89,8 @@ func NewWithCmd(cmdContext execContext, workdir string, mod gomodule.GoModule, o
 		buildTags:       buildTags,
 		coverPkg:        coverPkg,
 		integrationMode: integrationMode,
+		profilePath:     profilePath,
+		profileElapsed:  profileElapsed,
 	}
 	for _, opt := range opts {
 		c = opt(c)
@@ -95,6 +105,9 @@ func NewWithCmd(cmdContext execContext, workdir string, mod gomodule.GoModule, o
 // This is done to avoid that the download phase impacts the execution time which
 // is later used as timeout for the mutant testing execution.
 func (c *Coverage) Run() (Result, error) {
+	if c.profilePath != "" {
+		return c.runFromProfile()
+	}
 	log.Infof("Gathering coverage... ")
 	_ = os.Chdir(c.mod.Root)
 	if err := c.downloadModules(); err != nil {
@@ -113,8 +126,57 @@ func (c *Coverage) Run() (Result, error) {
 	return Result{Profile: profile, Elapsed: elapsed}, nil
 }
 
+// runFromProfile parses a pre-computed coverage profile instead of gathering
+// one. Gathering coverage means running the whole test suite, which a caller
+// that has just run it themselves would be paying for twice.
+//
+// The elapsed time cannot be measured in this mode, so the caller must supply
+// the duration of the run that produced the profile: it is the baseline for
+// the per-mutant timeout, and guessing it low turns KILLED mutants into
+// spurious TIMED OUT ones.
+func (c *Coverage) runFromProfile() (Result, error) {
+	elapsed, err := time.ParseDuration(c.profileElapsed)
+	if err != nil {
+		return Result{}, fmt.Errorf("coverage profile %q needs the duration of the test run that produced it: %w",
+			c.profilePath, err)
+	}
+	if elapsed <= 0 {
+		return Result{}, fmt.Errorf("coverage profile %q needs a positive duration for the test run that produced it, got %s",
+			c.profilePath, elapsed)
+	}
+
+	// Resolved before the chdir below, so a relative path is relative to the
+	// directory Gremlins was invoked from rather than the module root.
+	path, err := filepath.Abs(c.profilePath)
+	if err != nil {
+		return Result{}, fmt.Errorf("impossible to resolve the coverage profile path: %w", err)
+	}
+
+	log.Infof("Reusing coverage profile %s (test run took %s)\n", c.profilePath, elapsed)
+	_ = os.Chdir(c.mod.Root)
+	// Still needed: the profile spares us the coverage run, not the mutant
+	// test runs, which build against the module dependencies.
+	if err := c.downloadModules(); err != nil {
+		return Result{}, fmt.Errorf("impossible to download modules: %w", err)
+	}
+
+	profile, err := c.profileFrom(path)
+	if err != nil {
+		return Result{}, fmt.Errorf("an error occurred while reading coverage profile %q: %w", c.profilePath, err)
+	}
+
+	return Result{Profile: profile, Elapsed: elapsed}, nil
+}
+
 func (c *Coverage) profile() (Profile, error) {
-	cf, err := os.Open(c.filePath())
+	return c.profileFrom(c.filePath())
+}
+
+func (c *Coverage) profileFrom(path string) (Profile, error) {
+	// The path is the one the caller named on --profile, or the profile Gremlins
+	// just wrote itself. Opening the file the user asked for is the feature.
+	//nolint:gosec // G304: the profile path comes from configuration, not from input
+	cf, err := os.Open(path)
 	defer func(cf *os.File) {
 		_ = cf.Close()
 	}(cf)

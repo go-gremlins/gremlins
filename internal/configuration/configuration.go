@@ -39,6 +39,8 @@ const (
 	UnleashOutputKey             = "unleash.output"
 	UnleashTagsKey               = "unleash.tags"
 	UnleashCoverPkgKey           = "unleash.coverpkg"
+	UnleashCoverageProfileKey    = "unleash.coverage-profile"
+	UnleashCoverageElapsedKey    = "unleash.coverage-elapsed"
 	UnleashWorkersKey            = "unleash.workers"
 	UnleashTestCPUKey            = "unleash.test-cpu"
 	UnleashTimeoutCoefficientKey = "unleash.timeout-coefficient"

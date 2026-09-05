@@ -50,6 +50,8 @@ const (
 	paramDiff               = "diff"
 	paramBuildTags          = "tags"
 	paramCoverPackages      = "coverpkg"
+	paramCoverageProfile    = "coverage-profile"
+	paramCoverageElapsed    = "coverage-elapsed"
 	paramDryRun             = "dry-run"
 	paramOutputStatuses     = "output-statuses"
 	paramOutputDiffStatuses = "output-diff-statuses"
@@ -211,6 +213,8 @@ func setFlagsOnCmd(cmd *cobra.Command) error {
 		{Name: paramOutputDiffStatuses, CfgKey: configuration.UnleashOutputDiffStatusesKey, DefaultV: "", Usage: "print diff for mutants with these statuses, allowed values - 'lk'"},
 		{Name: paramBuildTags, CfgKey: configuration.UnleashTagsKey, Shorthand: "t", DefaultV: "", Usage: "a comma-separated list of build tags"},
 		{Name: paramCoverPackages, CfgKey: configuration.UnleashCoverPkgKey, DefaultV: "", Usage: "a comma-separated list of package patterns"},
+		{Name: paramCoverageProfile, CfgKey: configuration.UnleashCoverageProfileKey, DefaultV: "", Usage: "reuse a pre-computed coverage profile instead of gathering coverage (requires --coverage-elapsed)"},
+		{Name: paramCoverageElapsed, CfgKey: configuration.UnleashCoverageElapsedKey, DefaultV: "", Usage: "how long the test run that produced --coverage-profile took, e.g. '2m42s'"},
 		{Name: paramDiff, CfgKey: configuration.UnleashDiffRef, Shorthand: "D", DefaultV: "", Usage: "diff branch or commit"},
 		{Name: paramOutput, CfgKey: configuration.UnleashOutputKey, Shorthand: "o", DefaultV: "", Usage: "set the output file for machine readable results"},
 		{Name: paramIntegrationMode, CfgKey: configuration.UnleashIntegrationMode, Shorthand: "i", DefaultV: false, Usage: "makes Gremlins run the complete test suite for each mutation"},

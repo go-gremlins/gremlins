@@ -61,6 +61,16 @@ func TestUnleash(t *testing.T) {
 			defValue: "true",
 		},
 		{
+			name:     "coverage-elapsed",
+			flagType: "string",
+			defValue: "",
+		},
+		{
+			name:     "coverage-profile",
+			flagType: "string",
+			defValue: "",
+		},
+		{
 			name:     "coverpkg",
 			flagType: "string",
 			defValue: "",

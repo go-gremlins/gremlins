@@ -60,6 +60,46 @@ The default is for each test to analyze only the package being tested.
 gremlins unleash --coverpkg "./internal/...,./pkg/..."
 ```
 
+### Coverage profile
+
+:material-flag: `--coverage-profile` · :material-sign-direction: Default: empty
+
+Reuses a pre-computed Go coverage profile instead of gathering coverage.
+
+Gremlins normally starts by running the whole test suite to find out which code
+is covered, since there is no point mutating code no test exercises. A caller
+that has just run that suite itself — a CI pipeline with its own coverage gate,
+for instance — is paying for it twice, and on a large suite the coverage run can
+cost more than the mutation testing that follows it.
+
+The profile must describe the current state of the source, so it is up to the
+caller to be sure it is fresh: Gremlins reads it as given. A stale profile
+silently mutates the wrong lines.
+
+Requires `--coverage-elapsed`.
+
+```shell
+go test ./... -coverprofile coverage.out -count=1
+gremlins unleash --coverage-profile coverage.out --coverage-elapsed 2m42s
+```
+
+### Coverage elapsed
+
+:material-flag: `--coverage-elapsed` · :material-sign-direction: Default: empty
+
+How long the test run that produced `--coverage-profile` took.
+
+Gremlins derives the per-mutant timeout from the duration of the coverage run
+(see [Timeout coefficient](#timeout-coefficient)), which it cannot measure when
+it did not perform that run. Supplying a duration far below the real one makes
+mutants that the tests do in fact kill get reported as `TIMED OUT` instead.
+
+The value is any Go duration string.
+
+```shell
+gremlins unleash --coverage-profile coverage.out --coverage-elapsed 90s
+```
+
 ### Exclude files
 
 :material-flag: `--exclude-files/-E` · :material-sign-direction: Default: empty

@@ -22,6 +22,7 @@ import (
 	"os/exec"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/spf13/viper"
@@ -238,4 +239,92 @@ func fakeExecCommandFailure(run int) execContext {
 
 		return cmd
 	}
+}
+
+func TestCoverageReusesProvidedProfile(t *testing.T) {
+	viper.Set(configuration.UnleashCoverageProfileKey, "testdata/valid/coverage")
+	viper.Set(configuration.UnleashCoverageElapsedKey, "2m42s")
+	defer viper.Reset()
+
+	holder := &commandHolder{}
+	mod := gomodule.GoModule{
+		Name:       "example.com",
+		Root:       ".",
+		CallingDir: "path",
+	}
+	cov := coverage.NewWithCmd(fakeExecCommandSuccess(holder), "workdir", mod)
+
+	got, err := cov.Run()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := coverage.Profile{
+		"file1.go": {
+			{StartLine: 47, StartCol: 2, EndLine: 48, EndCol: 16},
+		},
+		"file2.go": {
+			{StartLine: 52, StartCol: 2, EndLine: 53, EndCol: 16},
+		},
+	}
+	if !cmp.Equal(got.Profile, want) {
+		t.Error(cmp.Diff(got.Profile, want))
+	}
+	if wantElapsed := 2*time.Minute + 42*time.Second; got.Elapsed != wantElapsed {
+		t.Errorf("expected elapsed %v, got %v", wantElapsed, got.Elapsed)
+	}
+
+	// The whole point of the flag: the test suite must not be run again. Only
+	// the module download survives, since the mutant test runs still need it.
+	if len(holder.events) != 1 {
+		t.Fatalf("expected only 'go mod download' to be executed, got %d commands", len(holder.events))
+	}
+	if gotCmd := strings.Join(holder.events[0].args, " "); gotCmd != "mod download" {
+		t.Errorf("expected 'go mod download', got 'go %s'", gotCmd)
+	}
+}
+
+func TestCoverageProvidedProfileFails(t *testing.T) {
+	testCases := []struct {
+		name    string
+		profile string
+		elapsed string
+	}{
+		{name: "elapsed not set", profile: "testdata/valid/coverage", elapsed: ""},
+		{name: "elapsed not a duration", profile: "testdata/valid/coverage", elapsed: "ages"},
+		{name: "elapsed not positive", profile: "testdata/valid/coverage", elapsed: "0s"},
+		{name: "profile does not exist", profile: "testdata/valid/not-there", elapsed: "1s"},
+		{name: "profile not parseable", profile: "testdata/invalid/coverage", elapsed: "1s"},
+	}
+	mod := gomodule.GoModule{
+		Name:       "example.com",
+		Root:       ".",
+		CallingDir: "path",
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			viper.Set(configuration.UnleashCoverageProfileKey, tc.profile)
+			viper.Set(configuration.UnleashCoverageElapsedKey, tc.elapsed)
+			defer viper.Reset()
+
+			cov := coverage.NewWithCmd(fakeExecCommandSuccess(nil), "workdir", mod)
+
+			if _, err := cov.Run(); err == nil {
+				t.Error("expected run to report an error")
+			}
+		})
+	}
+
+	t.Run("go mod download fails", func(t *testing.T) {
+		viper.Set(configuration.UnleashCoverageProfileKey, "testdata/valid/coverage")
+		viper.Set(configuration.UnleashCoverageElapsedKey, "1s")
+		defer viper.Reset()
+
+		cov := coverage.NewWithCmd(fakeExecCommandFailure(0), "workdir", mod)
+
+		if _, err := cov.Run(); err == nil {
+			t.Error("expected run to report an error")
+		}
+	})
 }

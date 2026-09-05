@@ -37,6 +37,24 @@
             "./internal/log,./pkg/..."
           ]
         },
+        "coverage-profile": {
+          "title": "Coverage profile",
+          "description": "Reuse a pre-computed coverage profile instead of gathering coverage",
+          "type": "string",
+          "default": "",
+          "examples": [
+            "coverage.out"
+          ]
+        },
+        "coverage-elapsed": {
+          "title": "Coverage elapsed",
+          "description": "How long the test run that produced the coverage profile took",
+          "type": "string",
+          "default": "",
+          "examples": [
+            "2m42s"
+          ]
+        },
         "output": {
           "title": "Output",
           "description": "The output file for machine readable results",
