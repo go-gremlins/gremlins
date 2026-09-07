@@ -440,6 +440,72 @@ coefficient. For example:
 gremlins unleash --timeout-coefficient=10
 ```
 
+### Timeout max
+
+:material-flag: `--timeout-max` · :material-sign-direction:
+Default: `""` (no ceiling)
+
+An absolute ceiling on a single mutant's test RUN, as a Go duration. It caps
+the coefficient-derived timeout; it never raises it. It bounds only the run:
+compiling the mutated package is charged to `--compile-allowance` instead.
+
+The coefficient scales the timeout by how long the package's own tests take,
+which is unrelated to how much damage a mutant can do in that time. A mutant
+that inverts a loop-advance statement (`i++` → `i--`) inside a scanning loop
+that appends on every iteration never terminates and allocates until the
+machine runs out of memory. On a CI runner the OOM killer then reaps the
+runner agent itself and the job dies with no verdict at all. Because the
+coefficient hands the longest timeouts to the slowest-testing packages, those
+packages are the most exposed — which is backwards.
+
+This flag bounds that exposure independently of the baseline. Past the
+ceiling the mutant is killed and recorded as `TIMED OUT`, the honest verdict
+for a mutant that did not terminate.
+
+```shell
+gremlins unleash --timeout-max=15s
+```
+
+A malformed or non-positive value is reported on stderr and ignored, leaving
+the run with no ceiling.
+
+### Compile allowance
+
+:material-flag: `--compile-allowance` · :material-sign-direction:
+Default: `2m`
+
+How long a mutant is allowed to COMPILE, as a Go duration, on top of the bound
+on its test run.
+
+Compile time and run time scale with unrelated things: compile time with the
+size of the package and its dependency graph, run time with the test that
+adjudicates the mutant. Charging both to one number makes the slow-compiling
+packages the ones whose mutants time out — including mutants whose tests would
+have reached a verdict in milliseconds. So the two are bounded separately:
+`go test -timeout` gets the run bound, and a deadline of `run bound + compile
+allowance` covers compilation and the run together.
+
+That deadline is a backstop, not a second leash. No `-timeout` can bound a
+compile that has hung, because there is no test binary yet to enforce one, so
+something has to. A mutant killed by either bound is recorded `TIMED OUT`,
+which stays in the efficacy denominator and credits no test with a detection.
+
+```shell
+gremlins unleash --timeout-max=5s --compile-allowance=3m
+```
+
+A malformed or non-positive value is reported on stderr and ignored, leaving
+the default allowance in place.
+
+!!! note "Verdicts are read from the output, not the exit status"
+    `go test` reports a failing test, a package that does not build and a test
+    that ran past its `-timeout` all as exit status 1 — only the test *binary*
+    exits 2, and what Gremlins spawns is `go`. Gremlins therefore scans the
+    child's output to tell the three apart, so a timed-out mutant is recorded
+    `TIMED OUT` rather than credited as a detection, and a mutant that does not
+    compile is recorded `NOT VIABLE`. The output is scanned as it streams and
+    then discarded, so a mutant that prints without bound cannot exhaust memory.
+
 [//]: # (@formatter:off)
 !!! note "Result Consistency"
     You may observe small fluctuations in the number of
@@ -455,6 +521,26 @@ gremlins unleash --timeout-coefficient=10
     testing process. Large variations or progressive degradation would
     indicate an issue.
 [//]: # (@formatter:on)
+
+### On-shutdown status
+
+:material-flag: `--on-shutdown-status` · :material-sign-direction: Default: `not-run`
+
+Controls the `Status` recorded for mutants that were still in-flight when the run was cancelled
+(e.g. `SIGTERM` from a CI runner that hit its job timeout, or Ctrl-C from the terminal).
+
+Allowed values:
+
+- `not-run` (default) — record cancelled-in-flight mutants as `NOT COVERED`. Truthful: they were
+  never observed.
+- `timed-out` — record them as `TIMED OUT`. Useful if you want test-efficacy
+  (`KILLED / (KILLED + LIVED)`) to ignore them.
+- `lived` — legacy behaviour: record them as `LIVED`. Available for backwards compatibility,
+  but misleading — these mutants were not tested, so they should not be counted as survivors.
+
+```shell
+gremlins unleash --on-shutdown-status=timed-out
+```
 
 ### Workers
 

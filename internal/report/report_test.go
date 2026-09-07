@@ -67,7 +67,7 @@ func TestReport(t *testing.T) {
 				// Limit the time reporting to the first two units (millis are excluded)
 				testingLine +
 				"Killed: 1, Lived: 1, Not covered: 1\n" +
-				"Timed out: 1, Not viable: 1, Skipped: 1\n" +
+				"Timed out: 1, Run timed out: 0, Not viable: 1, Skipped: 1\n" +
 				"Test efficacy: 50.00%\n" +
 				"Mutator coverage: 66.67%\n",
 		},
@@ -80,7 +80,7 @@ func TestReport(t *testing.T) {
 				// Limit the time reporting to the first two units (millis are excluded)
 				testingLine +
 				"Killed: 0, Lived: 0, Not covered: 1\n" +
-				"Timed out: 0, Not viable: 0, Skipped: 0\n" +
+				"Timed out: 0, Run timed out: 0, Not viable: 0, Skipped: 0\n" +
 				"Test efficacy: 0.00%\n" +
 				coverageLine,
 		},
@@ -94,9 +94,30 @@ func TestReport(t *testing.T) {
 				// Limit the time reporting to the first two units (millis are excluded)
 				testingLine +
 				"Killed: 0, Lived: 0, Not covered: 0\n" +
-				"Timed out: 2, Not viable: 0, Skipped: 0\n" +
+				"Timed out: 2, Run timed out: 0, Not viable: 0, Skipped: 0\n" +
 				"Test efficacy: 0.00%\n" +
 				coverageLine,
+		},
+		{
+			// The two timeout kinds are counted apart, and NEITHER enters
+			// test_efficacy. gremlins records which bound claimed a mutant; it
+			// does not decide that a run-phase timeout is a detection, because
+			// that is a policy its consumers own. A run that changed this line's
+			// 50.00% would be gremlins taking that decision for them.
+			name: "reports a run-phase timeout apart from a backstop timeout",
+			mutants: []mutator.Mutator{
+				stubMutant{status: mutator.Killed, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+				stubMutant{status: mutator.Lived, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+				stubMutant{status: mutator.TimedOut, mutantType: mutator.ConditionalsBoundary, position: fakePosition},
+				stubMutant{status: mutator.RunTimedOut, mutantType: mutator.ConditionalsBoundary, position: fakePosition},
+				stubMutant{status: mutator.RunTimedOut, mutantType: mutator.IncrementDecrement, position: fakePosition},
+			},
+			want: "\n" +
+				testingLine +
+				"Killed: 1, Lived: 1, Not covered: 0\n" +
+				"Timed out: 1, Run timed out: 2, Not viable: 0, Skipped: 0\n" +
+				"Test efficacy: 50.00%\n" +
+				"Mutator coverage: 100.00%\n",
 		},
 		{
 			name:    "reports nothing if no result",
@@ -307,7 +328,7 @@ func TestMutantNoDiff(t *testing.T) {
 		}
 		report.Mutant(m)
 
-		want := "       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
+		want := "         LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
 		got := out.String()
 		if !cmp.Equal(got, want) {
 			t.Error(cmp.Diff(want, got))
@@ -377,7 +398,7 @@ func TestMutantDiff(t *testing.T) {
 				if errOut.Len() > 0 {
 					t.Errorf("unexpected error logged: %q", errOut.String())
 				}
-				want := "       -if x > y {\n       +if x >= y {\n          x = 10\n"
+				want := "         -if x > y {\n         +if x >= y {\n            x = 10\n"
 				got := out.String()
 				if !cmp.Equal(got, want) {
 					t.Error(cmp.Diff(want, got))
@@ -432,13 +453,13 @@ func TestMutantLog(t *testing.T) {
 	got := out.String()
 
 	want := "" +
-		"       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
-		"      KILLED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
-		" NOT COVERED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
-		"    RUNNABLE CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
-		"  NOT VIABLE CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
-		"   TIMED OUT CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
-		"     SKIPPED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
+		"         LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"        KILLED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"   NOT COVERED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"      RUNNABLE CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"    NOT VIABLE CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"     TIMED OUT CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"       SKIPPED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
 
 	if !cmp.Equal(got, want) {
 		t.Error(cmp.Diff(got, want))

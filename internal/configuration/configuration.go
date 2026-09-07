@@ -42,12 +42,15 @@ const (
 	UnleashWorkersKey            = "unleash.workers"
 	UnleashTestCPUKey            = "unleash.test-cpu"
 	UnleashTimeoutCoefficientKey = "unleash.timeout-coefficient"
+	UnleashTimeoutMaxKey         = "unleash.timeout-max"
+	UnleashCompileAllowanceKey   = "unleash.compile-allowance"
 	UnleashIntegrationMode       = "unleash.integration"
 	UnleashExcludeFiles          = "unleash.exclude-files"
 	UnleashDiffRef               = "unleash.diff"
 	UnleashThresholdEfficacyKey  = "unleash.threshold.efficacy"
 	UnleashThresholdMCoverageKey = "unleash.threshold.mutant-coverage"
 	UnleashOutputDiffStatusesKey = "unleash.output-diff-statuses"
+	UnleashOnShutdownStatusKey   = "unleash.on-shutdown-status"
 )
 
 const (

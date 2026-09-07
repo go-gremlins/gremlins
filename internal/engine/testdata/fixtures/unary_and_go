@@ -1,0 +1,9 @@
+package main
+
+type point struct {
+	x int
+}
+
+func main() {
+	_ = &point{x: 1}
+}

@@ -34,3 +34,12 @@ _Invert loop control_ will perform inversions on control operations, which means
         break
     }
     ```
+
+[//]: # (@formatter:off)
+!!! note "Only where the statement is legal"
+    `break` and `continue` are not interchangeable everywhere they both parse. A `break` inside a
+    `switch` that no loop encloses becomes a `continue` that is not in a loop; a `continue` that is
+    what keeps a `for {}` from terminating becomes a `break` that leaves the enclosing function
+    missing a return. Gremlins type-checks a candidate mutant before emitting it, so neither is
+    generated. See [about mutations](index.md#mutants-gremlins-does-not-generate).
+[//]: # (@formatter:on)

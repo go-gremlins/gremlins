@@ -52,6 +52,7 @@ type Engine struct {
 	mutantStream chan mutator.Mutator
 	module       gomodule.GoModule
 	logger       report.MutantLogger
+	viability    Viability
 }
 
 // CodeData is used to check if the mutant should be executed.
@@ -69,13 +70,17 @@ type Option func(m Engine) Engine
 // It gets a fs.FS on which to perform the analysis, a CodeData to
 // check if the mutants are executable and a sets of Option.
 func New(mod gomodule.GoModule, codeData CodeData, jDealer ExecutorDealer, opts ...Option) Engine {
-	dirFS := os.DirFS(filepath.Join(mod.Root, mod.CallingDir))
+	dir := filepath.Join(mod.Root, mod.CallingDir)
 	mut := Engine{
 		module:   mod,
 		jDealer:  jDealer,
 		codeData: codeData,
-		fs:       dirFS,
+		fs:       os.DirFS(dir),
 		logger:   report.NewLogger(),
+		viability: NewTypeViability(
+			dir,
+			configuration.Get[string](configuration.UnleashTagsKey),
+		),
 	}
 	for _, opt := range opts {
 		mut = opt(mut)
@@ -93,11 +98,30 @@ func WithDirFs(dirFS fs.FS) Option {
 	}
 }
 
+// WithViability overrides the Viability the Engine consults before emitting a
+// mutant. A nil Viability emits every mutant the token table maps, which is
+// what gremlins did before one existed; the gate in unary_mutation_test.go
+// uses it to show what the default checker is holding back.
+func WithViability(v Viability) Option {
+	return func(m Engine) Engine {
+		m.viability = v
+
+		return m
+	}
+}
+
 // Run executes the mutation testing.
 //
 // It walks the fs.FS provided and checks every .go file which is not a test.
 // For each file it will scan for tokenMutations and gather all the mutants found.
 func (mu *Engine) Run(ctx context.Context) report.Results {
+	// If the dealer is the standard MutantExecutorDealer, hand it the run
+	// context so that in-flight mutants can be marked correctly when the
+	// runner cancels (e.g. SIGTERM at job timeout) instead of falling
+	// through to the default Lived branch.
+	if d, ok := mu.jDealer.(*MutantExecutorDealer); ok {
+		d.SetRunCtx(ctx)
+	}
 	mu.mutantStream = make(chan mutator.Mutator)
 	go func() {
 		defer close(mu.mutantStream)
@@ -138,14 +162,18 @@ func (mu *Engine) runOnFile(fileName string) {
 }
 
 func (mu *Engine) findMutations(fileName string, set *token.FileSet, file *ast.File, node *NodeToken) {
-	mutantTypes, ok := TokenMutantType[node.Tok()]
+	mutantTypes, ok := MutantTypesFor(node)
 	if !ok {
 		return
 	}
 
 	pkg := mu.pkgName(fileName, file.Name.Name)
+	position := set.Position(node.TokPos)
 	for _, mt := range mutantTypes {
 		if !configuration.Get[bool](configuration.MutantTypeEnabledKey(mt)) {
+			continue
+		}
+		if !mu.viable(position, node.Tok(), mt) {
 			continue
 		}
 		mutantType := mt
@@ -155,6 +183,21 @@ func (mu *Engine) findMutations(fileName string, set *token.FileSet, file *ast.F
 
 		mu.mutantStream <- tm
 	}
+}
+
+// viable reports whether applying mt to tok at position yields legal Go. The
+// token table maps a token to the mutations that are MEANINGFUL for it; only
+// the source around it decides whether they are legal. See Viability.
+func (mu *Engine) viable(position token.Position, tok token.Token, mt mutator.Type) bool {
+	if mu.viability == nil {
+		return true
+	}
+	mutated, ok := tokenMutations[mt][tok]
+	if !ok {
+		return true
+	}
+
+	return mu.viability.Viable(position, mutated)
 }
 
 func (mu *Engine) pkgName(fileName, fPkg string) string {
