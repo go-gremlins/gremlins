@@ -675,13 +675,20 @@ func TestPackageDiscovery(t *testing.T) {
 			name:     "from root, normal mode",
 			fromPkg:  ".",
 			intMode:  false,
-			wantPath: "example.com",
+			wantPath: "example.com/testdata/fixtures",
 		},
 		{
 			name:     "from subpackage, normal mode",
 			fromPkg:  "testdata/main/fixture",
 			intMode:  false,
-			wantPath: "example.com/testdata/main",
+			wantPath: "example.com/testdata/main/fixture/testdata/fixtures",
+		},
+		{
+			// The fixture is `package main`: the import path is still the file's directory.
+			name:     "a main package under cmd",
+			fromPkg:  "cmd/app",
+			intMode:  false,
+			wantPath: "example.com/cmd/app/testdata/fixtures",
 		},
 	}
 	for _, tc := range testCases {
