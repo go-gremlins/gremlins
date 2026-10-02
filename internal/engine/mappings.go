@@ -91,7 +91,7 @@ var tokenMutations = map[mutator.Type]map[token.Token]token.Token{
 		token.ADD_ASSIGN: token.SUB_ASSIGN,
 		token.MUL_ASSIGN: token.QUO_ASSIGN,
 		token.QUO_ASSIGN: token.MUL_ASSIGN,
-		token.REM_ASSIGN: token.REM_ASSIGN,
+		token.REM_ASSIGN: token.MUL_ASSIGN,
 		token.SUB_ASSIGN: token.ADD_ASSIGN,
 	},
 	mutator.InvertBitwise: {
