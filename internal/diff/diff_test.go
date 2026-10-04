@@ -3,6 +3,7 @@ package diff
 import (
 	"go/token"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/bluekeyes/go-gitdiff/gitdiff"
@@ -159,4 +160,64 @@ func opLines(op gitdiff.LineOp, count int) []gitdiff.Line {
 	}
 
 	return result
+}
+
+// A fragment can hold MORE THAN ONE block of added lines, and git's default
+// three lines of context routinely merge an insertion and a nearby
+// modification into a single fragment. The patch below is real `git diff`
+// output, not hand-written: it adds lines 4 and 5, then modifies line 7.
+//
+// The pre-fix arithmetic (NewPosition+LeadingContext .. +LinesAdded-1) claimed
+// 4..6 for this fragment — it reported unchanged context line 6 as changed and
+// LOST line 7 entirely. Under --diff that silently exempts a genuinely changed
+// line from mutation testing, so the run reports zero mutants and passes.
+func TestNewChangesFindsEveryAddedBlockInAFragment(t *testing.T) {
+	const patch = `diff --git a/x.go b/x.go
+index 1986b66..840352b 100644
+--- a/x.go
++++ b/x.go
+@@ -1,6 +1,8 @@
+ ctxA
+ ctxB
+ ctxC
++added1
++added2
+ ctxD
+-old line
++new line
+ ctxE
+`
+
+	files, _, err := gitdiff.Parse(strings.NewReader(patch))
+	if err != nil {
+		t.Fatalf("parse patch: %v", err)
+	}
+
+	got := newDiff(files)
+
+	want := Diff{"x.go": {
+		{StartLine: 4, EndLine: 5},
+		{StartLine: 7, EndLine: 7},
+	}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("newDiff() = %v, want %v", got, want)
+	}
+
+	// Stated as positions too, because the range representation is an
+	// implementation detail and IsChanged is what the engine actually asks.
+	for _, tc := range []struct {
+		line int
+		want bool
+	}{
+		{3, false}, // context before the first block
+		{4, true},  // added1
+		{5, true},  // added2
+		{6, false}, // ctxD -- context BETWEEN the two blocks
+		{7, true},  // the modified line the old arithmetic lost
+		{8, false}, // context after
+	} {
+		if got := got.IsChanged(token.Position{Filename: "x.go", Line: tc.line}); got != tc.want {
+			t.Errorf("IsChanged(line %d) = %v, want %v", tc.line, got, tc.want)
+		}
+	}
 }
