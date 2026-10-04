@@ -23,6 +23,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sync"
 	"time"
 
@@ -213,6 +214,26 @@ func (m *mutantExecutor) runTests(rootDir, pkg string) mutator.Status {
 	// Set up process group for killing entire process tree
 	setupProcessGroup(cmd)
 
+	// go reports a test binary that died by signal in its OUTPUT and still exits 1,
+	// the same code an ordinary test failure uses, so the exit status alone would
+	// credit a destroyed run to the test suite. Capture the output to tell them apart.
+	//
+	// The capture goes to a file rather than an in-process buffer on purpose: os/exec
+	// hands a file descriptor straight to the child, where an io.Writer would make
+	// Wait block on a copier that a surviving grandchild can hold open.
+	outFile, ferr := os.CreateTemp(m.wdDealer.WorkDir(), "gremlins-test-output-")
+	if ferr != nil {
+		log.Errorf("failed to capture the test output of %s: %v\n", m.mutant.Position(), ferr)
+	} else {
+		defer func() {
+			name := outFile.Name()
+			_ = outFile.Close()
+			_ = os.Remove(name)
+		}()
+		cmd.Stdout = outFile
+		cmd.Stderr = outFile
+	}
+
 	err := run(ctx, cmd)
 
 	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
@@ -220,10 +241,65 @@ func (m *mutantExecutor) runTests(rootDir, pkg string) mutator.Status {
 	}
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
-		return getTestFailedStatus(exitErr.ExitCode())
+		status := getTestFailedStatus(exitErr.ExitCode())
+		if status == mutator.Killed && testBinaryTerminatedBySignal(testOutput(outFile)) {
+			log.Errorf("test run for %s reached no verdict: the test binary was terminated by a signal\n",
+				m.mutant.Position())
+
+			return mutator.Errored
+		}
+		if status == mutator.Errored {
+			// The error carries the signal name ("signal: killed"), which is the only
+			// thing that tells an OOM kill apart from a crash, and neither of them is
+			// visible in the status alone.
+			log.Errorf("test run for %s reached no verdict: %v\n", m.mutant.Position(), exitErr)
+		}
+
+		return status
 	}
 
 	return mutator.Lived
+}
+
+// maxCapturedOutput bounds how much of the test output is read back. What is
+// looked for there is written by go itself at the end of a failing package, and
+// a chatty suite can produce far more than is worth holding in memory.
+const maxCapturedOutput = 64 << 10
+
+// testOutput reads back the tail of what the test command wrote, or nil if the
+// output was never captured or cannot be read. Nil is the safe answer: it leaves
+// the exit code to speak for itself, which is the behaviour without a capture.
+func testOutput(f *os.File) []byte {
+	if f == nil {
+		return nil
+	}
+	info, err := f.Stat()
+	if err != nil {
+		return nil
+	}
+	offset := int64(0)
+	if info.Size() > maxCapturedOutput {
+		offset = info.Size() - maxCapturedOutput
+	}
+	buf := make([]byte, info.Size()-offset)
+	if _, err := f.ReadAt(buf, offset); err != nil {
+		return nil
+	}
+
+	return buf
+}
+
+// goSignalledTestBinary matches the two lines go writes when the test binary it
+// spawned was terminated by a signal: the reason, then the FAIL summary for the
+// package. The pairing is what makes the match evidence — a test that prints
+// "signal: something" of its own accord has not been killed.
+var goSignalledTestBinary = regexp.MustCompile(`(?m)^signal: [^\n]+\nFAIL\b`)
+
+// testBinaryTerminatedBySignal reports whether go said the test binary it ran was
+// terminated by a signal. There is no exit code for this — go uses 1, the code an
+// ordinary test failure uses — so its output is the only channel that carries it.
+func testBinaryTerminatedBySignal(output []byte) bool {
+	return goSignalledTestBinary.Match(output)
 }
 
 func (m *mutantExecutor) getTestArgs(pkg string) []string {
@@ -287,12 +363,22 @@ func run(ctx context.Context, cmd *exec.Cmd) error {
 	}
 }
 
+// getTestFailedStatus maps the exit of the test command to the status of the
+// mutant it was testing.
+//
+// A negative exit code is os/exec reporting a process that did not exit on its
+// own but was terminated by a signal — an OOM kill, most often, since a mutant
+// can turn ordinary code into an allocation bomb and a memory cap then kills the
+// test process. That run produced no verdict, so it is neither a mutant the
+// tests failed to kill nor one they killed.
 func getTestFailedStatus(exitCode int) mutator.Status {
-	switch exitCode {
-	case 1:
+	switch {
+	case exitCode == 1:
 		return mutator.Killed
-	case 2:
+	case exitCode == 2:
 		return mutator.NotViable
+	case exitCode < 0:
+		return mutator.Errored
 	default:
 		return mutator.Lived
 	}

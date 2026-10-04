@@ -27,6 +27,8 @@ func (e ErrorType) String() string {
 		return "below efficacy-threshold"
 	case MutantCoverageThreshold:
 		return "below mutant coverage-threshold"
+	case ErroredMutants:
+		return "test run reached no verdict for some mutants"
 	}
 	panic("this should not happen")
 }
@@ -38,11 +40,16 @@ const (
 	// MutantCoverageThreshold is the error type raised when mutant coverage is
 	// below threshold.
 	MutantCoverageThreshold
+
+	// ErroredMutants is the error type raised when the test run of at least one
+	// mutant was terminated by a signal, and so reached no verdict.
+	ErroredMutants
 )
 
 var errorMapping = map[ErrorType]int{
 	EfficacyThreshold:       10,
 	MutantCoverageThreshold: 11,
+	ErroredMutants:          12,
 }
 
 // ExitError is a special Error that is raised when special conditions require

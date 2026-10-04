@@ -151,6 +151,14 @@ func TestMutatorTestExecution(t *testing.T) {
 			mutantStatus:  mutator.Runnable,
 			wantMutStatus: mutator.NotViable,
 		},
+		{
+			// go exits 1 for this exactly as it does for a failing assertion, so the
+			// mutant would otherwise be credited to the test suite that never judged it.
+			name:          "if the test binary was signalled then mutation is ERRORED",
+			testResult:    fakeExecCommandSignalledTestBinary,
+			mutantStatus:  mutator.Runnable,
+			wantMutStatus: mutator.Errored,
+		},
 	}
 	for _, tc := range testCases {
 		tc := tc
@@ -442,6 +450,14 @@ func TestProcessBuildFailure(_ *testing.T) {
 	os.Exit(2) // skipcq: RVV-A0003
 }
 
+func TestProcessSignalledTestBinary(_ *testing.T) {
+	if os.Getenv("GO_TEST_PROCESS") != "1" {
+		return
+	}
+	fmt.Fprint(os.Stdout, "signal: killed\nFAIL\texample.com\t2.991s\nFAIL\n")
+	os.Exit(1) // skipcq: RVV-A0003
+}
+
 func TestMutatorRunInTheCorrectFolder(t *testing.T) {
 	t.Run("mutation should run in the correct folder", func(t *testing.T) {
 		callingDir := "test/dir"
@@ -573,6 +589,13 @@ func fakeExecCommandWithHolder(got *commandHolder, fakeCmd func(ctx context.Cont
 
 func fakeExecCommandTestsFailure(ctx context.Context, command string, args ...string) *exec.Cmd {
 	cs := []string{"-test.run=TestProcessTestsFailure", "--", command}
+	cs = append(cs, args...)
+
+	return getCmd(ctx, cs)
+}
+
+func fakeExecCommandSignalledTestBinary(ctx context.Context, command string, args ...string) *exec.Cmd {
+	cs := []string{"-test.run=TestProcessSignalledTestBinary", "--", command}
 	cs = append(cs, args...)
 
 	return getCmd(ctx, cs)

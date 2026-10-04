@@ -63,6 +63,7 @@ type reportStatus struct {
 	skipped    int
 	notViable  int
 	runnable   int
+	errored    int
 
 	mutatorStatistics internal.MutatorType
 
@@ -120,6 +121,8 @@ func reportMutationStatus(m mutator.Mutator, rep *reportStatus) {
 		rep.notViable++
 	case mutator.Runnable:
 		rep.runnable++
+	case mutator.Errored:
+		rep.errored++
 	}
 }
 
@@ -218,10 +221,11 @@ func (r *reportStatus) fullRunReport() {
 	notViable := fgHiBlack(r.notViable)
 	skipped := fgHiBlack(r.skipped)
 	notCovered := fgHiYellow(r.notCovered)
+	errored := fgRed(r.errored)
 	log.Infoln("")
 	log.Infof("Mutation testing completed in %s\n", r.elapsed.String())
 	log.Infof("Killed: %s, Lived: %s, Not covered: %s\n", killed, lived, notCovered)
-	log.Infof("Timed out: %s, Not viable: %s, Skipped: %s\n", timedOut, notViable, skipped)
+	log.Infof("Timed out: %s, Not viable: %s, Skipped: %s, Errored: %s\n", timedOut, notViable, skipped, errored)
 	log.Infof("Test efficacy: %.2f%%\n", r.tEfficacy)
 	log.Infof("Mutator coverage: %.2f%%\n", r.mCovered)
 }
@@ -229,6 +233,13 @@ func (r *reportStatus) fullRunReport() {
 func (r *reportStatus) assess(tEfficacy, rCoverage float64) error {
 	if r.isDryRun() {
 		return nil
+	}
+
+	// A mutant whose run reached no verdict is a failure of the measurement, not a
+	// property of the code under test, and the thresholds below were computed
+	// without it. A gate must not pass on numbers that are missing a mutant.
+	if r.errored > 0 {
+		return execution.NewExitErr(execution.ErroredMutants)
 	}
 
 	et := configuration.Get[float64](configuration.UnleashThresholdEfficacyKey)
@@ -283,6 +294,8 @@ func Mutant(m mutator.Mutator) {
 		status = fgGreen(m.Status())
 	case mutator.NotViable, mutator.Skipped:
 		status = fgHiBlack(m.Status())
+	case mutator.Errored:
+		status = fgRed(m.Status())
 	}
 	log.Infof("%s%s %s at %s\n", padding(m.Status()), status, m.Type(), m.Position())
 }

@@ -60,7 +60,7 @@ func (l MutantLogger) Mutant(m mutator.Mutator) {
 }
 
 // ParseFilter parses a status filter string into a Filter map.
-// Valid characters are 'lctkvsr' representing different mutation statuses.
+// Valid characters are 'lctkvsre' representing different mutation statuses.
 func ParseFilter(s string) (Filter, error) {
 	if s == "" {
 		return nil, nil
@@ -84,6 +84,8 @@ func ParseFilter(s string) (Filter, error) {
 			result[mutator.Skipped] = struct{}{}
 		case 'r':
 			result[mutator.Runnable] = struct{}{}
+		case 'e':
+			result[mutator.Errored] = struct{}{}
 		default:
 			return nil, ErrInvalidFilter
 		}

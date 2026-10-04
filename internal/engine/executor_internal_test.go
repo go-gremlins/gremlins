@@ -21,6 +21,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/go-gremlins/gremlins/internal/mutator"
 )
 
 func TestGetTestArgs(t *testing.T) {
@@ -97,6 +99,91 @@ func TestGetTestArgs(t *testing.T) {
 
 			if diff := cmp.Diff(tc.want, sut.getTestArgs(tc.pkg)); diff != "" {
 				t.Errorf("getTestArgs() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestGetTestFailedStatus(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		want     mutator.Status
+		exitCode int
+	}{
+		"a failing test suite killed the mutant": {
+			exitCode: 1,
+			want:     mutator.Killed,
+		},
+		"a build failure means the mutant is not viable": {
+			exitCode: 2,
+			want:     mutator.NotViable,
+		},
+		// os/exec reports a negative exit code for a process that did not exit on
+		// its own but was terminated by a signal — an OOM kill, for instance. That
+		// run reached no verdict, so it is neither a surviving mutant nor a killed
+		// one.
+		"a signal-terminated run reached no verdict": {
+			exitCode: -1,
+			want:     mutator.Errored,
+		},
+		"any other exit code leaves the mutant alive": {
+			exitCode: 3,
+			want:     mutator.Lived,
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			if got := getTestFailedStatus(tc.exitCode); got != tc.want {
+				t.Errorf("getTestFailedStatus(%d) = %s, want %s", tc.exitCode, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestTestBinaryTerminatedBySignal(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		output string
+		want   bool
+	}{
+		// This is what `go test` prints when the test binary it spawned was killed
+		// by a signal: the reason on its own line, then the ordinary FAIL summary,
+		// and an exit code of 1 that is indistinguishable from a failing assertion.
+		"go reports the test binary was signalled": {
+			output: "signal: killed\nFAIL\toomtest\t2.991s\nFAIL\n",
+			want:   true,
+		},
+		"a segmentation violation is reported the same way": {
+			output: "signal: segmentation fault\nFAIL\tpkg\t0.004s\nFAIL\n",
+			want:   true,
+		},
+		"an ordinary test failure is not": {
+			output: "--- FAIL: TestSomething (0.00s)\n    a_test.go:9: boom\nFAIL\npkg\t0.005s\nFAIL\n",
+			want:   false,
+		},
+		// A test that prints the words itself has not been signalled: the line only
+		// counts where go puts it, immediately before the FAIL summary.
+		"a test printing the words is not": {
+			output: "signal: this is test output\nok\tpkg\t0.005s\n",
+			want:   false,
+		},
+		"no output at all is not": {
+			output: "",
+			want:   false,
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			if got := testBinaryTerminatedBySignal([]byte(tc.output)); got != tc.want {
+				t.Errorf("testBinaryTerminatedBySignal() = %t, want %t", got, tc.want)
 			}
 		})
 	}
