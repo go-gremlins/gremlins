@@ -81,3 +81,54 @@ func TestDetectsModule(t *testing.T) {
 		}
 	})
 }
+
+// TestPackagePatternsBecomeDirectories pins the reason sanitizeCallingDir
+// exists: a `/...` suffix is a Go package pattern, and every consumer of
+// CallingDir wants a directory. Stored verbatim, `./...` made the walk look for
+// a directory named "...", find nothing, and report a passing run that examined
+// no mutants at all.
+func TestPackagePatternsBecomeDirectories(t *testing.T) {
+	const modName = "example.com"
+
+	rootDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(rootDir, "go.mod"), []byte("module "+modName), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(rootDir, "pkgDir"), 0750); err != nil {
+		t.Fatal(err)
+	}
+
+	testCases := map[string]struct {
+		path string
+		want string
+	}{
+		"a bare pattern at the module root is the root": {
+			path: filepath.Join(rootDir, "..."),
+			want: ".",
+		},
+		"a pattern under a package is that package": {
+			path: filepath.Join(rootDir, "pkgDir", "..."),
+			want: "pkgDir",
+		},
+		"a plain package directory is unchanged": {
+			path: filepath.Join(rootDir, "pkgDir"),
+			want: "pkgDir",
+		},
+		"the module root itself is unchanged": {
+			path: rootDir,
+			want: ".",
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			mod, err := gomodule.Init(tc.path)
+			if err != nil {
+				t.Fatalf("Init(%q): %v", tc.path, err)
+			}
+			if mod.CallingDir != tc.want {
+				t.Errorf("Init(%q).CallingDir = %q, want %q", tc.path, mod.CallingDir, tc.want)
+			}
+		})
+	}
+}

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // GoModule represents the current execution context in Gremlins.
@@ -47,12 +48,38 @@ func Init(path string) (GoModule, error) {
 		return GoModule{}, err
 	}
 	path, _ = filepath.Rel(root, path)
+	path = sanitizeCallingDir(path)
 
 	return GoModule{
 		Name:       mod,
 		Root:       root,
 		CallingDir: path,
 	}, nil
+}
+
+// sanitizeCallingDir turns a target as a caller may type it into the real
+// directory every consumer of CallingDir needs.
+//
+// `./...` and `./pkg/...` are Go package patterns, not directories, and the
+// pattern used to be stored verbatim. Everything downstream then looked for a
+// directory named "...": the fs.FS walk found no files, so no mutants were
+// generated, so the run reported "No results to report." and exited 0. A gate
+// that examines nothing and passes is the failure mode worth naming here —
+// measured before this change, `gremlins unleash ./...` from a module root did
+// exactly that, while `./pkg/...` became "./pkg/.../..." and at least failed
+// loudly in the coverage gather.
+func sanitizeCallingDir(dir string) string {
+	dir = filepath.Clean(dir)
+	dir = strings.TrimSuffix(dir, string(filepath.Separator)+"...")
+	if dir == "..." {
+		dir = "."
+	}
+	dir = filepath.Clean(dir)
+	if dir == "" {
+		return "."
+	}
+
+	return dir
 }
 
 func modPkg(path string) (string, string, error) {
