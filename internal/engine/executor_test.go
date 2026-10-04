@@ -531,7 +531,13 @@ func fakeExecCommandSuccess(ctx context.Context, command string, args ...string)
 	cs = append(cs, args...)
 	// #nosec G204 G702 - We are in tests, we don't care
 	cmd := exec.CommandContext(ctx, os.Args[0], cs...)
-	cmd.Env = []string{"GO_TEST_PROCESS=1"}
+	// ThreadSanitizer sleeps for a second on the way out of every
+	// race-instrumented process, so that a race in a thread still finishing is
+	// still reported. A helper process is a stand-in that prints a fixed answer
+	// and exits, and a suite starts many of them; there is nothing here for the
+	// sleep to catch, and paying it turns a seconds-long package into a
+	// minutes-long one under -race.
+	cmd.Env = []string{"GO_TEST_PROCESS=1", "GORACE=atexit_sleep_ms=0"}
 
 	return cmd
 }
@@ -588,7 +594,13 @@ func fakeExecCommandBuildFailure(ctx context.Context, command string, args ...st
 func getCmd(ctx context.Context, cs []string) *exec.Cmd {
 	// #nosec G204 G702 - We are in tests, we don't care
 	cmd := exec.CommandContext(ctx, os.Args[0], cs...)
-	cmd.Env = []string{"GO_TEST_PROCESS=1"}
+	// ThreadSanitizer sleeps for a second on the way out of every
+	// race-instrumented process, so that a race in a thread still finishing is
+	// still reported. A helper process is a stand-in that prints a fixed answer
+	// and exits, and a suite starts many of them; there is nothing here for the
+	// sleep to catch, and paying it turns a seconds-long package into a
+	// minutes-long one under -race.
+	cmd.Env = []string{"GO_TEST_PROCESS=1", "GORACE=atexit_sleep_ms=0"}
 
 	return cmd
 }
