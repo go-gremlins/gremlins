@@ -142,7 +142,12 @@ func (c *Coverage) downloadModules() error {
 }
 
 func (c *Coverage) executeCoverage() (time.Duration, error) {
-	args := []string{"test"}
+	// This run is timed, and its duration is what every mutant's timeout is derived
+	// from. Go's test cache is a result cache: it keeps the pass/fail answer and
+	// discards the duration, so without -count=1 every run after the first measures a
+	// cache replay instead of the suite. -count=1 is the same single pass as the
+	// default; naming it makes the run ineligible for the cache.
+	args := []string{"test", "-count=1"}
 	if c.buildTags != "" {
 		args = append(args, "-tags", c.buildTags)
 	}

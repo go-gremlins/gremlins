@@ -227,7 +227,9 @@ func (m *mutantExecutor) runTests(rootDir, pkg string) mutator.Status {
 }
 
 func (m *mutantExecutor) getTestArgs(pkg string) []string {
-	args := []string{"test"}
+	// A mutant must be judged by tests that actually ran against it, never by a cached
+	// result: -count=1 makes the run ineligible for Go's test cache.
+	args := []string{"test", "-count=1"}
 	if m.buildTags != "" {
 		args = append(args, "-tags", m.buildTags)
 	}
