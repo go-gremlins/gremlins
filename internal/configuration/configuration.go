@@ -24,6 +24,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
@@ -42,6 +43,8 @@ const (
 	UnleashWorkersKey            = "unleash.workers"
 	UnleashTestCPUKey            = "unleash.test-cpu"
 	UnleashTimeoutCoefficientKey = "unleash.timeout-coefficient"
+	// UnleashTimeoutMinKey is the floor under the per-mutant timeout.
+	UnleashTimeoutMinKey         = "unleash.timeout-min"
 	UnleashIntegrationMode       = "unleash.integration"
 	UnleashExcludeFiles          = "unleash.exclude-files"
 	UnleashDiffRef               = "unleash.diff"
@@ -187,6 +190,20 @@ func Get[T any](k string) T {
 	r, _ = viper.Get(k).(T)
 
 	return r
+}
+
+// GetDuration returns the configuration value for key k as a duration.
+//
+// It exists because Get relies on a type assertion over viper.Get, and a
+// duration does not survive that: a value bound from a pflag or read from a
+// YAML file arrives as a string ("1m0s"), so the assertion to time.Duration
+// fails and the caller silently gets zero. viper.GetDuration casts instead of
+// asserting, which is what a duration needs.
+func GetDuration(k string) time.Duration {
+	mutex.RLock()
+	defer mutex.RUnlock()
+
+	return viper.GetDuration(k)
 }
 
 // Reset is used mainly for testing purposes, in order to clean up the Viper

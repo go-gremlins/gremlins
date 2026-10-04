@@ -98,6 +98,25 @@ func NewExecutorDealer(mod gomodule.GoModule, wdd workdir.Dealer, elapsed time.D
 		baseTime = time.Second
 	}
 
+	// The floor under the whole product, not under the baseline.
+	//
+	// A mutant's cost has little to do with how long the healthy suite
+	// takes: a passing suite runs success paths, while a mutant pushes
+	// tests onto their failure paths, which are usually fixed waits —
+	// a poll with a deadline, a select on a timer — that the baseline
+	// never pays. So coefficient x elapsed gets TIGHTER as a package
+	// gets faster, and a fast package can end up with a bound no
+	// mutant can finish inside. Measured downstream: a suite that went
+	// from 6.3s to 543ms took 30 of 32 mutants from killed to timed
+	// out, none of them hung.
+	//
+	// Zero means unset, which leaves the previous behaviour exactly as
+	// it was.
+	timeout := baseTime * time.Duration(coefficient)
+	if floor := configuration.GetDuration(configuration.UnleashTimeoutMinKey); timeout < floor {
+		timeout = floor
+	}
+
 	jd := MutantExecutorDealer{
 		mod:               mod,
 		wdDealer:          wdd,
@@ -105,7 +124,7 @@ func NewExecutorDealer(mod gomodule.GoModule, wdd workdir.Dealer, elapsed time.D
 		dryRun:            dryRun,
 		integrationMode:   integrationMode,
 		testCPU:           testCPU,
-		testExecutionTime: baseTime * time.Duration(coefficient),
+		testExecutionTime: timeout,
 		execContext:       exec.CommandContext,
 	}
 

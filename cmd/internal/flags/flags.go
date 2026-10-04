@@ -18,6 +18,8 @@
 package flags
 
 import (
+	"time"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -62,6 +64,8 @@ func setFlags(flag *Flag, fs *pflag.FlagSet) error {
 		setFloat64(flag, fs, dv)
 	case []string:
 		setStringArray(flag, fs, dv)
+	case time.Duration:
+		setDuration(flag, fs, dv)
 	}
 	err := viper.BindPFlag(flag.CfgKey, fs.Lookup(flag.Name))
 	if err != nil {
@@ -69,6 +73,14 @@ func setFlags(flag *Flag, fs *pflag.FlagSet) error {
 	}
 
 	return nil
+}
+
+func setDuration(flag *Flag, flags *pflag.FlagSet, dv time.Duration) {
+	if flag.Shorthand != "" {
+		flags.DurationP(flag.Name, flag.Shorthand, dv, flag.Usage)
+	} else {
+		flags.Duration(flag.Name, dv, flag.Usage)
+	}
 }
 
 func setInt(flag *Flag, flags *pflag.FlagSet, dv int) {

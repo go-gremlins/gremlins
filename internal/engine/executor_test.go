@@ -235,6 +235,8 @@ func TestMutatorRun(t *testing.T) {
 		tags               string
 		wantPath           string
 		timeoutCoefficient int
+		timeoutMin         time.Duration
+		wantTimeoutMin     time.Duration
 		intMode            bool
 	}{
 		{
@@ -261,6 +263,31 @@ func TestMutatorRun(t *testing.T) {
 			tags:               "tag1,t1g2",
 			wantPath:           "example.com/my/package",
 		},
+		{
+			// The floor is under the product, not under the baseline: a
+			// suite fast enough that coefficient x elapsed is shorter
+			// than any mutant can finish in would otherwise report
+			// timeouts for mutants that terminate.
+			name:               "a timeout-min raises a bound the coefficient made too tight",
+			timeoutCoefficient: 1,
+			timeoutMin:         90 * time.Second,
+			wantTimeoutMin:     90 * time.Second,
+			pkg:                "example.com/my/package",
+			callDir:            "test/dir",
+			tags:               "tag1,t1g2",
+			wantPath:           "example.com/my/package",
+		},
+		{
+			// And it is a floor, not an override: a coefficient that
+			// already produces a longer bound keeps it.
+			name:               "a timeout-min below the coefficient's bound changes nothing",
+			timeoutCoefficient: 4,
+			timeoutMin:         time.Nanosecond,
+			pkg:                "example.com/my/package",
+			callDir:            "test/dir",
+			tags:               "tag1,t1g2",
+			wantPath:           "example.com/my/package",
+		},
 	}
 	for _, tc := range testCases {
 		tc := tc
@@ -271,6 +298,9 @@ func TestMutatorRun(t *testing.T) {
 			}
 			if tc.timeoutCoefficient != 0 {
 				settings[configuration.UnleashTimeoutCoefficientKey] = tc.timeoutCoefficient
+			}
+			if tc.timeoutMin != 0 {
+				settings[configuration.UnleashTimeoutMinKey] = tc.timeoutMin
 			}
 			viperSet(settings)
 			defer viperReset()
@@ -307,6 +337,9 @@ func TestMutatorRun(t *testing.T) {
 			wantTimeout := 2*time.Second + expectedTimeout*engine.DefaultTimeoutCoefficient
 			if tc.timeoutCoefficient != 0 {
 				wantTimeout = 2*time.Second + expectedTimeout*time.Duration(tc.timeoutCoefficient)
+			}
+			if tc.wantTimeoutMin != 0 {
+				wantTimeout = 2*time.Second + tc.wantTimeoutMin
 			}
 			want := fmt.Sprintf("go test -tags %s -timeout %s -failfast %s", tc.tags, wantTimeout, tc.wantPath)
 			got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))

@@ -17,6 +17,8 @@
 package flags
 
 import (
+	"time"
+
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -120,6 +122,24 @@ func TestSet(t *testing.T) {
 				CfgKey:    "test.cfg",
 				Shorthand: "t",
 				DefaultV:  []string{},
+				Usage:     "test usage",
+			},
+		},
+		{
+			flag: Flag{
+				Name:      "duration-flag-no-sh",
+				CfgKey:    "test.cfg",
+				Shorthand: "",
+				DefaultV:  time.Duration(0),
+				Usage:     "test usage",
+			},
+		},
+		{
+			flag: Flag{
+				Name:      "duration-flag-sh",
+				CfgKey:    "test.cfg",
+				Shorthand: "t",
+				DefaultV:  time.Duration(0),
 				Usage:     "test usage",
 			},
 		},
