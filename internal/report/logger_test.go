@@ -44,6 +44,12 @@ func Test_parseFilter(t *testing.T) {
 			},
 		},
 		{
+			filter: "e",
+			want: report.Filter{
+				mutator.Errored: struct{}{},
+			},
+		},
+		{
 			filter: "",
 		},
 		{

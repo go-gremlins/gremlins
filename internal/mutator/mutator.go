@@ -29,6 +29,9 @@ import "go/token"
 //     means the test suite is not effective in catching it.
 //   - Killed means that the TokenMutant has been tested and the tests failed, which
 //     means they are effective in covering this regression.
+//   - Errored means that the test run for the TokenMutant reached no verdict at
+//     all — the test command was terminated by a signal rather than exiting on
+//     its own — so the mutant was neither killed nor did it survive.
 type Status int
 
 // Currently supported MutantStatus.
@@ -40,6 +43,7 @@ const (
 	Killed
 	NotViable
 	TimedOut
+	Errored
 )
 
 func (ms Status) String() string {
@@ -58,6 +62,8 @@ func (ms Status) String() string {
 		return "NOT VIABLE"
 	case TimedOut:
 		return "TIMED OUT"
+	case Errored:
+		return "ERRORED"
 	default:
 		panic("this should not happen")
 	}

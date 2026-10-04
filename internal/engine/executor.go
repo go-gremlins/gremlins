@@ -220,7 +220,15 @@ func (m *mutantExecutor) runTests(rootDir, pkg string) mutator.Status {
 	}
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
-		return getTestFailedStatus(exitErr.ExitCode())
+		status := getTestFailedStatus(exitErr.ExitCode())
+		if status == mutator.Errored {
+			// The error carries the signal name ("signal: killed"), which is the only
+			// thing that tells an OOM kill apart from a crash, and neither of them is
+			// visible in the status alone.
+			log.Errorf("test run for %s reached no verdict: %v\n", m.mutant.Position(), exitErr)
+		}
+
+		return status
 	}
 
 	return mutator.Lived
@@ -287,12 +295,22 @@ func run(ctx context.Context, cmd *exec.Cmd) error {
 	}
 }
 
+// getTestFailedStatus maps the exit of the test command to the status of the
+// mutant it was testing.
+//
+// A negative exit code is os/exec reporting a process that did not exit on its
+// own but was terminated by a signal — an OOM kill, most often, since a mutant
+// can turn ordinary code into an allocation bomb and a memory cap then kills the
+// test process. That run produced no verdict, so it is neither a mutant the
+// tests failed to kill nor one they killed.
 func getTestFailedStatus(exitCode int) mutator.Status {
-	switch exitCode {
-	case 1:
+	switch {
+	case exitCode == 1:
 		return mutator.Killed
-	case 2:
+	case exitCode == 2:
 		return mutator.NotViable
+	case exitCode < 0:
+		return mutator.Errored
 	default:
 		return mutator.Lived
 	}

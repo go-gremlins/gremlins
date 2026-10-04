@@ -67,7 +67,7 @@ func TestReport(t *testing.T) {
 				// Limit the time reporting to the first two units (millis are excluded)
 				testingLine +
 				"Killed: 1, Lived: 1, Not covered: 1\n" +
-				"Timed out: 1, Not viable: 1, Skipped: 1\n" +
+				"Timed out: 1, Not viable: 1, Skipped: 1, Errored: 0\n" +
 				"Test efficacy: 50.00%\n" +
 				"Mutator coverage: 66.67%\n",
 		},
@@ -80,7 +80,7 @@ func TestReport(t *testing.T) {
 				// Limit the time reporting to the first two units (millis are excluded)
 				testingLine +
 				"Killed: 0, Lived: 0, Not covered: 1\n" +
-				"Timed out: 0, Not viable: 0, Skipped: 0\n" +
+				"Timed out: 0, Not viable: 0, Skipped: 0, Errored: 0\n" +
 				"Test efficacy: 0.00%\n" +
 				coverageLine,
 		},
@@ -94,9 +94,24 @@ func TestReport(t *testing.T) {
 				// Limit the time reporting to the first two units (millis are excluded)
 				testingLine +
 				"Killed: 0, Lived: 0, Not covered: 0\n" +
-				"Timed out: 2, Not viable: 0, Skipped: 0\n" +
+				"Timed out: 2, Not viable: 0, Skipped: 0, Errored: 0\n" +
 				"Test efficacy: 0.00%\n" +
 				coverageLine,
+		},
+		{
+			name: "an errored mutant is counted apart and left out of both denominators",
+			mutants: []mutator.Mutator{
+				stubMutant{status: mutator.Killed, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+				stubMutant{status: mutator.Lived, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+				stubMutant{status: mutator.Errored, mutantType: mutator.ConditionalsBoundary, position: fakePosition},
+			},
+			want: "\n" +
+				// Limit the time reporting to the first two units (millis are excluded)
+				testingLine +
+				"Killed: 1, Lived: 1, Not covered: 0\n" +
+				"Timed out: 0, Not viable: 0, Skipped: 0, Errored: 1\n" +
+				"Test efficacy: 50.00%\n" +
+				"Mutator coverage: 100.00%\n",
 		},
 		{
 			name:    "reports nothing if no result",
@@ -290,6 +305,58 @@ func TestAssessment(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAssessmentErroredMutants(t *testing.T) {
+	// A mutant whose test run reached no verdict is a failure of the measurement,
+	// not a property of the code under test, so the run must not pass on thresholds
+	// computed without it.
+	t.Run("a run with an errored mutant fails even when both thresholds are met", func(t *testing.T) {
+		log.Init(&bytes.Buffer{}, &bytes.Buffer{})
+		defer log.Reset()
+
+		viper.Set(configuration.UnleashThresholdEfficacyKey, float64(50))
+		viper.Set(configuration.UnleashThresholdMCoverageKey, float64(50))
+		defer viper.Reset()
+
+		data := report.Results{
+			Mutants: []mutator.Mutator{
+				stubMutant{status: mutator.Killed, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+				stubMutant{status: mutator.Errored, mutantType: mutator.ConditionalsBoundary, position: fakePosition},
+			},
+			Elapsed: 1 * time.Minute,
+		}
+
+		err := report.Do(data)
+
+		var exitErr *execution.ExitError
+		if !errors.As(err, &exitErr) {
+			t.Fatalf("expected an ExitError, got %v", err)
+		}
+		if exitErr.ExitCode() != 12 {
+			t.Errorf("want exit code 12, got %d", exitErr.ExitCode())
+		}
+	})
+
+	t.Run("a run with no errored mutant is assessed on the thresholds alone", func(t *testing.T) {
+		log.Init(&bytes.Buffer{}, &bytes.Buffer{})
+		defer log.Reset()
+
+		viper.Set(configuration.UnleashThresholdEfficacyKey, float64(50))
+		viper.Set(configuration.UnleashThresholdMCoverageKey, float64(50))
+		defer viper.Reset()
+
+		data := report.Results{
+			Mutants: []mutator.Mutator{
+				stubMutant{status: mutator.Killed, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+			},
+			Elapsed: 1 * time.Minute,
+		}
+
+		if err := report.Do(data); err != nil {
+			t.Errorf("expected no error, got %v", err)
+		}
+	})
 }
 
 func TestMutantNoDiff(t *testing.T) {

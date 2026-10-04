@@ -20,3 +20,6 @@ Gremlins will report each mutation as:
 - `TIMED OUT`: The tests timed out while testing the mutation: the mutation actually made the tests fail, but not
   explicitly.
 - `NOT VIABLE`: The mutation makes the build fail.
+- `ERRORED`: The test run reached no verdict, because the test command was terminated by a signal
+  rather than exiting on its own — an out-of-memory kill, for instance. The mutation was neither
+  caught nor missed, and a run reporting any of these exits non-zero.

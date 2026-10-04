@@ -21,6 +21,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/go-gremlins/gremlins/internal/mutator"
 )
 
 func TestGetTestArgs(t *testing.T) {
@@ -97,6 +99,46 @@ func TestGetTestArgs(t *testing.T) {
 
 			if diff := cmp.Diff(tc.want, sut.getTestArgs(tc.pkg)); diff != "" {
 				t.Errorf("getTestArgs() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestGetTestFailedStatus(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		want     mutator.Status
+		exitCode int
+	}{
+		"a failing test suite killed the mutant": {
+			exitCode: 1,
+			want:     mutator.Killed,
+		},
+		"a build failure means the mutant is not viable": {
+			exitCode: 2,
+			want:     mutator.NotViable,
+		},
+		// os/exec reports a negative exit code for a process that did not exit on
+		// its own but was terminated by a signal — an OOM kill, for instance. That
+		// run reached no verdict, so it is neither a surviving mutant nor a killed
+		// one.
+		"a signal-terminated run reached no verdict": {
+			exitCode: -1,
+			want:     mutator.Errored,
+		},
+		"any other exit code leaves the mutant alive": {
+			exitCode: 3,
+			want:     mutator.Lived,
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			if got := getTestFailedStatus(tc.exitCode); got != tc.want {
+				t.Errorf("getTestFailedStatus(%d) = %s, want %s", tc.exitCode, got, tc.want)
 			}
 		})
 	}
