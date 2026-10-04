@@ -18,11 +18,11 @@
 package gomodule
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"golang.org/x/mod/modfile"
 )
 
 // GoModule represents the current execution context in Gremlins.
@@ -58,21 +58,19 @@ func Init(path string) (GoModule, error) {
 func modPkg(path string) (string, string, error) {
 	root := findModuleRoot(path)
 	//nolint:gosec // root is internally determined, not user input
-	file, err := os.Open(root + "/go.mod")
-	defer func(file *os.File) {
-		_ = file.Close()
-	}(file)
+	data, err := os.ReadFile(filepath.Join(root, "go.mod"))
 	if err != nil {
 		return "", "", err
 	}
-	r := bufio.NewReader(file)
-	line, _, err := r.ReadLine()
-	if err != nil {
-		return "", "", err
+	// go.mod may carry comments and blank lines above the module directive,
+	// and the module path may be quoted, so parse it rather than reading
+	// the first line.
+	packageName := modfile.ModulePath(data)
+	if packageName == "" {
+		return "", "", fmt.Errorf("no module directive found in %s", filepath.Join(root, "go.mod"))
 	}
-	packageName := bytes.TrimPrefix(line, []byte("module "))
 
-	return string(packageName), root, nil
+	return packageName, root, nil
 }
 
 func findModuleRoot(path string) string {
