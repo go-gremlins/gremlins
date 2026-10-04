@@ -175,4 +175,11 @@ type Mutator interface {
 
 	// MutatedSnippet returns the mutated code snippet around the mutation point.
 	MutatedSnippet() []byte
+
+	// TestsRun returns the tests that were run against the Mutator, empty when
+	// the whole test suite of its package ran.
+	TestsRun() []string
+
+	// SetTestsRun records the tests that were run against the Mutator.
+	SetTestsRun(tests []string)
 }

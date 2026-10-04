@@ -136,6 +136,7 @@ type mutantStub struct {
 	mutType        mutator.Type
 	applyCalled    bool
 	rollbackCalled bool
+	testsRun       []string
 
 	hasApplyError bool
 }
@@ -197,4 +198,12 @@ func (*mutantStub) OrigSnippet() []byte {
 
 func (*mutantStub) MutatedSnippet() []byte {
 	return nil
+}
+
+func (m *mutantStub) TestsRun() []string {
+	return m.testsRun
+}
+
+func (m *mutantStub) SetTestsRun(tests []string) {
+	m.testsRun = tests
 }

@@ -211,3 +211,9 @@ func (fakeMutant) OrigSnippet() []byte {
 func (fakeMutant) MutatedSnippet() []byte {
 	panic("not used in test")
 }
+
+func (fakeMutant) TestsRun() []string {
+	return nil
+}
+
+func (fakeMutant) SetTestsRun([]string) {}

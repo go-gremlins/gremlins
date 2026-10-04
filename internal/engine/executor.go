@@ -20,13 +20,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go/token"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/go-gremlins/gremlins/internal/configuration"
+	"github.com/go-gremlins/gremlins/internal/coverage"
 	"github.com/go-gremlins/gremlins/internal/engine/workdir"
 	"github.com/go-gremlins/gremlins/internal/engine/workerpool"
 	"github.com/go-gremlins/gremlins/internal/gomodule"
@@ -54,11 +57,14 @@ type ExecutorDealer interface {
 type MutantExecutorDealer struct {
 	wdDealer          workdir.Dealer
 	execContext       execContext
+	testMap           TestSelector
+	dependents        DependentFinder
 	mod               gomodule.GoModule
 	buildTags         string
 	testExecutionTime time.Duration
 	dryRun            bool
 	integrationMode   bool
+	crossPackage      bool
 	testCPU           int
 }
 
@@ -74,11 +80,57 @@ func WithExecContext(c execContext) ExecutorDealerOption {
 	}
 }
 
+// TestSelector answers, for a position in the code, which tests execute it, and
+// whether a package's tests are known at all.
+//
+// It is the executor's whole view of the test map: an executor asks what covers
+// this mutant and whether it may trust the answer for this package, and nothing
+// else about how the map was built.
+type TestSelector interface {
+	// Mapped reports whether the tests of a package are known in full.
+	Mapped(pkg string) bool
+
+	// TestsFor returns the tests that execute the given position.
+	TestsFor(pos token.Position) []coverage.TestID
+}
+
+// DependentFinder answers which packages depend on a package, through their own
+// code or through their tests.
+//
+// It is what --cross-package needs and all it needs: which packages a mutation
+// could break is a question about imports, answerable statically, with no
+// coverage and no test runs.
+type DependentFinder interface {
+	Dependents(pkg string) []string
+}
+
+// WithDependents turns on cross-package testing: a mutant is tested against the
+// packages that depend on the one it is in, not only that one.
+func WithDependents(d DependentFinder) ExecutorDealerOption {
+	return func(m MutantExecutorDealer) MutantExecutorDealer {
+		m.dependents = d
+
+		return m
+	}
+}
+
+// WithTestSelection turns on test selection: instead of the whole suite of the
+// mutated package, each mutant runs the tests the selector says execute its
+// line, wherever those tests live.
+func WithTestSelection(sel TestSelector) ExecutorDealerOption {
+	return func(m MutantExecutorDealer) MutantExecutorDealer {
+		m.testMap = sel
+
+		return m
+	}
+}
+
 // NewExecutorDealer initialises a MutantExecutorDealer.
 func NewExecutorDealer(mod gomodule.GoModule, wdd workdir.Dealer, elapsed time.Duration, opts ...ExecutorDealerOption) *MutantExecutorDealer {
 	buildTags := configuration.Get[string](configuration.UnleashTagsKey)
 	dryRun := configuration.Get[bool](configuration.UnleashDryRunKey)
 	integrationMode := configuration.Get[bool](configuration.UnleashIntegrationMode)
+	crossPackage := configuration.Get[bool](configuration.UnleashCrossPackageKey)
 	testCPU := configuration.Get[int](configuration.UnleashTestCPUKey)
 	tCoefficient := configuration.Get[int](configuration.UnleashTimeoutCoefficientKey)
 
@@ -100,6 +152,7 @@ func NewExecutorDealer(mod gomodule.GoModule, wdd workdir.Dealer, elapsed time.D
 
 	jd := MutantExecutorDealer{
 		mod:               mod,
+		crossPackage:      crossPackage,
 		wdDealer:          wdd,
 		buildTags:         buildTags,
 		dryRun:            dryRun,
@@ -127,6 +180,9 @@ func (m MutantExecutorDealer) NewExecutor(mut mutator.Mutator, outCh chan<- muta
 		wg:                wg,
 		wdDealer:          m.wdDealer,
 		module:            m.mod,
+		testMap:           m.testMap,
+		dependents:        m.dependents,
+		crossPackage:      m.crossPackage,
 		dryRun:            m.dryRun,
 		integrationMode:   m.integrationMode,
 		buildTags:         m.buildTags,
@@ -142,6 +198,8 @@ type execContext = func(ctx context.Context, name string, args ...string) *exec.
 
 type mutantExecutor struct {
 	mutant            mutator.Mutator
+	testMap           TestSelector
+	dependents        DependentFinder
 	wdDealer          workdir.Dealer
 	outCh             chan<- mutator.Mutator
 	wg                *sync.WaitGroup
@@ -151,6 +209,7 @@ type mutantExecutor struct {
 	testExecutionTime time.Duration
 	dryRun            bool
 	integrationMode   bool
+	crossPackage      bool
 	testCPU           int
 }
 
@@ -198,11 +257,111 @@ func (m *mutantExecutor) Start(w *workerpool.Worker) {
 	m.outCh <- m.mutant
 }
 
+// testRun is the single `go test` invocation a mutant is judged by: the
+// packages to run, and which tests within them. An empty tests slice means
+// whole suites, which is what runs when there is no test selection.
+//
+// It is one invocation and not one per package on purpose. `go test` takes many
+// packages with one -run, builds them together, and most of what a mutant costs
+// is that build: measured on four packages of Rulewright's backend with a -run
+// matching nothing at all, four invocations took 4147ms against 2115ms for one.
+// The tests were never the expense; the invocations were.
+type testRun struct {
+	pkgs  []string
+	tests []string
+}
+
 func (m *mutantExecutor) runTests(rootDir, pkg string) mutator.Status {
 	ctx, cancel := context.WithTimeout(context.Background(), m.testExecutionTime)
 	defer cancel()
 
-	cmd := m.execContext(ctx, "go", m.getTestArgs(pkg)...)
+	return m.runTestCommand(ctx, rootDir, m.selectTests(pkg))
+}
+
+// selectTests decides what to run for the mutant, along two independent axes.
+//
+// Which PACKAGES: the mutated one, and with --cross-package the packages that
+// depend on it, because those are the ones a mutation can break. That is the
+// gap package scoping leaves — go-gremlins/gremlins#224, a LIVED verdict that
+// was correct for what it measured — and answering it needs nothing but the
+// import graph.
+//
+// Which TESTS within them: all of them, or with --test-selection only the ones
+// coverage says execute the mutated line. Narrowing inside a package it was
+// already going to build and pay fixtures for cannot cost more than not
+// narrowing; measured on Rulewright's backend it is 24% of the test executions.
+//
+// The two compose: neither flag is today's behaviour, both together is the
+// narrowest run that still sees the callers.
+//
+// Every path that cannot answer confidently widens rather than narrows, to the
+// whole suites of the packages it settled on: never wrong, only slow.
+func (m *mutantExecutor) selectTests(pkg string) testRun {
+	pkgs := []string{pkg}
+	if m.crossPackage {
+		pkgs = append(pkgs, m.dependents.Dependents(pkg)...)
+	}
+	wholeSuites := testRun{pkgs: pkgs}
+	if m.testMap == nil || m.integrationMode {
+		return wholeSuites
+	}
+	// A package the map could not see whole might hold the very test that kills
+	// this mutant, and skipping it would turn a killed mutant into a LIVED one.
+	if !m.testMap.Mapped(pkg) {
+		return wholeSuites
+	}
+	tests := within(m.testMap.TestsFor(m.mutant.Position()), pkgs)
+	if len(tests) == 0 {
+		// An uncovered mutant never reaches here, so an empty answer means the
+		// map is incomplete — coverage is not always deterministic — rather than
+		// that no test exercises the line.
+		return wholeSuites
+	}
+
+	var sel testRun
+	seenPkg := make(map[string]struct{}, len(tests))
+	seenName := make(map[string]struct{}, len(tests))
+	names := make([]string, 0, len(tests))
+	for _, id := range tests {
+		if _, ok := seenPkg[id.Pkg]; !ok {
+			seenPkg[id.Pkg] = struct{}{}
+			sel.pkgs = append(sel.pkgs, id.Pkg)
+		}
+		// The -run pattern applies to every package listed, so a name shared by
+		// two packages runs in both even where only one covers the line. That
+		// runs more tests than strictly needed, never fewer, so it can only cost
+		// time — and it saves an invocation per package, which costs more.
+		if _, ok := seenName[id.Name]; !ok {
+			seenName[id.Name] = struct{}{}
+			sel.tests = append(sel.tests, id.Name)
+		}
+		names = append(names, id.String())
+	}
+	m.mutant.SetTestsRun(names)
+
+	return sel
+}
+
+// within keeps the tests that live in one of the packages being run. Tests
+// outside them are not this run's business: without --cross-package that means
+// the mutated package alone, and with it the packages that depend on it.
+func within(tests []coverage.TestID, pkgs []string) []coverage.TestID {
+	in := make(map[string]struct{}, len(pkgs))
+	for _, p := range pkgs {
+		in[p] = struct{}{}
+	}
+	kept := tests[:0:0]
+	for _, id := range tests {
+		if _, ok := in[id.Pkg]; ok {
+			kept = append(kept, id)
+		}
+	}
+
+	return kept
+}
+
+func (m *mutantExecutor) runTestCommand(ctx context.Context, rootDir string, sel testRun) mutator.Status {
+	cmd := m.execContext(ctx, "go", m.getTestArgs(sel)...)
 	cmd.Dir = m.mutant.Workdir()
 	if m.integrationMode {
 		cmd.Dir = rootDir
@@ -226,7 +385,7 @@ func (m *mutantExecutor) runTests(rootDir, pkg string) mutator.Status {
 	return mutator.Lived
 }
 
-func (m *mutantExecutor) getTestArgs(pkg string) []string {
+func (m *mutantExecutor) getTestArgs(sel testRun) []string {
 	args := []string{"test"}
 	if m.buildTags != "" {
 		args = append(args, "-tags", m.buildTags)
@@ -241,13 +400,17 @@ func (m *mutantExecutor) getTestArgs(pkg string) []string {
 		args = append(args, "-cpu", fmt.Sprintf("%d", m.testCPU))
 	}
 
-	path := pkg
-	if m.integrationMode {
-		path = "./..."
+	// An empty selection is the whole suite: no -run at all, exactly the command
+	// that runs without selection.
+	if len(sel.tests) > 0 {
+		args = append(args, "-run", "^("+strings.Join(sel.tests, "|")+")$")
 	}
-	args = append(args, path)
 
-	return args
+	if m.integrationMode {
+		return append(args, "./...")
+	}
+
+	return append(args, sel.pkgs...)
 }
 
 func run(ctx context.Context, cmd *exec.Cmd) error {

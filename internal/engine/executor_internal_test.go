@@ -32,6 +32,7 @@ func TestGetTestArgs(t *testing.T) {
 		testCPU           int
 		integrationMode   bool
 		pkg               string
+		tests             []string
 		want              []string
 	}{
 		"should_not_include_tags_flag_when_build_tags_are_empty": {
@@ -82,6 +83,19 @@ func TestGetTestArgs(t *testing.T) {
 			pkg:               "example.com/my/package",
 			want:              []string{"test", "-tags", "integration", "-timeout", "12s", "-failfast", "-cpu", "2", "./..."},
 		},
+		"should_run_only_the_selected_tests_when_the_map_named_them": {
+			testExecutionTime: 10 * time.Second,
+			pkg:               "example.com/my/package",
+			tests:             []string{"TestOne", "TestTwo"},
+			want: []string{"test", "-timeout", "12s", "-failfast",
+				"-run", "^(TestOne|TestTwo)$", "example.com/my/package"},
+		},
+		"should_run_the_whole_suite_when_no_test_was_selected": {
+			testExecutionTime: 10 * time.Second,
+			pkg:               "example.com/my/package",
+			tests:             []string{},
+			want:              []string{"test", "-timeout", "12s", "-failfast", "example.com/my/package"},
+		},
 	}
 
 	for name, tc := range testCases {
@@ -95,7 +109,8 @@ func TestGetTestArgs(t *testing.T) {
 				integrationMode:   tc.integrationMode,
 			}
 
-			if diff := cmp.Diff(tc.want, sut.getTestArgs(tc.pkg)); diff != "" {
+			sel := testRun{pkgs: []string{tc.pkg}, tests: tc.tests}
+			if diff := cmp.Diff(tc.want, sut.getTestArgs(sel)); diff != "" {
 				t.Errorf("getTestArgs() mismatch (-want +got):\n%s", diff)
 			}
 		})
