@@ -230,6 +230,13 @@ example if you are analysing integration or E2E tests. In this scenario, you can
 However, you should be aware that integration mode is generally much slower, and you can also get
 slightly different results depending on your test suite.
 
+[//]: # (@formatter:off)
+!!! tip
+    If what you want is the cross-package tests and not the whole suite,
+    [test selection](#test-selection) runs exactly the tests that execute the mutated line,
+    wherever they live, instead of every test in the module.
+[//]: # (@formatter:on)
+
 ```shell
 gremlins unleash --integration
 ```
@@ -385,6 +392,92 @@ This flag overrides the number of CPUs the Go test tool will utilize. By default
 ```shell
 gremlins unleash --test-cpu=1
 ```
+
+### Test selection
+
+:material-flag: `--test-selection` · :material-sign-direction: Default: `false`
+
+By default Gremlins runs every test in the package where the mutant is. Package membership is a
+guess at which tests could notice a mutation; coverage is the answer. With this flag Gremlins
+runs only the tests **of that package** that actually execute the mutated line.
+
+This cannot cost more than not using it. The package is the same one, so its test binary was
+being built and its fixtures paid for either way; the only difference is that fewer of its tests
+run. Measured on a module of 450 mutants, it performed 24% of the test executions the whole-suite
+behaviour did.
+
+When a mutant survives, the report names the tests that ran against it:
+
+```
+       LIVED CONDITIONALS_BOUNDARY at vm/vm.go:6:10
+         not caught by: example.com/vm.TestSize, example.com/vm.TestClamp
+```
+
+The map that makes this possible cannot be read out of a coverage profile, because Go's profile
+does not record which test executed a block. Gremlins builds it by running each test on its own
+with coverage over the whole module, which costs one process per test — but only once. The map is
+cached between runs, under `gremlins/testmap` in your user cache directory, keyed per module and
+per checkout. A package is re-mapped only when the build ID of its test binary changes, which is
+Go's own hash over that package's source *and* every dependency's. On an unchanged tree the map
+costs one compile per package and no test runs at all.
+
+```shell
+gremlins unleash --test-selection
+```
+
+[//]: # (@formatter:off)
+!!! warning
+    The build ID cannot see state outside the build. A test whose coverage depends on a database,
+    a clock, or the network can map differently on two runs of the same binary, and the cache
+    holds that for longer than a single run would. Delete the cache directory to force a full
+    re-map.
+[//]: # (@formatter:on)
+
+[//]: # (@formatter:off)
+!!! note
+    Selection is only ever used where the map is complete. If a package's tests cannot all be
+    mapped — one of them fails to run, for instance — that package runs its whole suite, which is
+    the behaviour without the flag. The same happens for a mutant the map has nothing to say
+    about, and in `--integration` mode, where the whole module runs for every mutant by design.
+[//]: # (@formatter:on)
+
+### Cross package
+
+:material-flag: `--cross-package` · :material-sign-direction: Default: `false`
+
+Tests a mutant against the packages that **depend on** the one it is in, not only that one. A
+mutation can only break a package that uses the mutated code, so those are the packages worth
+running — and package scoping never runs them, which is how a mutant your suite does catch gets
+reported as surviving. That is
+[go-gremlins/gremlins#224](https://github.com/go-gremlins/gremlins/issues/224), where a
+maintainer filed a bug against a `LIVED` verdict that was correct for what it had measured.
+
+It needs no coverage map and no mapping phase. Which packages a change could break is a question
+about imports, and one `go list` answers it — including packages whose *tests* import the mutated
+one, which exercise it even when their own code does not.
+
+```shell
+gremlins unleash --cross-package
+```
+
+It is off by default because it is not free: the packages it adds are recompiled by the mutation,
+and each pays its own test fixtures. On a module of 450 mutants the mutant phase went from 15.4 to
+22.4 minutes, and the widest runs exhausted a 3 GB memory cap.
+
+### Combining the two
+
+The flags are independent and compose:
+
+| flags | what runs for a mutant in P |
+|---|---|
+| neither | P's whole test suite |
+| `--test-selection` | P's covering tests |
+| `--cross-package` | whole suites of P and of every package that depends on P |
+| both | covering tests in P and in P's dependents |
+
+`--test-selection` alone maps only the packages being mutated, and records each test against its
+own package's code. Adding `--cross-package` widens the map to the whole module, because a test
+that kills the mutant may be anywhere — which is what makes that combination the expensive one.
 
 ### Threshold efficacy
 

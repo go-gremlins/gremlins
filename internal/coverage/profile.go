@@ -18,6 +18,8 @@ package coverage
 
 import (
 	"go/token"
+	"path"
+	"path/filepath"
 )
 
 // Profile is implemented as a map holding a slice of Block per each filename.
@@ -39,6 +41,47 @@ func (p Profile) IsCovered(pos token.Position) bool {
 	}
 
 	return false
+}
+
+// ProfilePosition translates a mutant's position into the name a Profile records
+// it under.
+//
+// The two disagree only about where the path starts. A mutant is located by
+// walking the directory Gremlins was pointed at, so its file is named from
+// there; a profile names a file from the module root, so that what it records
+// means the same thing in every run. They coincide whenever Gremlins is pointed
+// at the module root, which is why a scoped run is the only place this shows up.
+func ProfilePosition(callingDir string, pos token.Position) token.Position {
+	dir := path.Clean(filepath.ToSlash(callingDir))
+	if dir == "" || dir == "." {
+		return pos
+	}
+	pos.Filename = path.Join(dir, pos.Filename)
+
+	return pos
+}
+
+// Merge returns a Profile covering every block any of the given profiles covers,
+// keeping each block once.
+func Merge(profiles ...Profile) Profile {
+	seen := make(map[string]map[Block]struct{})
+	merged := make(Profile)
+	for _, profile := range profiles {
+		for file, blocks := range profile {
+			if _, ok := seen[file]; !ok {
+				seen[file] = make(map[Block]struct{})
+			}
+			for _, b := range blocks {
+				if _, dup := seen[file][b]; dup {
+					continue
+				}
+				seen[file][b] = struct{}{}
+				merged[file] = append(merged[file], b)
+			}
+		}
+	}
+
+	return merged
 }
 
 // Block holds the start and end coordinates of a section of a source file

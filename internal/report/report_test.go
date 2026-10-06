@@ -566,6 +566,7 @@ type stubMutant struct {
 	mutantType     mutator.Type
 	originSnippet  []byte
 	mutatedSnippet []byte
+	testsRun       []string
 }
 
 func (s stubMutant) Type() mutator.Type {
@@ -618,4 +619,60 @@ func (s stubMutant) OrigSnippet() []byte {
 
 func (s stubMutant) MutatedSnippet() []byte {
 	return s.mutatedSnippet
+}
+
+func (s stubMutant) TestsRun() []string {
+	return s.testsRun
+}
+
+func (stubMutant) SetTestsRun([]string) {}
+
+func TestMutantLogNamesTheTestsASurvivingMutantSurvived(t *testing.T) {
+	testCases := map[string]struct {
+		status   mutator.Status
+		testsRun []string
+		want     string
+	}{
+		"a surviving mutant says what did not catch it": {
+			status:   mutator.Lived,
+			testsRun: []string{"example.com.TestRange", "example.com/vm.TestSize"},
+			want: "       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+				"         not caught by: example.com.TestRange, example.com/vm.TestSize\n",
+		},
+		// The whole suite ran, so there is no shorter answer than "your tests".
+		"nothing is added when the whole suite ran": {
+			status: mutator.Lived,
+			want:   "       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n",
+		},
+		"a killed mutant needs no account of what caught it": {
+			status:   mutator.Killed,
+			testsRun: []string{"example.com.TestRange"},
+			want:     "      KILLED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n",
+		},
+		"a long list is cut short and counted": {
+			status:   mutator.Lived,
+			testsRun: []string{"p.T1", "p.T2", "p.T3", "p.T4", "p.T5", "p.T6", "p.T7"},
+			want: "       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+				"         not caught by: p.T1, p.T2, p.T3, p.T4, p.T5 (+2 more)\n",
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			out := &bytes.Buffer{}
+			log.Init(out, &bytes.Buffer{})
+			defer log.Reset()
+
+			report.Mutant(stubMutant{
+				status:     tc.status,
+				mutantType: mutator.ConditionalsBoundary,
+				position:   fakePosition,
+				testsRun:   tc.testsRun,
+			})
+
+			if got := out.String(); got != tc.want {
+				t.Errorf("\n got: %q\nwant: %q", got, tc.want)
+			}
+		})
+	}
 }

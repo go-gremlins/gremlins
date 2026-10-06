@@ -285,6 +285,33 @@ func Mutant(m mutator.Mutator) {
 		status = fgHiBlack(m.Status())
 	}
 	log.Infof("%s%s %s at %s\n", padding(m.Status()), status, m.Type(), m.Position())
+	reportTestsRun(m)
+}
+
+// maxReportedTests bounds the list. A mutant covered by fifty tests makes its
+// point with the first few, and the count says the rest are there.
+const maxReportedTests = 5
+
+// reportTestsRun names the tests a surviving mutant survived.
+//
+// A LIVED verdict without it is what made go-gremlins/gremlins#224 a bug report
+// rather than a fix: the output said the mutant survived without saying what
+// had been run against it, so "your tests are wrong" and "these tests did not
+// cover it" looked identical. With test selection the list is the difference.
+func reportTestsRun(m mutator.Mutator) {
+	if m.Status() != mutator.Lived {
+		return
+	}
+	tests := m.TestsRun()
+	if len(tests) == 0 {
+		return
+	}
+	shown, extra := tests, ""
+	if len(shown) > maxReportedTests {
+		shown = shown[:maxReportedTests]
+		extra = fmt.Sprintf(" (+%d more)", len(tests)-maxReportedTests)
+	}
+	log.Infof("%s  not caught by: %s%s\n", padding(m.Status()), strings.Join(shown, ", "), extra)
 }
 
 // MutantDiff logs the unified diff between the original and mutated code snippets.

@@ -215,3 +215,43 @@ func TestIsCovered(t *testing.T) {
 		})
 	}
 }
+
+func TestProfilePosition(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		callingDir string
+		filename   string
+		want       string
+	}{
+		// A whole-module run is where the two coordinates already agree, which is
+		// why nothing noticed they were different for so long.
+		"the module root leaves a position alone": {".", "internal/api/handler.go", "internal/api/handler.go"},
+		"an unset calling dir leaves it alone":    {"", "internal/api/handler.go", "internal/api/handler.go"},
+		"a scoped run's position is rebased onto the module": {
+			"internal/api", "handler.go", "internal/api/handler.go",
+		},
+		"a nested file under a scoped run keeps its subpath": {
+			"internal/api", "sub/handler.go", "internal/api/sub/handler.go",
+		},
+		"a calling dir as the caller may have typed it": {"./internal/api/", "handler.go", "internal/api/handler.go"},
+	}
+
+	for name, tCase := range testCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			pos := token.Position{Filename: tCase.filename, Line: 12, Column: 3, Offset: 100}
+			got := coverage.ProfilePosition(tCase.callingDir, pos)
+
+			if got.Filename != tCase.want {
+				t.Errorf("want %q, got %q", tCase.want, got.Filename)
+			}
+			// Only the name moves: a rebased position still has to find the block
+			// it names.
+			if got.Line != pos.Line || got.Column != pos.Column || got.Offset != pos.Offset {
+				t.Errorf("the position itself moved: %+v", got)
+			}
+		})
+	}
+}

@@ -141,8 +141,12 @@ func TestCoverageParsesOutput(t *testing.T) {
 		CallingDir: "path",
 	}
 	cov := coverage.NewWithCmd(fakeExecCommandSuccess(nil), "testdata/valid", mod)
+	// Named from the module root, not from the calling directory: a profile has
+	// to mean the same thing in a scoped run and a whole-module one, or the two
+	// cannot read each other's test map. A mutant's position is translated to
+	// meet it — see coverage.ProfilePosition.
 	profile := coverage.Profile{
-		"file1.go": {
+		"path/file1.go": {
 			{
 				StartLine: 47,
 				StartCol:  2,
@@ -150,7 +154,7 @@ func TestCoverageParsesOutput(t *testing.T) {
 				EndCol:    16,
 			},
 		},
-		"file2.go": {
+		"path/file2.go": {
 			{
 				StartLine: 52,
 				StartCol:  2,

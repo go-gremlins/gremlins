@@ -22,7 +22,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -52,11 +51,58 @@ type Coverage struct {
 
 	buildTags       string
 	coverPkg        string
+	cacheDir        string
+	scope           []string
+	crossPackage    bool
 	integrationMode bool
+
+	// Read once per run and shared by every package the map builder visits:
+	// what the toolchain is, what each dependency directory hashes to, what
+	// each package links, what each instrumented dependency looks like, and
+	// what each package is called.
+	env         *goEnvironment
+	dirHashes   map[string]string
+	depListings map[string]depListing
+	depSources  map[string]*depSource
+
+	// pkgNames is each listed package's name by import path, which is what
+	// an unnamed import binds.
+	pkgNames map[string]string
+
+	// types is what the type-checker said about each package, and
+	// typesTried every package it was asked about, whatever it said (see
+	// typeFactsOf). typeLoader replaces go/packages for the tests that
+	// stand a fake in for the go command; nil is the real one.
+	types      map[typesKey]typeFacts
+	typesTried map[typesKey]bool
+	typeLoader typeLoader
 }
 
 // Option for the Coverage initialization.
 type Option func(c *Coverage) *Coverage
+
+// WithTestMapCacheDir puts the test map cache somewhere other than the user's
+// cache directory. A CI job that wants the map to survive between runs points
+// this at a directory it restores.
+func WithTestMapCacheDir(dir string) Option {
+	return func(c *Coverage) *Coverage {
+		c.cacheDir = dir
+
+		return c
+	}
+}
+
+// WithMapScope limits the test map to the packages importPaths names. A --diff
+// run has mutants only in the packages its changed files belong to, and
+// mapping the rest compiles and runs tests no mutant will read. A package left
+// out is unmapped, so a mutant there falls back to its whole suite.
+func WithMapScope(importPaths []string) Option {
+	return func(c *Coverage) *Coverage {
+		c.scope = importPaths
+
+		return c
+	}
+}
 
 type execContext = func(name string, args ...string) *exec.Cmd
 
@@ -71,6 +117,7 @@ func NewWithCmd(cmdContext execContext, workdir string, mod gomodule.GoModule, o
 	buildTags := configuration.Get[string](configuration.UnleashTagsKey)
 	coverPkg := configuration.Get[string](configuration.UnleashCoverPkgKey)
 	integrationMode := configuration.Get[bool](configuration.UnleashIntegrationMode)
+	crossPackage := configuration.Get[bool](configuration.UnleashCrossPackageKey)
 
 	c := &Coverage{
 		cmdContext:      cmdContext,
@@ -80,6 +127,7 @@ func NewWithCmd(cmdContext execContext, workdir string, mod gomodule.GoModule, o
 		mod:             mod,
 		buildTags:       buildTags,
 		coverPkg:        coverPkg,
+		crossPackage:    crossPackage,
 		integrationMode: integrationMode,
 	}
 	for _, opt := range opts {
@@ -142,6 +190,12 @@ func (c *Coverage) downloadModules() error {
 }
 
 func (c *Coverage) executeCoverage() (time.Duration, error) {
+	return c.executeCoverageOf(c.scanPath())
+}
+
+// executeCoverageOf gathers coverage over the given package patterns into
+// filePath, and reports how long it took.
+func (c *Coverage) executeCoverageOf(targets ...string) (time.Duration, error) {
 	args := []string{"test"}
 	if c.buildTags != "" {
 		args = append(args, "-tags", c.buildTags)
@@ -150,7 +204,8 @@ func (c *Coverage) executeCoverage() (time.Duration, error) {
 		args = append(args, "-coverpkg", c.coverPkg)
 	}
 
-	args = append(args, "-cover", "-coverprofile", c.filePath(), c.scanPath())
+	args = append(args, "-cover", "-coverprofile", c.filePath())
+	args = append(args, targets...)
 	cmd := c.cmdContext("go", args...)
 
 	start := time.Now()
@@ -161,6 +216,12 @@ func (c *Coverage) executeCoverage() (time.Duration, error) {
 	}
 
 	return time.Since(start), nil
+}
+
+// ScanPath is the package pattern this run covers: the whole module, or the
+// subtree the caller scoped it to.
+func (c *Coverage) ScanPath() string {
+	return c.scanPath()
 }
 
 func (c *Coverage) scanPath() string {
@@ -179,29 +240,23 @@ func (c *Coverage) parse(data io.Reader) (Profile, error) {
 	if err != nil {
 		return nil, err
 	}
-	status := make(Profile)
-	for _, p := range profiles {
-		for _, b := range p.Blocks {
-			if b.Count == 0 {
-				continue
-			}
-			block := Block{
-				StartLine: b.StartLine,
-				StartCol:  b.StartCol,
-				EndLine:   b.EndLine,
-				EndCol:    b.EndCol,
-			}
-			fn := c.removeModuleFromPath(p)
-			status[fn] = append(status[fn], block)
-		}
-	}
 
-	return status, nil
+	return c.blocksOf(profiles), nil
 }
 
+// removeModuleFromPath is the name a profile block is recorded under: the file's
+// path from the MODULE ROOT, whatever directory Gremlins was pointed at.
+//
+// It used to be relative to the calling directory, which made the same file two
+// different names depending on the run's scope — `internal/api/handler.go` from
+// the module root, `handler.go` from a run scoped to that package. Nothing
+// noticed while a profile was only ever compared with positions from the same
+// run. The test map cache is the thing that outlives a run, and under two names
+// a restored map answers about no test at all: never wrong, and exactly as slow
+// as having no cache.
+//
+// A mutant's position IS relative to the calling directory, so the comparison
+// translates it: see ProfilePosition.
 func (c *Coverage) removeModuleFromPath(p *cover.Profile) string {
-	path := strings.ReplaceAll(p.FileName, c.mod.Name+"/", "")
-	path, _ = filepath.Rel(c.mod.CallingDir, path)
-
-	return path
+	return strings.ReplaceAll(p.FileName, c.mod.Name+"/", "")
 }

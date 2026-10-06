@@ -188,7 +188,7 @@ func normalisePkgPath(pkg string) string {
 func (mu *Engine) mutationStatus(pos token.Position) mutator.Status {
 	var status mutator.Status
 
-	if mu.codeData.Cov.IsCovered(pos) {
+	if mu.codeData.Cov.IsCovered(coverage.ProfilePosition(mu.module.CallingDir, pos)) {
 		status = mutator.Runnable
 	}
 

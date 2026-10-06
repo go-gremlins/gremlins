@@ -20,6 +20,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
+	"path"
+	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 
@@ -30,6 +34,7 @@ import (
 	"github.com/go-gremlins/gremlins/cmd/internal/flags"
 	"github.com/go-gremlins/gremlins/internal/configuration"
 	"github.com/go-gremlins/gremlins/internal/coverage"
+	"github.com/go-gremlins/gremlins/internal/deps"
 	"github.com/go-gremlins/gremlins/internal/diff"
 	"github.com/go-gremlins/gremlins/internal/engine"
 	"github.com/go-gremlins/gremlins/internal/engine/workdir"
@@ -59,6 +64,8 @@ const (
 	paramTestCPU            = "test-cpu"
 	paramWorkers            = "workers"
 	paramTimeoutCoefficient = "timeout-coefficient"
+	paramTestSelection      = "test-selection"
+	paramCrossPackage       = "cross-package"
 
 	// Thresholds.
 	paramThresholdEfficacy  = "threshold-efficacy"
@@ -171,15 +178,43 @@ func run(ctx context.Context, mod gomodule.GoModule, workDir string) (report.Res
 		return report.Results{}, err
 	}
 
-	cProfile, err := c.Run()
+	var opts []engine.ExecutorDealerOption
+
+	// Which packages a mutation could break is a question about imports, so it
+	// costs one `go list` and no test runs at all.
+	var graph *deps.Graph
+	if configuration.Get[bool](configuration.UnleashCrossPackageKey) {
+		graph, err = deps.New(exec.Command, c.ScanPath())
+		if err != nil {
+			return report.Results{}, fmt.Errorf("failed to resolve the module's dependents: %w", err)
+		}
+		opts = append(opts, engine.WithDependents(graph))
+	}
+
+	// Which tests within those packages execute the mutated line is a question
+	// about coverage, and that is the expensive one. With selection the map
+	// that answers it is built inside Gather, and stands in for the coverage
+	// gather wherever it can. The map scope is set first: a package outside it
+	// holds no mutant in this run, so it is neither mapped nor gathered.
+	selection := testSelectionRequested()
+	if selection {
+		if scope := mapScope(mod, fDiff, graph.Dependents); scope != nil {
+			coverage.WithMapScope(scope)(c)
+		}
+	}
+	cProfile, testMap, err := c.Gather(selection)
 	if err != nil {
-		return report.Results{}, fmt.Errorf("failed to gather coverage: %w", err)
+		return report.Results{}, err
+	}
+
+	if selection {
+		opts = append(opts, engine.WithTestSelection(testMap))
 	}
 
 	wdDealer := workdir.NewCachedDealer(workDir, mod.Root)
 	defer wdDealer.Clean()
 
-	jDealer := engine.NewExecutorDealer(mod, wdDealer, cProfile.Elapsed)
+	jDealer := engine.NewExecutorDealer(mod, wdDealer, cProfile.Elapsed, opts...)
 
 	codeData := engine.CodeData{
 		Cov:       cProfile.Profile,
@@ -191,6 +226,71 @@ func run(ctx context.Context, mod gomodule.GoModule, workDir string) (report.Res
 	results := mut.Run(ctx)
 
 	return results, nil
+}
+
+// mapScope is the test map's scope for a --diff run: the packages of the
+// changed production files, which are the only ones that hold mutants, and,
+// through dependents, the packages whose tests --cross-package selects for
+// them. Files under testdata or vendor are never mutated, so they bring no
+// package in. Without a diff every package can hold a mutant: no scope. The
+// diff's paths are relative to the calling directory, as mutant positions are,
+// and a file's import path is its directory under the module, whatever its
+// package clause says.
+func mapScope(mod gomodule.GoModule, changes diff.Diff, dependents func(string) []string) []string {
+	if len(changes) == 0 {
+		return nil
+	}
+	in := map[string]bool{}
+	for file := range changes {
+		name := filepath.ToSlash(string(file))
+		if !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") || underIgnoredDir(name) {
+			continue
+		}
+		pkg := mod.Name
+		if dir := filepath.ToSlash(filepath.Dir(filepath.Join(mod.CallingDir, name))); dir != "." {
+			pkg += "/" + dir
+		}
+		in[pkg] = true
+		for _, dep := range dependents(pkg) {
+			in[dep] = true
+		}
+	}
+	scope := make([]string, 0, len(in))
+	for pkg := range in {
+		scope = append(scope, pkg)
+	}
+	sort.Strings(scope)
+
+	return scope
+}
+
+// underIgnoredDir reports whether a slash-separated path runs through a
+// testdata or vendor directory, which the engine never mutates.
+func underIgnoredDir(name string) bool {
+	for _, part := range strings.Split(path.Dir(name), "/") {
+		if part == "testdata" || part == "vendor" {
+			return true
+		}
+	}
+
+	return false
+}
+
+// testSelectionRequested reports whether to build the test map.
+//
+// Integration mode runs the whole module for every mutant by design, so there is
+// nothing for selection to narrow and the map would be paid for nothing.
+func testSelectionRequested() bool {
+	if !configuration.Get[bool](configuration.UnleashTestSelectionKey) {
+		return false
+	}
+	if configuration.Get[bool](configuration.UnleashIntegrationMode) {
+		log.Infoln("test-selection has no effect in integration mode: every mutant runs the whole module")
+
+		return false
+	}
+
+	return true
 }
 
 func setFlagsOnCmd(cmd *cobra.Command) error {
@@ -220,6 +320,8 @@ func setFlagsOnCmd(cmd *cobra.Command) error {
 		{Name: paramWorkers, CfgKey: configuration.UnleashWorkersKey, DefaultV: 0, Usage: "the number of workers to use in mutation testing"},
 		{Name: paramTestCPU, CfgKey: configuration.UnleashTestCPUKey, DefaultV: 0, Usage: "the number of CPUs to allow each test run to use"},
 		{Name: paramTimeoutCoefficient, CfgKey: configuration.UnleashTimeoutCoefficientKey, DefaultV: 0, Usage: "the coefficient by which the timeout is increased"},
+		{Name: paramTestSelection, CfgKey: configuration.UnleashTestSelectionKey, DefaultV: false, Usage: "run only the tests of the mutated package that execute the mutated line"},
+		{Name: paramCrossPackage, CfgKey: configuration.UnleashCrossPackageKey, DefaultV: false, Usage: "also test the mutated package's dependents, so a mutation is judged by what it could break"},
 	}
 
 	for _, f := range fls {
