@@ -19,8 +19,13 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/go-gremlins/gremlins/internal/configuration"
 	"github.com/go-gremlins/gremlins/internal/mutator"
@@ -131,6 +136,16 @@ func TestUnleash(t *testing.T) {
 			defValue: "false",
 		},
 		{
+			name:     "schemata",
+			flagType: "bool",
+			defValue: "true",
+		},
+		{
+			name:     "schemata-build-timeout",
+			flagType: "string",
+			defValue: "",
+		},
+		{
 			name:      "tags",
 			shorthand: "t",
 			flagType:  "string",
@@ -199,5 +214,67 @@ func TestUnleash(t *testing.T) {
 		if mtf.DefValue != wantDef {
 			t.Errorf("expected %q have default %q, got %q", s, wantDef, mtf.DefValue)
 		}
+	}
+}
+
+// TestSchemataIsDefault checks that a run given no schemata flag, config key
+// or environment variable resolves to the schema path, and that each of
+// --schemata=false, unleash.schemata: false in .gremlins.yaml and
+// GREMLINS_UNLEASH_SCHEMATA=false opts out of it.
+func TestSchemataIsDefault(t *testing.T) {
+	// An environment value reaches configuration.Get as a string, and Get
+	// reads a bool by type assertion until go-gremlins/gremlins#216 is fixed,
+	// so "true" from the environment is not asserted here; "false" reads as
+	// the zero value either way.
+	testCases := map[string]struct {
+		args []string
+		cfg  string
+		env  string
+		want bool
+	}{
+		"no_flag":         {args: nil, want: true},
+		"explicit_off":    {args: []string{"--schemata=false"}, want: false},
+		"explicit_on":     {args: []string{"--schemata"}, want: true},
+		"config_absent":   {cfg: "unleash:\n  workers: 2\n", want: true},
+		"config_off":      {cfg: "unleash:\n  schemata: false\n", want: false},
+		"config_on":       {cfg: "unleash:\n  schemata: true\n", want: true},
+		"env_off":         {env: "false", want: false},
+		"env_over_config": {cfg: "unleash:\n  schemata: true\n", env: "false", want: false},
+		"flag_over_env":   {args: []string{"--schemata"}, env: "false", want: true},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			viper.Reset()
+			t.Cleanup(viper.Reset)
+			if tc.env != "" {
+				t.Setenv("GREMLINS_UNLEASH_SCHEMATA", tc.env)
+			}
+			cPaths := []string{t.TempDir()} // no config file in it
+			if tc.cfg != "" {
+				p := filepath.Join(t.TempDir(), ".gremlins.yaml")
+				if err := os.WriteFile(p, []byte(tc.cfg), 0o600); err != nil {
+					t.Fatal(err)
+				}
+				cPaths = []string{p}
+			}
+			c, err := newUnleashCmd(context.Background())
+			if err != nil {
+				t.Fatal("newUnleashCmd should not fail")
+			}
+			// Initialised in PreRunE, as gremlins does it just before the
+			// command runs: cobra's initializers are process-global, and one
+			// a root command of another test left behind re-initialises the
+			// configuration from the default paths when this command runs.
+			c.cmd.PreRunE = func(_ *cobra.Command, _ []string) error { return configuration.Init(cPaths) }
+			c.cmd.RunE = func(_ *cobra.Command, _ []string) error { return nil }
+			c.cmd.SetArgs(tc.args)
+			if err := c.cmd.Execute(); err != nil {
+				t.Fatal("Execute should not fail")
+			}
+			if got := configuration.Get[bool](configuration.UnleashSchemataKey); got != tc.want {
+				t.Errorf("schemata = %v, want %v", got, tc.want)
+			}
+		})
 	}
 }

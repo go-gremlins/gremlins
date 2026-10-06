@@ -41,6 +41,29 @@ func (p Profile) IsCovered(pos token.Position) bool {
 	return false
 }
 
+// Merge returns a Profile covering every block any of the given profiles covers,
+// keeping each block once.
+func Merge(profiles ...Profile) Profile {
+	seen := make(map[string]map[Block]struct{})
+	merged := make(Profile)
+	for _, profile := range profiles {
+		for file, blocks := range profile {
+			if _, ok := seen[file]; !ok {
+				seen[file] = make(map[Block]struct{})
+			}
+			for _, b := range blocks {
+				if _, dup := seen[file][b]; dup {
+					continue
+				}
+				seen[file][b] = struct{}{}
+				merged[file] = append(merged[file], b)
+			}
+		}
+	}
+
+	return merged
+}
+
 // Block holds the start and end coordinates of a section of a source file
 // covered by tests.
 type Block struct {

@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 	"sync"
 
@@ -30,6 +31,7 @@ import (
 	"github.com/go-gremlins/gremlins/cmd/internal/flags"
 	"github.com/go-gremlins/gremlins/internal/configuration"
 	"github.com/go-gremlins/gremlins/internal/coverage"
+	"github.com/go-gremlins/gremlins/internal/deps"
 	"github.com/go-gremlins/gremlins/internal/diff"
 	"github.com/go-gremlins/gremlins/internal/engine"
 	"github.com/go-gremlins/gremlins/internal/engine/workdir"
@@ -47,18 +49,25 @@ type unleashCmd struct {
 const (
 	commandName = "unleash"
 
-	paramDiff               = "diff"
-	paramBuildTags          = "tags"
-	paramCoverPackages      = "coverpkg"
-	paramDryRun             = "dry-run"
-	paramOutputStatuses     = "output-statuses"
-	paramOutputDiffStatuses = "output-diff-statuses"
-	paramOutput             = "output"
-	paramIntegrationMode    = "integration"
-	paramExcludeFiles       = "exclude-files"
-	paramTestCPU            = "test-cpu"
-	paramWorkers            = "workers"
-	paramTimeoutCoefficient = "timeout-coefficient"
+	paramDiff                 = "diff"
+	paramBuildTags            = "tags"
+	paramCoverPackages        = "coverpkg"
+	paramDryRun               = "dry-run"
+	paramOutputStatuses       = "output-statuses"
+	paramOutputDiffStatuses   = "output-diff-statuses"
+	paramOutput               = "output"
+	paramIntegrationMode      = "integration"
+	paramExcludeFiles         = "exclude-files"
+	paramTestCPU              = "test-cpu"
+	paramWorkers              = "workers"
+	paramTimeoutCoefficient   = "timeout-coefficient"
+	paramTestSelection        = "test-selection"
+	paramCrossPackage         = "cross-package"
+	paramSchemata             = "schemata"
+	paramTimeoutMax           = "timeout-max"
+	paramCompileAllowance     = "compile-allowance"
+	paramSchemataBuildTimeout = "schemata-build-timeout"
+	paramOnShutdownStatus     = "on-shutdown-status"
 
 	// Thresholds.
 	paramThresholdEfficacy  = "threshold-efficacy"
@@ -176,13 +185,42 @@ func run(ctx context.Context, mod gomodule.GoModule, workDir string) (report.Res
 		return report.Results{}, fmt.Errorf("failed to gather coverage: %w", err)
 	}
 
+	covered := cProfile.Profile
+	var opts []engine.ExecutorDealerOption
+
+	// Which packages a mutation could break is a question about imports, so it
+	// costs one `go list` and no test runs at all.
+	if configuration.Get[bool](configuration.UnleashCrossPackageKey) {
+		graph, err := deps.New(exec.Command, c.ScanPath())
+		if err != nil {
+			return report.Results{}, fmt.Errorf("failed to resolve the module's dependents: %w", err)
+		}
+		opts = append(opts, engine.WithDependents(graph))
+	}
+
+	// Which tests within those packages execute the mutated line is a question
+	// about coverage, and that is the expensive one.
+	if testSelectionRequested() {
+		testMap, err := c.BuildTestMap()
+		if err != nil {
+			return report.Results{}, fmt.Errorf("failed to map tests to the code they execute: %w", err)
+		}
+		opts = append(opts, engine.WithTestSelection(testMap))
+		// The map sees a line executed only by another package's tests, which a
+		// plain coverage run attributes to nobody, leaving the mutants on it
+		// untested. Widen the profile with it rather than replacing it: a
+		// package the map could not see whole is missing from the union, and its
+		// mutants must stay runnable.
+		covered = coverage.Merge(cProfile.Profile, testMap.Union())
+	}
+
 	wdDealer := workdir.NewCachedDealer(workDir, mod.Root)
 	defer wdDealer.Clean()
 
-	jDealer := engine.NewExecutorDealer(mod, wdDealer, cProfile.Elapsed)
+	jDealer := engine.NewExecutorDealer(mod, wdDealer, cProfile.Elapsed, opts...)
 
 	codeData := engine.CodeData{
-		Cov:       cProfile.Profile,
+		Cov:       covered,
 		Diff:      fDiff,
 		Exclusion: exclude,
 	}
@@ -191,6 +229,23 @@ func run(ctx context.Context, mod gomodule.GoModule, workDir string) (report.Res
 	results := mut.Run(ctx)
 
 	return results, nil
+}
+
+// testSelectionRequested reports whether to build the test map.
+//
+// Integration mode runs the whole module for every mutant by design, so there is
+// nothing for selection to narrow and the map would be paid for nothing.
+func testSelectionRequested() bool {
+	if !configuration.Get[bool](configuration.UnleashTestSelectionKey) {
+		return false
+	}
+	if configuration.Get[bool](configuration.UnleashIntegrationMode) {
+		log.Infoln("test-selection has no effect in integration mode: every mutant runs the whole module")
+
+		return false
+	}
+
+	return true
 }
 
 func setFlagsOnCmd(cmd *cobra.Command) error {
@@ -207,7 +262,7 @@ func setFlagsOnCmd(cmd *cobra.Command) error {
 
 	fls := []*flags.Flag{
 		{Name: paramDryRun, CfgKey: configuration.UnleashDryRunKey, Shorthand: "d", DefaultV: false, Usage: "find mutations but do not executes tests"},
-		{Name: paramOutputStatuses, CfgKey: configuration.UnleashOutputStatusesKey, Shorthand: "S", DefaultV: "", Usage: "print only statuses from this flag, allowed values - 'lctkvsr'"},
+		{Name: paramOutputStatuses, CfgKey: configuration.UnleashOutputStatusesKey, Shorthand: "S", DefaultV: "", Usage: "print only statuses from this flag, allowed values - 'lctkvsre'"},
 		{Name: paramOutputDiffStatuses, CfgKey: configuration.UnleashOutputDiffStatusesKey, DefaultV: "", Usage: "print diff for mutants with these statuses, allowed values - 'lk'"},
 		{Name: paramBuildTags, CfgKey: configuration.UnleashTagsKey, Shorthand: "t", DefaultV: "", Usage: "a comma-separated list of build tags"},
 		{Name: paramCoverPackages, CfgKey: configuration.UnleashCoverPkgKey, DefaultV: "", Usage: "a comma-separated list of package patterns"},
@@ -220,6 +275,13 @@ func setFlagsOnCmd(cmd *cobra.Command) error {
 		{Name: paramWorkers, CfgKey: configuration.UnleashWorkersKey, DefaultV: 0, Usage: "the number of workers to use in mutation testing"},
 		{Name: paramTestCPU, CfgKey: configuration.UnleashTestCPUKey, DefaultV: 0, Usage: "the number of CPUs to allow each test run to use"},
 		{Name: paramTimeoutCoefficient, CfgKey: configuration.UnleashTimeoutCoefficientKey, DefaultV: 0, Usage: "the coefficient by which the timeout is increased"},
+		{Name: paramTestSelection, CfgKey: configuration.UnleashTestSelectionKey, DefaultV: false, Usage: "run only the tests of the mutated package that execute the mutated line"},
+		{Name: paramCrossPackage, CfgKey: configuration.UnleashCrossPackageKey, DefaultV: false, Usage: "also test the mutated package's dependents, so a mutation is judged by what it could break"},
+		{Name: paramSchemata, CfgKey: configuration.UnleashSchemataKey, DefaultV: true, Usage: "compile every mutant into one set of test binaries and switch between them at run time; --schemata=false restores one build per mutant; set GREMLINS_SCHEMATA_KEEP=<dir> to keep the binaries, the rewritten source and an index of mutant ids in <dir>"},
+		{Name: paramTimeoutMax, CfgKey: configuration.UnleashTimeoutMaxKey, DefaultV: "", Usage: "absolute ceiling on a single mutant's test run, as a Go duration (e.g. '15s'); caps the coefficient-derived timeout so a non-terminating mutant cannot exhaust the machine. Empty means no ceiling"},
+		{Name: paramCompileAllowance, CfgKey: configuration.UnleashCompileAllowanceKey, DefaultV: "", Usage: "time a mutant is allowed to COMPILE, as a Go duration (e.g. '2m'), on top of the bound on its test run; the two together form the deadline that also bounds a compile that has hung. Empty uses the default"},
+		{Name: paramSchemataBuildTimeout, CfgKey: configuration.UnleashSchemataBuildTimeoutKey, DefaultV: "", Usage: "bound on the one schemata build of a whole run, as a Go duration (e.g. '30m'), separate from --compile-allowance, which bounds one mutant's compile; a build cut off by it, by a signal or by running out of memory is retried once at half the parallelism before its mutants take the per-mutant path. Empty derives it: the compile allowance times the number of test packages built, at least 10m"},
+		{Name: paramOnShutdownStatus, CfgKey: configuration.UnleashOnShutdownStatusKey, DefaultV: "not-run", Usage: "status to record for in-flight mutants when the run is cancelled (e.g. SIGTERM from a CI runner); one of 'not-run', 'timed-out', 'lived'"},
 	}
 
 	for _, f := range fls {

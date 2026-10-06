@@ -45,24 +45,42 @@ var (
 // Results contains the list of mutator.Mutator to be reported
 // and the time it took to discover and test them.
 type Results struct {
-	Module  string
-	Mutants []mutator.Mutator
-	Elapsed time.Duration
+	// Schemata is set only when the run used --schemata.
+	Schemata *SchemataSummary
+	Module   string
+	Mutants  []mutator.Mutator
+	Elapsed  time.Duration
+}
+
+// SchemataSummary is how the runnable mutants of a schemata run were
+// executed: Placed were judged against the schema test binaries, PerMutant
+// through the per-mutant go test path, whether Prepare netted them or their
+// executor fell back to it.
+type SchemataSummary struct {
+	Placed    int
+	PerMutant int
+	// NotUsed says why no schema build was made although schemata is on
+	// and there were runnable mutants: "dry run", or "integration mode".
+	// Placed is 0 then.
+	NotUsed string
 }
 
 type reportStatus struct {
 	files map[string][]internal.Mutation
 
-	elapsed *durafmt.Durafmt
-	module  string
+	elapsed  *durafmt.Durafmt
+	schemata *SchemataSummary
+	module   string
 
-	killed     int
-	lived      int
-	timedOut   int
-	notCovered int
-	skipped    int
-	notViable  int
-	runnable   int
+	killed      int
+	lived       int
+	timedOut    int
+	runTimedOut int
+	notCovered  int
+	skipped     int
+	notViable   int
+	runnable    int
+	errored     int
 
 	mutatorStatistics internal.MutatorType
 
@@ -75,8 +93,9 @@ func newReport(results Results) (*reportStatus, bool) {
 		return nil, false
 	}
 	rep := &reportStatus{
-		module:  results.Module,
-		elapsed: durafmt.Parse(results.Elapsed).LimitFirstN(2),
+		module:   results.Module,
+		elapsed:  durafmt.Parse(results.Elapsed).LimitFirstN(2),
+		schemata: results.Schemata,
 	}
 	rep.files = make(map[string][]internal.Mutation)
 	for _, m := range results.Mutants {
@@ -116,10 +135,14 @@ func reportMutationStatus(m mutator.Mutator, rep *reportStatus) {
 		rep.skipped++
 	case mutator.TimedOut:
 		rep.timedOut++
+	case mutator.RunTimedOut:
+		rep.runTimedOut++
 	case mutator.NotViable:
 		rep.notViable++
 	case mutator.Runnable:
 		rep.runnable++
+	case mutator.Errored:
+		rep.errored++
 	}
 }
 
@@ -159,6 +182,13 @@ func (r *reportStatus) reportFindings() {
 		r.dryRunReport()
 	} else {
 		r.fullRunReport()
+	}
+	if r.schemata != nil {
+		if r.schemata.NotUsed != "" {
+			log.Infof("Schemata: not used (%s), per-mutant path %d\n", r.schemata.NotUsed, r.schemata.PerMutant)
+		} else {
+			log.Infof("Schemata: placed %d, per-mutant path %d\n", r.schemata.Placed, r.schemata.PerMutant)
+		}
 	}
 	r.fileReport()
 }
@@ -215,13 +245,16 @@ func (r *reportStatus) fullRunReport() {
 	killed := fgHiGreen(r.killed)
 	lived := fgRed(r.lived)
 	timedOut := fgGreen(r.timedOut)
+	runTimedOut := fgGreen(r.runTimedOut)
 	notViable := fgHiBlack(r.notViable)
 	skipped := fgHiBlack(r.skipped)
 	notCovered := fgHiYellow(r.notCovered)
+	errored := fgRed(r.errored)
 	log.Infoln("")
 	log.Infof("Mutation testing completed in %s\n", r.elapsed.String())
 	log.Infof("Killed: %s, Lived: %s, Not covered: %s\n", killed, lived, notCovered)
-	log.Infof("Timed out: %s, Not viable: %s, Skipped: %s\n", timedOut, notViable, skipped)
+	log.Infof("Timed out: %s, Run timed out: %s, Not viable: %s, Skipped: %s, Errored: %s\n",
+		timedOut, runTimedOut, notViable, skipped, errored)
 	log.Infof("Test efficacy: %.2f%%\n", r.tEfficacy)
 	log.Infof("Mutator coverage: %.2f%%\n", r.mCovered)
 }
@@ -229,6 +262,13 @@ func (r *reportStatus) fullRunReport() {
 func (r *reportStatus) assess(tEfficacy, rCoverage float64) error {
 	if r.isDryRun() {
 		return nil
+	}
+
+	// A mutant whose run reached no verdict is a failure of the measurement, not a
+	// property of the code under test, and the thresholds below were computed
+	// without it. A gate must not pass on numbers that are missing a mutant.
+	if r.errored > 0 {
+		return execution.NewExitErr(execution.ErroredMutants)
 	}
 
 	et := configuration.Get[float64](configuration.UnleashThresholdEfficacyKey)
@@ -279,12 +319,41 @@ func Mutant(m mutator.Mutator) {
 		status = fgRed(m.Status())
 	case mutator.NotCovered:
 		status = fgHiYellow(m.Status())
-	case mutator.TimedOut:
+	case mutator.TimedOut, mutator.RunTimedOut:
 		status = fgGreen(m.Status())
 	case mutator.NotViable, mutator.Skipped:
 		status = fgHiBlack(m.Status())
+	case mutator.Errored:
+		status = fgRed(m.Status())
 	}
 	log.Infof("%s%s %s at %s\n", padding(m.Status()), status, m.Type(), m.Position())
+	reportTestsRun(m)
+}
+
+// maxReportedTests bounds the list. A mutant covered by fifty tests makes its
+// point with the first few, and the count says the rest are there.
+const maxReportedTests = 5
+
+// reportTestsRun names the tests a surviving mutant survived.
+//
+// A LIVED verdict without it is what made go-gremlins/gremlins#224 a bug report
+// rather than a fix: the output said the mutant survived without saying what
+// had been run against it, so "your tests are wrong" and "these tests did not
+// cover it" looked identical. With test selection the list is the difference.
+func reportTestsRun(m mutator.Mutator) {
+	if m.Status() != mutator.Lived {
+		return
+	}
+	tests := m.TestsRun()
+	if len(tests) == 0 {
+		return
+	}
+	shown, extra := tests, ""
+	if len(shown) > maxReportedTests {
+		shown = shown[:maxReportedTests]
+		extra = fmt.Sprintf(" (+%d more)", len(tests)-maxReportedTests)
+	}
+	log.Infof("%s  not caught by: %s%s\n", padding(m.Status()), strings.Join(shown, ", "), extra)
 }
 
 // MutantDiff logs the unified diff between the original and mutated code snippets.
@@ -348,11 +417,22 @@ func generateDiff(m mutator.Mutator) ([]string, error) {
 }
 
 func padding(s mutator.Status) string {
-	var pad string
-	padLen := 12 - len(s.String())
-	for i := 0; i < padLen; i++ {
-		pad += " "
+	return strings.Repeat(" ", statusColumnWidth-len(s.String()))
+}
+
+// statusColumnWidth is the column the status name is right-aligned in: the
+// longest status name, plus one space to separate it from what follows. Derived
+// from mutator.Statuses rather than declared, so adding a status cannot leave a
+// literal behind that silently stops padding every line.
+var statusColumnWidth = longestStatusNameLen() + 1
+
+func longestStatusNameLen() int {
+	longest := 0
+	for _, s := range mutator.Statuses {
+		if n := len(s.String()); n > longest {
+			longest = n
+		}
 	}
 
-	return pad
+	return longest
 }

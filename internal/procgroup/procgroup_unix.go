@@ -16,27 +16,27 @@
  *    limitations under the License.
  */
 
-package engine
+package procgroup
 
 import (
 	"os/exec"
 	"syscall"
 )
 
-// setupProcessGroup configures the command to run in a new process group.
+// Setup configures the command to run in a new process group.
 // This ensures that child processes (e.g., test binaries spawned by go test)
 // can be cleaned up together when the parent is killed.
-func setupProcessGroup(cmd *exec.Cmd) {
+func Setup(cmd *exec.Cmd) {
 	if cmd.SysProcAttr == nil {
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
 	}
 	cmd.SysProcAttr.Setpgid = true
 }
 
-// killProcessGroup kills the process and all its children by sending
+// Kill kills the process and all its children by sending
 // SIGKILL to the entire process group. This prevents orphaned processes
 // from accumulating and exhausting system resources.
-func killProcessGroup(cmd *exec.Cmd) error {
+func Kill(cmd *exec.Cmd) error {
 	if cmd.Process == nil {
 		return nil
 	}

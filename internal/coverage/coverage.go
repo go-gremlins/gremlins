@@ -52,11 +52,24 @@ type Coverage struct {
 
 	buildTags       string
 	coverPkg        string
+	cacheDir        string
+	crossPackage    bool
 	integrationMode bool
 }
 
 // Option for the Coverage initialization.
 type Option func(c *Coverage) *Coverage
+
+// WithTestMapCacheDir puts the test map cache somewhere other than the user's
+// cache directory. A CI job that wants the map to survive between runs points
+// this at a directory it restores.
+func WithTestMapCacheDir(dir string) Option {
+	return func(c *Coverage) *Coverage {
+		c.cacheDir = dir
+
+		return c
+	}
+}
 
 type execContext = func(name string, args ...string) *exec.Cmd
 
@@ -71,6 +84,7 @@ func NewWithCmd(cmdContext execContext, workdir string, mod gomodule.GoModule, o
 	buildTags := configuration.Get[string](configuration.UnleashTagsKey)
 	coverPkg := configuration.Get[string](configuration.UnleashCoverPkgKey)
 	integrationMode := configuration.Get[bool](configuration.UnleashIntegrationMode)
+	crossPackage := configuration.Get[bool](configuration.UnleashCrossPackageKey)
 
 	c := &Coverage{
 		cmdContext:      cmdContext,
@@ -80,6 +94,7 @@ func NewWithCmd(cmdContext execContext, workdir string, mod gomodule.GoModule, o
 		mod:             mod,
 		buildTags:       buildTags,
 		coverPkg:        coverPkg,
+		crossPackage:    crossPackage,
 		integrationMode: integrationMode,
 	}
 	for _, opt := range opts {
@@ -161,6 +176,12 @@ func (c *Coverage) executeCoverage() (time.Duration, error) {
 	}
 
 	return time.Since(start), nil
+}
+
+// ScanPath is the package pattern this run covers: the whole module, or the
+// subtree the caller scoped it to.
+func (c *Coverage) ScanPath() string {
+	return c.scanPath()
 }
 
 func (c *Coverage) scanPath() string {

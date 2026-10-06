@@ -20,10 +20,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"go/token"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -67,7 +69,7 @@ func TestReport(t *testing.T) {
 				// Limit the time reporting to the first two units (millis are excluded)
 				testingLine +
 				"Killed: 1, Lived: 1, Not covered: 1\n" +
-				"Timed out: 1, Not viable: 1, Skipped: 1\n" +
+				"Timed out: 1, Run timed out: 0, Not viable: 1, Skipped: 1, Errored: 0\n" +
 				"Test efficacy: 50.00%\n" +
 				"Mutator coverage: 66.67%\n",
 		},
@@ -80,7 +82,7 @@ func TestReport(t *testing.T) {
 				// Limit the time reporting to the first two units (millis are excluded)
 				testingLine +
 				"Killed: 0, Lived: 0, Not covered: 1\n" +
-				"Timed out: 0, Not viable: 0, Skipped: 0\n" +
+				"Timed out: 0, Run timed out: 0, Not viable: 0, Skipped: 0, Errored: 0\n" +
 				"Test efficacy: 0.00%\n" +
 				coverageLine,
 		},
@@ -94,9 +96,45 @@ func TestReport(t *testing.T) {
 				// Limit the time reporting to the first two units (millis are excluded)
 				testingLine +
 				"Killed: 0, Lived: 0, Not covered: 0\n" +
-				"Timed out: 2, Not viable: 0, Skipped: 0\n" +
+				"Timed out: 2, Run timed out: 0, Not viable: 0, Skipped: 0, Errored: 0\n" +
 				"Test efficacy: 0.00%\n" +
 				coverageLine,
+		},
+		{
+			name: "an errored mutant is counted apart and left out of both denominators",
+			mutants: []mutator.Mutator{
+				stubMutant{status: mutator.Killed, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+				stubMutant{status: mutator.Lived, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+				stubMutant{status: mutator.Errored, mutantType: mutator.ConditionalsBoundary, position: fakePosition},
+			},
+			want: "\n" +
+				// Limit the time reporting to the first two units (millis are excluded)
+				testingLine +
+				"Killed: 1, Lived: 1, Not covered: 0\n" +
+				"Timed out: 0, Run timed out: 0, Not viable: 0, Skipped: 0, Errored: 1\n" +
+				"Test efficacy: 50.00%\n" +
+				"Mutator coverage: 100.00%\n",
+		},
+		{
+			// The two timeout kinds are counted apart, and NEITHER enters
+			// test_efficacy. gremlins records which bound claimed a mutant; it
+			// does not decide that a run-phase timeout is a detection, because
+			// that is a policy its consumers own. A run that changed this line's
+			// 50.00% would be gremlins taking that decision for them.
+			name: "reports a run-phase timeout apart from a backstop timeout",
+			mutants: []mutator.Mutator{
+				stubMutant{status: mutator.Killed, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+				stubMutant{status: mutator.Lived, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+				stubMutant{status: mutator.TimedOut, mutantType: mutator.ConditionalsBoundary, position: fakePosition},
+				stubMutant{status: mutator.RunTimedOut, mutantType: mutator.ConditionalsBoundary, position: fakePosition},
+				stubMutant{status: mutator.RunTimedOut, mutantType: mutator.IncrementDecrement, position: fakePosition},
+			},
+			want: "\n" +
+				testingLine +
+				"Killed: 1, Lived: 1, Not covered: 0\n" +
+				"Timed out: 1, Run timed out: 2, Not viable: 0, Skipped: 0, Errored: 0\n" +
+				"Test efficacy: 50.00%\n" +
+				"Mutator coverage: 100.00%\n",
 		},
 		{
 			name:    "reports nothing if no result",
@@ -176,6 +214,36 @@ func TestReport(t *testing.T) {
 
 			if !cmp.Equal(got, tc.want) {
 				t.Error(cmp.Diff(tc.want, got))
+			}
+		})
+	}
+}
+
+// TestReportSchemataSummary checks the schemata line: printed after the run
+// summary when the run used --schemata, absent otherwise.
+func TestReportSchemataSummary(t *testing.T) {
+	mutants := []mutator.Mutator{
+		stubMutant{status: mutator.Killed, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+	}
+	testCases := map[string]struct {
+		summary *report.SchemataSummary
+		want    string
+	}{
+		"with_schemata":    {summary: &report.SchemataSummary{Placed: 3, PerMutant: 2}, want: "Mutator coverage: 100.00%\nSchemata: placed 3, per-mutant path 2\n"},
+		"dry_run":          {summary: &report.SchemataSummary{NotUsed: "dry run"}, want: "Mutator coverage: 100.00%\nSchemata: not used (dry run), per-mutant path 0\n"},
+		"integration_mode": {summary: &report.SchemataSummary{PerMutant: 4, NotUsed: "integration mode"}, want: "Mutator coverage: 100.00%\nSchemata: not used (integration mode), per-mutant path 4\n"},
+		"without_schemata": {want: "Mutator coverage: 100.00%\n"},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			out := &bytes.Buffer{}
+			log.Init(out, &bytes.Buffer{})
+			defer log.Reset()
+
+			_ = report.Do(report.Results{Mutants: mutants, Schemata: tc.summary})
+
+			if got := out.String(); !strings.HasSuffix(got, tc.want) || strings.Count(got, "Schemata:") != strings.Count(tc.want, "Schemata:") {
+				t.Errorf("report ends %q, want it to end %q", got, tc.want)
 			}
 		})
 	}
@@ -292,6 +360,58 @@ func TestAssessment(t *testing.T) {
 	}
 }
 
+func TestAssessmentErroredMutants(t *testing.T) {
+	// A mutant whose test run reached no verdict is a failure of the measurement,
+	// not a property of the code under test, so the run must not pass on thresholds
+	// computed without it.
+	t.Run("a run with an errored mutant fails even when both thresholds are met", func(t *testing.T) {
+		log.Init(&bytes.Buffer{}, &bytes.Buffer{})
+		defer log.Reset()
+
+		viper.Set(configuration.UnleashThresholdEfficacyKey, float64(50))
+		viper.Set(configuration.UnleashThresholdMCoverageKey, float64(50))
+		defer viper.Reset()
+
+		data := report.Results{
+			Mutants: []mutator.Mutator{
+				stubMutant{status: mutator.Killed, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+				stubMutant{status: mutator.Errored, mutantType: mutator.ConditionalsBoundary, position: fakePosition},
+			},
+			Elapsed: 1 * time.Minute,
+		}
+
+		err := report.Do(data)
+
+		var exitErr *execution.ExitError
+		if !errors.As(err, &exitErr) {
+			t.Fatalf("expected an ExitError, got %v", err)
+		}
+		if exitErr.ExitCode() != 12 {
+			t.Errorf("want exit code 12, got %d", exitErr.ExitCode())
+		}
+	})
+
+	t.Run("a run with no errored mutant is assessed on the thresholds alone", func(t *testing.T) {
+		log.Init(&bytes.Buffer{}, &bytes.Buffer{})
+		defer log.Reset()
+
+		viper.Set(configuration.UnleashThresholdEfficacyKey, float64(50))
+		viper.Set(configuration.UnleashThresholdMCoverageKey, float64(50))
+		defer viper.Reset()
+
+		data := report.Results{
+			Mutants: []mutator.Mutator{
+				stubMutant{status: mutator.Killed, mutantType: mutator.ConditionalsNegation, position: fakePosition},
+			},
+			Elapsed: 1 * time.Minute,
+		}
+
+		if err := report.Do(data); err != nil {
+			t.Errorf("expected no error, got %v", err)
+		}
+	})
+}
+
 func TestMutantNoDiff(t *testing.T) {
 	t.Run("does not print diff even when snippets are non-empty", func(t *testing.T) {
 		out := &bytes.Buffer{}
@@ -307,7 +427,7 @@ func TestMutantNoDiff(t *testing.T) {
 		}
 		report.Mutant(m)
 
-		want := "       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
+		want := "         LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
 		got := out.String()
 		if !cmp.Equal(got, want) {
 			t.Error(cmp.Diff(want, got))
@@ -377,7 +497,7 @@ func TestMutantDiff(t *testing.T) {
 				if errOut.Len() > 0 {
 					t.Errorf("unexpected error logged: %q", errOut.String())
 				}
-				want := "       -if x > y {\n       +if x >= y {\n          x = 10\n"
+				want := "         -if x > y {\n         +if x >= y {\n            x = 10\n"
 				got := out.String()
 				if !cmp.Equal(got, want) {
 					t.Error(cmp.Diff(want, got))
@@ -432,13 +552,13 @@ func TestMutantLog(t *testing.T) {
 	got := out.String()
 
 	want := "" +
-		"       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
-		"      KILLED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
-		" NOT COVERED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
-		"    RUNNABLE CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
-		"  NOT VIABLE CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
-		"   TIMED OUT CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
-		"     SKIPPED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
+		"         LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"        KILLED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"   NOT COVERED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"      RUNNABLE CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"    NOT VIABLE CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"     TIMED OUT CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"       SKIPPED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
 
 	if !cmp.Equal(got, want) {
 		t.Error(cmp.Diff(got, want))
@@ -566,6 +686,7 @@ type stubMutant struct {
 	mutantType     mutator.Type
 	originSnippet  []byte
 	mutatedSnippet []byte
+	testsRun       []string
 }
 
 func (s stubMutant) Type() mutator.Type {
@@ -618,4 +739,86 @@ func (s stubMutant) OrigSnippet() []byte {
 
 func (s stubMutant) MutatedSnippet() []byte {
 	return s.mutatedSnippet
+}
+
+func (s stubMutant) TestsRun() []string {
+	return s.testsRun
+}
+
+func (stubMutant) SetTestsRun([]string) {}
+
+// pad and cont mirror how report.Mutant lays a line out, derived rather than
+// written down because the code derives them too: the status column follows the
+// longest name in mutator.Statuses, so adding a status would otherwise silently
+// rot every expectation below.
+func statusWidth() int {
+	longest := 0
+	for _, s := range mutator.Statuses {
+		if n := len(s.String()); n > longest {
+			longest = n
+		}
+	}
+
+	return longest + 1
+}
+
+// pad is the status name right-aligned in that column.
+func pad(status mutator.Status) string {
+	return fmt.Sprintf("%*s", statusWidth(), status.String())
+}
+
+// cont is the indent of a continuation line: the same padding the status got,
+// plus the two spaces report.Mutant writes before "not caught by".
+func cont(status mutator.Status) string {
+	return strings.Repeat(" ", statusWidth()-len(status.String())) + "  "
+}
+
+func TestMutantLogNamesTheTestsASurvivingMutantSurvived(t *testing.T) {
+	testCases := map[string]struct {
+		status   mutator.Status
+		testsRun []string
+		want     string
+	}{
+		"a surviving mutant says what did not catch it": {
+			status:   mutator.Lived,
+			testsRun: []string{"example.com.TestRange", "example.com/vm.TestSize"},
+			want: pad(mutator.Lived) + " CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+				cont(mutator.Lived) + "not caught by: example.com.TestRange, example.com/vm.TestSize\n",
+		},
+		// The whole suite ran, so there is no shorter answer than "your tests".
+		"nothing is added when the whole suite ran": {
+			status: mutator.Lived,
+			want:   pad(mutator.Lived) + " CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n",
+		},
+		"a killed mutant needs no account of what caught it": {
+			status:   mutator.Killed,
+			testsRun: []string{"example.com.TestRange"},
+			want:     pad(mutator.Killed) + " CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n",
+		},
+		"a long list is cut short and counted": {
+			status:   mutator.Lived,
+			testsRun: []string{"p.T1", "p.T2", "p.T3", "p.T4", "p.T5", "p.T6", "p.T7"},
+			want: pad(mutator.Lived) + " CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+				cont(mutator.Lived) + "not caught by: p.T1, p.T2, p.T3, p.T4, p.T5 (+2 more)\n",
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			out := &bytes.Buffer{}
+			log.Init(out, &bytes.Buffer{})
+			defer log.Reset()
+
+			report.Mutant(stubMutant{
+				status:     tc.status,
+				mutantType: mutator.ConditionalsBoundary,
+				position:   fakePosition,
+				testsRun:   tc.testsRun,
+			})
+
+			if got := out.String(); got != tc.want {
+				t.Errorf("\n got: %q\nwant: %q", got, tc.want)
+			}
+		})
+	}
 }

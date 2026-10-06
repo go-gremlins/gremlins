@@ -165,6 +165,7 @@ Output
 - `v` - NOT VIABLE
 - `s` - SKIPPED
 - `r` - RUNNABLE
+- `e` - ERRORED
 
 ### Diff statuses output
 
@@ -229,6 +230,13 @@ Nonetheless, there may be cases where you may want to run all the test suite for
 example if you are analysing integration or E2E tests. In this scenario, you can enable _integration mode_.
 However, you should be aware that integration mode is generally much slower, and you can also get
 slightly different results depending on your test suite.
+
+[//]: # (@formatter:off)
+!!! tip
+    If what you want is the cross-package tests and not the whole suite,
+    [test selection](#test-selection) runs exactly the tests that execute the mutated line,
+    wherever they live, instead of every test in the module.
+[//]: # (@formatter:on)
 
 ```shell
 gremlins unleash --integration
@@ -361,6 +369,74 @@ Enables/disables the [REMOVE_SELF ASSIGNMENTS](../../mutations/remove_self_assig
 gremlins unleash --remove-self-assignments
 ```
 
+### Schemata
+
+:material-flag: `--schemata` · :material-sign-direction: Default: `true`
+
+Compiles all the mutants of a run into one set of test binaries, instead of building the tests once per mutant.
+
+Building and linking the tests dominates the cost of a mutant, so a run that builds once and switches mutants at
+run time is much faster. Gremlins rewrites the code under test so that every mutant is present in the binary,
+and each test run selects the one to activate through the `GREMLINS_MUTANT` environment variable.
+The rewritten code records that the active mutant's code actually ran in the file named by `GREMLINS_REACHED`.
+
+The two ways of running differ in how a mutant is classified, because reaching the code is observed directly:
+
+* a mutant whose code never ran during passing tests is `NOT COVERED`;
+* a test failure without the mutant's code having run is `ERRORED`, not `KILLED`.
+
+A mutant Gremlins cannot place in the rewritten code falls back to a per-mutant build automatically,
+and the result is unchanged. At the end of the run, a summary line reports how many mutants went each way:
+
+```text
+Schemata: placed 118, per-mutant path 4
+```
+
+When the schema cannot be used at all, the line says why. In integration mode every mutant runs the whole
+module, so every mutant takes the per-mutant path:
+
+```text
+Schemata: not used (integration mode), per-mutant path 122
+```
+
+A dry run runs no mutant, so nothing is built and none takes either path:
+
+```text
+Schemata: not used (dry run), per-mutant path 0
+```
+
+To inspect what Gremlins built, set `GREMLINS_SCHEMATA_KEEP=<dir>`: the test binaries, the rewritten source
+and an index of the mutant ids are kept in `<dir>`.
+
+```shell
+GREMLINS_SCHEMATA_KEEP=/tmp/schemata gremlins unleash
+```
+
+The switch between mutants travels in the environment. A test that starts a child process with an explicit
+environment runs that child with no mutant active and without recording that the mutant's code ran, and a test
+that clears its own environment before the mutant's code first runs loses that record. A test that
+writes next to its own source file, located through `runtime.Caller`, writes into the directory the test
+binaries were built in, which every worker shares; without schemata each worker has its own copy.
+
+To go back to one build per mutant, use the flag, the `unleash.schemata` key in `.gremlins.yaml`, or the
+`GREMLINS_UNLEASH_SCHEMATA` environment variable:
+
+```shell
+gremlins unleash --schemata=false
+```
+
+```yaml
+unleash:
+  schemata: false
+```
+
+```shell
+GREMLINS_UNLEASH_SCHEMATA=false gremlins unleash
+```
+
+As for every option, the flag takes precedence over the environment variable, and the environment variable over
+the configuration file.
+
 ### Tags
 
 :material-flag: `--tags`/`-t` · :material-sign-direction: Default: empty
@@ -385,6 +461,92 @@ This flag overrides the number of CPUs the Go test tool will utilize. By default
 ```shell
 gremlins unleash --test-cpu=1
 ```
+
+### Test selection
+
+:material-flag: `--test-selection` · :material-sign-direction: Default: `false`
+
+By default Gremlins runs every test in the package where the mutant is. Package membership is a
+guess at which tests could notice a mutation; coverage is the answer. With this flag Gremlins
+runs only the tests **of that package** that actually execute the mutated line.
+
+This cannot cost more than not using it. The package is the same one, so its test binary was
+being built and its fixtures paid for either way; the only difference is that fewer of its tests
+run. Measured on a module of 450 mutants, it performed 24% of the test executions the whole-suite
+behaviour did.
+
+When a mutant survives, the report names the tests that ran against it:
+
+```
+       LIVED CONDITIONALS_BOUNDARY at vm/vm.go:6:10
+         not caught by: example.com/vm.TestSize, example.com/vm.TestClamp
+```
+
+The map that makes this possible cannot be read out of a coverage profile, because Go's profile
+does not record which test executed a block. Gremlins builds it by running each test on its own
+with coverage over the whole module, which costs one process per test — but only once. The map is
+cached between runs, under `gremlins/testmap` in your user cache directory, keyed per module and
+per checkout. A package is re-mapped only when the build ID of its test binary changes, which is
+Go's own hash over that package's source *and* every dependency's. On an unchanged tree the map
+costs one compile per package and no test runs at all.
+
+```shell
+gremlins unleash --test-selection
+```
+
+[//]: # (@formatter:off)
+!!! warning
+    The build ID cannot see state outside the build. A test whose coverage depends on a database,
+    a clock, or the network can map differently on two runs of the same binary, and the cache
+    holds that for longer than a single run would. Delete the cache directory to force a full
+    re-map.
+[//]: # (@formatter:on)
+
+[//]: # (@formatter:off)
+!!! note
+    Selection is only ever used where the map is complete. If a package's tests cannot all be
+    mapped — one of them fails to run, for instance — that package runs its whole suite, which is
+    the behaviour without the flag. The same happens for a mutant the map has nothing to say
+    about, and in `--integration` mode, where the whole module runs for every mutant by design.
+[//]: # (@formatter:on)
+
+### Cross package
+
+:material-flag: `--cross-package` · :material-sign-direction: Default: `false`
+
+Tests a mutant against the packages that **depend on** the one it is in, not only that one. A
+mutation can only break a package that uses the mutated code, so those are the packages worth
+running — and package scoping never runs them, which is how a mutant your suite does catch gets
+reported as surviving. That is
+[go-gremlins/gremlins#224](https://github.com/go-gremlins/gremlins/issues/224), where a
+maintainer filed a bug against a `LIVED` verdict that was correct for what it had measured.
+
+It needs no coverage map and no mapping phase. Which packages a change could break is a question
+about imports, and one `go list` answers it — including packages whose *tests* import the mutated
+one, which exercise it even when their own code does not.
+
+```shell
+gremlins unleash --cross-package
+```
+
+It is off by default because it is not free: the packages it adds are recompiled by the mutation,
+and each pays its own test fixtures. On a module of 450 mutants the mutant phase went from 15.4 to
+22.4 minutes, and the widest runs exhausted a 3 GB memory cap.
+
+### Combining the two
+
+The flags are independent and compose:
+
+| flags | what runs for a mutant in P |
+|---|---|
+| neither | P's whole test suite |
+| `--test-selection` | P's covering tests |
+| `--cross-package` | whole suites of P and of every package that depends on P |
+| both | covering tests in P and in P's dependents |
+
+`--test-selection` alone maps only the packages being mutated, and records each test against its
+own package's code. Adding `--cross-package` widens the map to the whole module, because a test
+that kills the mutant may be anywhere — which is what makes that combination the expensive one.
 
 ### Threshold efficacy
 
@@ -440,6 +602,72 @@ coefficient. For example:
 gremlins unleash --timeout-coefficient=10
 ```
 
+### Timeout max
+
+:material-flag: `--timeout-max` · :material-sign-direction:
+Default: `""` (no ceiling)
+
+An absolute ceiling on a single mutant's test RUN, as a Go duration. It caps
+the coefficient-derived timeout; it never raises it. It bounds only the run:
+compiling the mutated package is charged to `--compile-allowance` instead.
+
+The coefficient scales the timeout by how long the package's own tests take,
+which is unrelated to how much damage a mutant can do in that time. A mutant
+that inverts a loop-advance statement (`i++` → `i--`) inside a scanning loop
+that appends on every iteration never terminates and allocates until the
+machine runs out of memory. On a CI runner the OOM killer then reaps the
+runner agent itself and the job dies with no verdict at all. Because the
+coefficient hands the longest timeouts to the slowest-testing packages, those
+packages are the most exposed — which is backwards.
+
+This flag bounds that exposure independently of the baseline. Past the
+ceiling the mutant is killed and recorded as `TIMED OUT`, the honest verdict
+for a mutant that did not terminate.
+
+```shell
+gremlins unleash --timeout-max=15s
+```
+
+A malformed or non-positive value is reported on stderr and ignored, leaving
+the run with no ceiling.
+
+### Compile allowance
+
+:material-flag: `--compile-allowance` · :material-sign-direction:
+Default: `2m`
+
+How long a mutant is allowed to COMPILE, as a Go duration, on top of the bound
+on its test run.
+
+Compile time and run time scale with unrelated things: compile time with the
+size of the package and its dependency graph, run time with the test that
+adjudicates the mutant. Charging both to one number makes the slow-compiling
+packages the ones whose mutants time out — including mutants whose tests would
+have reached a verdict in milliseconds. So the two are bounded separately:
+`go test -timeout` gets the run bound, and a deadline of `run bound + compile
+allowance` covers compilation and the run together.
+
+That deadline is a backstop, not a second leash. No `-timeout` can bound a
+compile that has hung, because there is no test binary yet to enforce one, so
+something has to. A mutant killed by either bound is recorded `TIMED OUT`,
+which stays in the efficacy denominator and credits no test with a detection.
+
+```shell
+gremlins unleash --timeout-max=5s --compile-allowance=3m
+```
+
+A malformed or non-positive value is reported on stderr and ignored, leaving
+the default allowance in place.
+
+!!! note "Verdicts are read from the output, not the exit status"
+    `go test` reports a failing test, a package that does not build and a test
+    that ran past its `-timeout` all as exit status 1 — only the test *binary*
+    exits 2, and what Gremlins spawns is `go`. Gremlins therefore scans the
+    child's output to tell the three apart, so a timed-out mutant is recorded
+    `TIMED OUT` rather than credited as a detection, and a mutant that does not
+    compile is recorded `NOT VIABLE`. The output is scanned as it streams and
+    then discarded, so a mutant that prints without bound cannot exhaust memory.
+
 [//]: # (@formatter:off)
 !!! note "Result Consistency"
     You may observe small fluctuations in the number of
@@ -455,6 +683,56 @@ gremlins unleash --timeout-coefficient=10
     testing process. Large variations or progressive degradation would
     indicate an issue.
 [//]: # (@formatter:on)
+
+### Schemata build timeout
+
+:material-flag: `--schemata-build-timeout` · :material-sign-direction:
+Default: `""` (derived)
+
+The bound on the one schemata build of a whole run, as a Go duration. With
+[schemata](#schemata), every package the run tests is built once, together,
+before any mutant runs; this flag bounds that build. It is separate from
+`--compile-allowance`, which bounds the compile of one mutant on the
+per-mutant path: a mutant can make the compiler hang, but the schemata build
+compiles source that only switches mutants by id, so a slow build there means
+a slow or busy machine, not a bad mutant.
+
+Left empty, the bound is derived: the compile allowance times the number of
+test packages built, and never less than 10 minutes. The run's own context
+still bounds everything, so a hung toolchain cannot outlive the run.
+
+A package whose build is cut off — by this bound, by a signal, or by running
+out of memory — is built once more, at half the parallelism, with a fresh
+bound. Only a package that does not compile, or whose retry fails too, sends
+its mutants to the per-mutant path, and the log line says which:
+`does not compile`, `timed out after a retry` or `was killed after a retry`.
+
+```shell
+gremlins unleash --schemata-build-timeout=30m
+```
+
+A malformed or non-positive value is reported on stderr and ignored, leaving
+the derived bound in place.
+
+### On-shutdown status
+
+:material-flag: `--on-shutdown-status` · :material-sign-direction: Default: `not-run`
+
+Controls the `Status` recorded for mutants that were still in-flight when the run was cancelled
+(e.g. `SIGTERM` from a CI runner that hit its job timeout, or Ctrl-C from the terminal).
+
+Allowed values:
+
+- `not-run` (default) — record cancelled-in-flight mutants as `NOT COVERED`. Truthful: they were
+  never observed.
+- `timed-out` — record them as `TIMED OUT`. Useful if you want test-efficacy
+  (`KILLED / (KILLED + LIVED)`) to ignore them.
+- `lived` — legacy behaviour: record them as `LIVED`. Available for backwards compatibility,
+  but misleading — these mutants were not tested, so they should not be counted as survivors.
+
+```shell
+gremlins unleash --on-shutdown-status=timed-out
+```
 
 ### Workers
 

@@ -60,7 +60,8 @@ func (l MutantLogger) Mutant(m mutator.Mutator) {
 }
 
 // ParseFilter parses a status filter string into a Filter map.
-// Valid characters are 'lctkvsr' representing different mutation statuses.
+// Valid characters are 'lctkvsre' representing different mutation statuses;
+// 't' selects both TimedOut and RunTimedOut.
 func ParseFilter(s string) (Filter, error) {
 	if s == "" {
 		return nil, nil
@@ -75,7 +76,12 @@ func ParseFilter(s string) (Filter, error) {
 		case 'c':
 			result[mutator.NotCovered] = struct{}{}
 		case 't':
+			// Both timeout kinds. A reader asking to see timed-out mutants
+			// wants the ones that overran their run as much as the ones the
+			// backstop claimed; the two are told apart by the status printed on
+			// each line, not by having to ask for them separately.
 			result[mutator.TimedOut] = struct{}{}
+			result[mutator.RunTimedOut] = struct{}{}
 		case 'k':
 			result[mutator.Killed] = struct{}{}
 		case 'v':
@@ -84,6 +90,8 @@ func ParseFilter(s string) (Filter, error) {
 			result[mutator.Skipped] = struct{}{}
 		case 'r':
 			result[mutator.Runnable] = struct{}{}
+		case 'e':
+			result[mutator.Errored] = struct{}{}
 		default:
 			return nil, ErrInvalidFilter
 		}

@@ -51,6 +51,7 @@ type TokenMutator struct {
 
 	origSnippet    []byte
 	mutatedSnippet []byte
+	testsRun       []string
 }
 
 // NewTokenMutant initialises a TokenMutator.
@@ -216,6 +217,19 @@ func (m *TokenMutator) resetOrigFile() {
 // OrigSnippet returns the original code snippet around the mutation point.
 func (m *TokenMutator) OrigSnippet() []byte {
 	return m.origSnippet
+}
+
+// TestsRun returns the tests that were run against the TokenMutator. It is empty
+// when the whole test suite of the mutant's package ran, which is what happens
+// without test selection.
+func (m *TokenMutator) TestsRun() []string {
+	return m.testsRun
+}
+
+// SetTestsRun records the tests that were run against the TokenMutator, so that
+// a report can say what a surviving mutant actually survived.
+func (m *TokenMutator) SetTestsRun(tests []string) {
+	m.testsRun = tests
 }
 
 // MutatedSnippet returns the mutated code snippet around the mutation point.

@@ -81,3 +81,31 @@ func TestDetectsModule(t *testing.T) {
 		}
 	})
 }
+
+func TestPackageDir(t *testing.T) {
+	t.Parallel()
+	mod := gomodule.GoModule{Name: "example.com/m"}
+	root := filepath.Join(string(filepath.Separator), "copy")
+	testCases := map[string]struct {
+		pkg  string
+		want string
+		ok   bool
+	}{
+		"module_root":    {pkg: "example.com/m", want: root, ok: true},
+		"subpackage":     {pkg: "example.com/m/a", want: filepath.Join(root, "a"), ok: true},
+		"nested":         {pkg: "example.com/m/a/b", want: filepath.Join(root, "a", "b"), ok: true},
+		"other_module":   {pkg: "example.com/other"},
+		"sibling_prefix": {pkg: "example.com/mx/a"},
+		"trailing_slash": {pkg: "example.com/m/"},
+		"empty":          {pkg: ""},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			got, ok := mod.PackageDir(root, tc.pkg)
+			if got != tc.want || ok != tc.ok {
+				t.Errorf("PackageDir(%q) = %q, %v, want %q, %v", tc.pkg, got, ok, tc.want, tc.ok)
+			}
+		})
+	}
+}

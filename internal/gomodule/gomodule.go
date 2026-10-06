@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // GoModule represents the current execution context in Gremlins.
@@ -34,6 +35,26 @@ type GoModule struct {
 	Name       string
 	Root       string
 	CallingDir string
+}
+
+// PackageDir maps pkg, an import path of the module, to its directory under
+// root, a copy of the module's root folder (or the root itself): the module
+// path is the root's own package, and every path below it a subdirectory. It
+// reports false for an import path that is not the module's.
+//
+// The engine's executors and the schema preparation both place a package in a
+// module copy through this one function, so that the directory a test binary
+// runs in and the directory its build and null run assume cannot drift apart.
+func (m GoModule) PackageDir(root, pkg string) (string, bool) {
+	if pkg == m.Name {
+		return root, true
+	}
+	rel, ok := strings.CutPrefix(pkg, m.Name+"/")
+	if !ok || rel == "" {
+		return "", false
+	}
+
+	return filepath.Join(root, filepath.FromSlash(rel)), true
 }
 
 // Init initializes the current module. It finds the module name and the root

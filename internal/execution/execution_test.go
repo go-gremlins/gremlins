@@ -41,6 +41,12 @@ func TestExitErr(t *testing.T) {
 			wantExitMsg:  "below mutant coverage-threshold",
 			wantExitCode: 11,
 		},
+		{
+			name:         "errored-mutants",
+			errorType:    execution.ErroredMutants,
+			wantExitMsg:  "test run reached no verdict for some mutants",
+			wantExitCode: 12,
+		},
 	}
 	for _, tc := range testCases {
 		tc := tc

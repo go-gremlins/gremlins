@@ -29,6 +29,24 @@ import "go/token"
 //     means the test suite is not effective in catching it.
 //   - Killed means that the TokenMutant has been tested and the tests failed, which
 //     means they are effective in covering this regression.
+//   - Errored means that the test run for the TokenMutant reached no verdict at
+//     all — the test command was terminated by a signal rather than exiting on
+//     its own — so the mutant was neither killed nor did it survive.
+//   - TimedOut means that the deadline wrapping the WHOLE `go test` child —
+//     resolve, compile, link, then run — expired. Which of those phases consumed
+//     it is not known, so the mutant is unadjudicated: a compile that hung
+//     reaches this status identically to a run that did.
+//   - RunTimedOut means that the test BINARY's own -timeout watchdog fired and
+//     said so in its output. That is a positive observation about the mutant
+//     rather than about the machine: a test binary existed, the suite started,
+//     and it did not finish inside a bound the Go toolchain starts when the
+//     binary starts, so compilation cannot have consumed it.
+//
+// The two timeout statuses are kept apart because they carry different
+// evidence, and a consumer that scores them alike scores a slow compiler and a
+// non-terminating mutant identically. gremlins takes no position on which of
+// them is a detection: neither appears in test_efficacy, exactly as before. The
+// distinction is recorded so that a consumer can take one.
 type Status int
 
 // Currently supported MutantStatus.
@@ -40,7 +58,50 @@ const (
 	Killed
 	NotViable
 	TimedOut
+	Errored
+	RunTimedOut
 )
+
+// Statuses allows to iterate over Status. Kept next to the constants so a new
+// status cannot be added without the readers that enumerate them seeing it.
+var Statuses = []Status{
+	NotCovered,
+	Runnable,
+	Skipped,
+	Lived,
+	Killed,
+	NotViable,
+	TimedOut,
+	RunTimedOut,
+}
+
+// ParseShutdownStatus maps the CLI/config value for "what status to assign
+// to mutants that were still in-flight when the runner cancelled the run"
+// to a concrete Status. The returned bool is false for unrecognised inputs.
+//
+// Accepted forms (case-insensitive): "not-run" (alias "notrun"),
+// "timed-out" (aliases "timedout", "timeout"), "lived".
+//
+// "not-run" maps to NotCovered — the closest existing semantic for "we
+// never got a chance to run this mutant", and avoids inventing a new
+// Status value that would break downstream JSON consumers.
+//
+// "timed-out" maps to TimedOut and deliberately not to RunTimedOut. A mutant
+// the runner cancelled was never adjudicated by anything, which is precisely
+// what TimedOut means; RunTimedOut asserts that a test binary reported the
+// overrun itself, and no shutdown can produce that evidence.
+func ParseShutdownStatus(s string) (Status, bool) {
+	switch s {
+	case "not-run", "notrun", "":
+		return NotCovered, true
+	case "timed-out", "timedout", "timeout":
+		return TimedOut, true
+	case "lived":
+		return Lived, true
+	}
+
+	return 0, false
+}
 
 func (ms Status) String() string {
 	switch ms {
@@ -58,6 +119,10 @@ func (ms Status) String() string {
 		return "NOT VIABLE"
 	case TimedOut:
 		return "TIMED OUT"
+	case Errored:
+		return "ERRORED"
+	case RunTimedOut:
+		return "RUN TIMED OUT"
 	default:
 		panic("this should not happen")
 	}
@@ -175,4 +240,11 @@ type Mutator interface {
 
 	// MutatedSnippet returns the mutated code snippet around the mutation point.
 	MutatedSnippet() []byte
+
+	// TestsRun returns the tests that were run against the Mutator, empty when
+	// the whole test suite of its package ran.
+	TestsRun() []string
+
+	// SetTestsRun records the tests that were run against the Mutator.
+	SetTestsRun(tests []string)
 }

@@ -16,28 +16,28 @@
  *    limitations under the License.
  */
 
-package engine
+package procgroup
 
 import (
 	"os/exec"
 	"syscall"
 )
 
-// setupProcessGroup configures the command to use Windows process groups.
+// Setup configures the command to use Windows process groups.
 // Note: Windows process group semantics differ from Unix. This is best-effort
 // and may not kill all child processes in all scenarios.
-func setupProcessGroup(cmd *exec.Cmd) {
+func Setup(cmd *exec.Cmd) {
 	if cmd.SysProcAttr == nil {
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
 	}
 	cmd.SysProcAttr.CreationFlags = syscall.CREATE_NEW_PROCESS_GROUP
 }
 
-// killProcessGroup attempts to kill the process on Windows.
+// Kill attempts to kill the process on Windows.
 // Note: Windows doesn't have Unix-style process groups, so this
 // is best-effort and may not kill all child processes. Future
 // enhancement could use Windows job objects for better process tree control.
-func killProcessGroup(cmd *exec.Cmd) error {
+func Kill(cmd *exec.Cmd) error {
 	if cmd.Process == nil {
 		return nil
 	}
