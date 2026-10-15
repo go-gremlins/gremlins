@@ -27,6 +27,7 @@ import (
 	"testing"
 )
 
+// TestCopyClosesFiles verifies copies release their files before cleanup or GC.
 func TestCopyClosesFiles(t *testing.T) {
 	previous := debug.SetGCPercent(-1)
 	defer debug.SetGCPercent(previous)
@@ -55,6 +56,7 @@ func TestCopyClosesFiles(t *testing.T) {
 	assertNoOpenFiles(t, root)
 }
 
+// TestCopyClosesFilesOnError verifies failed copies release acquired files.
 func TestCopyClosesFilesOnError(t *testing.T) {
 	previous := debug.SetGCPercent(-1)
 	defer debug.SetGCPercent(previous)
@@ -84,15 +86,17 @@ func TestCopyClosesFilesOnError(t *testing.T) {
 	}
 }
 
+// assertNoOpenFiles checks only descriptors owned by the test fixture.
 func assertNoOpenFiles(t *testing.T, root string) {
 	t.Helper()
-	entries, err := os.ReadDir("/proc/self/fd")
+	fdDir := filepath.Join(string(os.PathSeparator), "proc", "self", "fd")
+	entries, err := os.ReadDir(fdDir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var opened []string
 	for _, entry := range entries {
-		target, err := os.Readlink(filepath.Join("/proc/self/fd", entry.Name()))
+		target, err := os.Readlink(filepath.Join(fdDir, entry.Name()))
 		if err == nil && strings.HasPrefix(target, root+string(os.PathSeparator)) {
 			opened = append(opened, target)
 		}
