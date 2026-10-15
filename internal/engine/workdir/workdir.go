@@ -160,15 +160,18 @@ func doCopy(srcPath, dstPath string, fileMode fs.FileMode) error {
 	if err != nil {
 		return err
 	}
+	defer s.Close()
 	//nolint:gosec // dstPath is internally controlled, not user input
 	d, err := os.OpenFile(dstPath, os.O_CREATE|os.O_RDWR, fileMode)
 	if err != nil {
 		return err
 	}
 
-	if _, err = io.Copy(d, s); err != nil {
-		return err
+	_, copyErr := io.Copy(d, s)
+	closeErr := d.Close()
+	if copyErr != nil {
+		return copyErr
 	}
 
-	return nil
+	return closeErr
 }
