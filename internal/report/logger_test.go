@@ -29,12 +29,16 @@ func Test_parseFilter(t *testing.T) {
 			},
 		},
 		{
+			// 't' selects BOTH timeout kinds: a reader asking to see timed-out
+			// mutants wants the ones whose run overran as much as the ones the
+			// compile+run backstop claimed.
 			filter: "tkvs",
 			want: report.Filter{
-				mutator.TimedOut:  struct{}{},
-				mutator.Killed:    struct{}{},
-				mutator.NotViable: struct{}{},
-				mutator.Skipped:   struct{}{},
+				mutator.TimedOut:    struct{}{},
+				mutator.RunTimedOut: struct{}{},
+				mutator.Killed:      struct{}{},
+				mutator.NotViable:   struct{}{},
+				mutator.Skipped:     struct{}{},
 			},
 		},
 		{
@@ -151,9 +155,9 @@ func TestLogger(t *testing.T) {
 	got := out.String()
 
 	want := "output-statuses filter not applied: " + report.ErrInvalidFilter.Error() + "\n" +
-		" NOT COVERED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
-		"      KILLED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
-		"       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
+		"   NOT COVERED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"        KILLED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n" +
+		"         LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
 
 	if !cmp.Equal(got, want) {
 		t.Error(cmp.Diff(got, want))
@@ -207,7 +211,7 @@ func TestLoggerOutputStatusesAndDiffStatusesTogether(t *testing.T) {
 		})
 
 		got := out.String()
-		statusLine := "      KILLED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
+		statusLine := "        KILLED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
 		if !strings.HasPrefix(got, statusLine) {
 			t.Errorf("expected status line prefix, got: %q", got)
 		}
@@ -225,7 +229,7 @@ func TestLoggerOutputDiffStatuses(t *testing.T) {
 		originSnippet:  []byte("x > y\n"),
 		mutatedSnippet: []byte("x >= y\n"),
 	}
-	statusLine := "       LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
+	statusLine := "         LIVED CONDITIONALS_BOUNDARY at aFolder/aFile.go:12:3\n"
 
 	t.Run("prints diff when status matches output-diff-statuses", func(t *testing.T) {
 		out := &bytes.Buffer{}

@@ -19,10 +19,12 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/go-gremlins/gremlins/internal/configuration"
+	"github.com/go-gremlins/gremlins/internal/engine"
 	"github.com/go-gremlins/gremlins/internal/mutator"
 )
 
@@ -199,5 +201,28 @@ func TestUnleash(t *testing.T) {
 		if mtf.DefValue != wantDef {
 			t.Errorf("expected %q have default %q, got %q", s, wantDef, mtf.DefValue)
 		}
+	}
+}
+
+// TestCacheEnvIgnoreParsesTheCommandLine parses --cache-env-ignore through the
+// unleash command's own flag set: a comma-separated value is several patterns,
+// and a repeated flag adds to them. A pattern left joined matches no variable
+// name, so every key would keep every per-run variable and never hit.
+func TestCacheEnvIgnoreParsesTheCommandLine(t *testing.T) {
+	configuration.Reset()
+	t.Cleanup(configuration.Reset)
+	c, err := newUnleashCmd(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	args := []string{"--cache-env-ignore", "GITHUB_*,RUNNER_TRACKING_ID", "--cache-env-ignore", " CI_JOB_ID ,"}
+	if err := c.cmd.ParseFlags(args); err != nil {
+		t.Fatal(err)
+	}
+
+	got := engine.CacheEnvIgnore()
+	want := []string{"GITHUB_*", "RUNNER_TRACKING_ID", "CI_JOB_ID"}
+	if !slices.Equal(got, want) {
+		t.Errorf("--cache-env-ignore %q: got %q, want %q", args, got, want)
 	}
 }

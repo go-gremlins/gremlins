@@ -56,13 +56,14 @@ type reportStatus struct {
 	elapsed *durafmt.Durafmt
 	module  string
 
-	killed     int
-	lived      int
-	timedOut   int
-	notCovered int
-	skipped    int
-	notViable  int
-	runnable   int
+	killed      int
+	lived       int
+	timedOut    int
+	runTimedOut int
+	notCovered  int
+	skipped     int
+	notViable   int
+	runnable    int
 
 	mutatorStatistics internal.MutatorType
 
@@ -116,6 +117,8 @@ func reportMutationStatus(m mutator.Mutator, rep *reportStatus) {
 		rep.skipped++
 	case mutator.TimedOut:
 		rep.timedOut++
+	case mutator.RunTimedOut:
+		rep.runTimedOut++
 	case mutator.NotViable:
 		rep.notViable++
 	case mutator.Runnable:
@@ -215,13 +218,15 @@ func (r *reportStatus) fullRunReport() {
 	killed := fgHiGreen(r.killed)
 	lived := fgRed(r.lived)
 	timedOut := fgGreen(r.timedOut)
+	runTimedOut := fgGreen(r.runTimedOut)
 	notViable := fgHiBlack(r.notViable)
 	skipped := fgHiBlack(r.skipped)
 	notCovered := fgHiYellow(r.notCovered)
 	log.Infoln("")
 	log.Infof("Mutation testing completed in %s\n", r.elapsed.String())
 	log.Infof("Killed: %s, Lived: %s, Not covered: %s\n", killed, lived, notCovered)
-	log.Infof("Timed out: %s, Not viable: %s, Skipped: %s\n", timedOut, notViable, skipped)
+	log.Infof("Timed out: %s, Run timed out: %s, Not viable: %s, Skipped: %s\n",
+		timedOut, runTimedOut, notViable, skipped)
 	log.Infof("Test efficacy: %.2f%%\n", r.tEfficacy)
 	log.Infof("Mutator coverage: %.2f%%\n", r.mCovered)
 }
@@ -279,7 +284,7 @@ func Mutant(m mutator.Mutator) {
 		status = fgRed(m.Status())
 	case mutator.NotCovered:
 		status = fgHiYellow(m.Status())
-	case mutator.TimedOut:
+	case mutator.TimedOut, mutator.RunTimedOut:
 		status = fgGreen(m.Status())
 	case mutator.NotViable, mutator.Skipped:
 		status = fgHiBlack(m.Status())
@@ -348,11 +353,22 @@ func generateDiff(m mutator.Mutator) ([]string, error) {
 }
 
 func padding(s mutator.Status) string {
-	var pad string
-	padLen := 12 - len(s.String())
-	for i := 0; i < padLen; i++ {
-		pad += " "
+	return strings.Repeat(" ", statusColumnWidth-len(s.String()))
+}
+
+// statusColumnWidth is the column the status name is right-aligned in: the
+// longest status name, plus one space to separate it from what follows. Derived
+// from mutator.Statuses rather than declared, so adding a status cannot leave a
+// literal behind that silently stops padding every line.
+var statusColumnWidth = longestStatusNameLen() + 1
+
+func longestStatusNameLen() int {
+	longest := 0
+	for _, s := range mutator.Statuses {
+		if n := len(s.String()); n > longest {
+			longest = n
+		}
 	}
 
-	return pad
+	return longest
 }

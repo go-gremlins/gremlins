@@ -149,6 +149,13 @@ func TestCoverageParsesOutput(t *testing.T) {
 				EndLine:   48,
 				EndCol:    16,
 			},
+			{
+				StartLine:   48,
+				StartCol:    4,
+				EndLine:     49,
+				EndCol:      20,
+				NotExecuted: true,
+			},
 		},
 		"file2.go": {
 			{

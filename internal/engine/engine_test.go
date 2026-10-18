@@ -649,6 +649,49 @@ func TestSkipNotDiffMutants(t *testing.T) {
 	}
 }
 
+// TestDiffIsMatchedFromAScopedRun pins the base the diff and the engine
+// agree on. The diff names files relative to the module root; a run scoped to
+// a subdirectory walks file names relative to that subdirectory. Before they
+// were joined, a run over ./sub never matched a single changed line, and every
+// mutant of the change was SKIPPED.
+func TestDiffIsMatchedFromAScopedRun(t *testing.T) {
+	const scopedFile = "scoped.go"
+
+	f, _ := os.Open("testdata/fixtures/geq_go")
+	file, _ := io.ReadAll(f)
+	_ = f.Close()
+
+	testCases := []struct {
+		name     string
+		diffName diff.FileName
+		skipped  bool
+	}{
+		{name: "the module-relative name of a changed file", diffName: "sub/" + scopedFile, skipped: false},
+		{name: "a changed file elsewhere in the module", diffName: scopedFile, skipped: true},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			viperSet(map[string]any{configuration.UnleashDryRunKey: true})
+			defer viperReset()
+
+			sys := fstest.MapFS{scopedFile: {Data: file}}
+			mod := gomodule.GoModule{Name: expectedModule, Root: ".", CallingDir: "sub"}
+			codeData := engine.CodeData{Diff: diff.Diff{tc.diffName: {{StartLine: 1, EndLine: 1000}}}}
+			mut := engine.New(mod, codeData, newJobDealerStub(t), engine.WithDirFs(sys))
+			res := mut.Run(context.Background())
+
+			if len(res.Mutants) == 0 {
+				t.Fatal("should receive mutants")
+			}
+			for _, m := range res.Mutants {
+				if got := m.Status() == mutator.Skipped; got != tc.skipped {
+					t.Errorf("%s: SKIPPED = %v, want %v", m.Position(), got, tc.skipped)
+				}
+			}
+		})
+	}
+}
+
 func TestStopsOnCancel(t *testing.T) {
 	mapFS, mod, c := loadFixture(defaultFixture, ".")
 	defer c()

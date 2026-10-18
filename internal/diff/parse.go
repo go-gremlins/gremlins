@@ -11,9 +11,11 @@ import (
 	"github.com/go-gremlins/gremlins/internal/log"
 )
 
-// New creates a new Diff by parsing git diff output using the default command executor.
-func New() (Diff, error) {
-	return NewWithCmd(exec.Command)
+// New creates a new Diff by parsing git diff output using the default command
+// executor. moduleRoot is the root of the Go module under test; see
+// NewWithCmd for why the diff is read from there.
+func New(moduleRoot string) (Diff, error) {
+	return NewWithCmd(exec.Command, moduleRoot)
 }
 
 type execCmd interface {
@@ -22,7 +24,13 @@ type execCmd interface {
 
 // NewWithCmd creates a new Diff by parsing git diff output using a custom command executor.
 // This is useful for testing.
-func NewWithCmd[T execCmd](cmdContext func(name string, args ...string) T) (Diff, error) {
+//
+// The diff is read from moduleRoot with --relative, so every file name in it
+// is relative to the module root, the same base the engine resolves its
+// positions against. Plain `git diff` names files relative to the repository
+// root whatever the working directory, which matches nothing once the module
+// is not the repository root or the run is scoped to a subdirectory.
+func NewWithCmd[T execCmd](cmdContext func(name string, args ...string) T, moduleRoot string) (Diff, error) {
 	diffRef := configuration.Get[string](configuration.UnleashDiffRef)
 	if diffRef == "" {
 		return nil, nil
@@ -30,7 +38,7 @@ func NewWithCmd[T execCmd](cmdContext func(name string, args ...string) T) (Diff
 
 	log.Infoln("Gathering files diff...")
 
-	cmd := cmdContext("git", "diff", "--merge-base", diffRef)
+	cmd := cmdContext("git", "-C", moduleRoot, "diff", "--merge-base", "--relative", diffRef)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {

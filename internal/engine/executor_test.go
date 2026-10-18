@@ -151,6 +151,18 @@ func TestMutatorTestExecution(t *testing.T) {
 			mutantStatus:  mutator.Runnable,
 			wantMutStatus: mutator.NotViable,
 		},
+		{
+			// The run-phase timeout marker is evidence only alongside a child
+			// that FAILED. A child that printed it and then exited 0 adjudicated
+			// the mutant, whatever it said on the way, and reading its output
+			// alone would move a survivor out of the LIVED column and into a
+			// timeout one — where a consumer that credits run-phase timeouts
+			// would then pay the suite for it.
+			name:          "if the child prints the timeout marker and still succeeds, mutation is LIVED",
+			testResult:    fakeExecCommandMarkerThenSuccess,
+			mutantStatus:  mutator.Runnable,
+			wantMutStatus: mutator.Lived,
+		},
 	}
 	for _, tc := range testCases {
 		tc := tc
@@ -234,8 +246,13 @@ func TestMutatorRun(t *testing.T) {
 		callDir            string
 		tags               string
 		wantPath           string
+		timeoutMax         string
+		compileAllowance   string
 		timeoutCoefficient int
-		intMode            bool
+		// wantExecutionTime, when non-zero, is the per-mutant timeout the run
+		// must end up with, overriding the coefficient-derived expectation.
+		wantExecutionTime time.Duration
+		intMode           bool
 	}{
 		{
 			name:     "normal mode",
@@ -261,6 +278,79 @@ func TestMutatorRun(t *testing.T) {
 			tags:               "tag1,t1g2",
 			wantPath:           "example.com/my/package",
 		},
+		{
+			// The whole point of the ceiling: 4 x 10s would be 40s, and a mutant
+			// that never terminates gets 40s to exhaust the machine. The cap
+			// takes it to 15s regardless of how slow the package's tests are.
+			name:               "it caps the timeout at timeout-max",
+			timeoutCoefficient: 4,
+			timeoutMax:         "15s",
+			wantExecutionTime:  15 * time.Second,
+			pkg:                "example.com/my/package",
+			callDir:            "test/dir",
+			tags:               "tag1,t1g2",
+			wantPath:           "example.com/my/package",
+		},
+		{
+			// A ceiling above the derived timeout must not pull it UP: the cap
+			// bounds the worst case, it does not set the timeout.
+			name:               "a timeout-max above the derived timeout leaves it alone",
+			timeoutCoefficient: 4,
+			timeoutMax:         "2m",
+			wantExecutionTime:  40 * time.Second,
+			pkg:                "example.com/my/package",
+			callDir:            "test/dir",
+			tags:               "tag1,t1g2",
+			wantPath:           "example.com/my/package",
+		},
+		{
+			// An unparseable ceiling falls back to the derived timeout. It is
+			// reported on stderr rather than swallowed, but it must not abort a
+			// run or silently become zero — a zero timeout would kill every
+			// mutant instantly and report the package as perfectly tested.
+			name:              "a malformed timeout-max is ignored",
+			timeoutMax:        "fifteen seconds",
+			wantExecutionTime: expectedTimeout * engine.DefaultTimeoutCoefficient,
+			pkg:               "example.com/my/package",
+			callDir:           "test/dir",
+			tags:              "tag1,t1g2",
+			wantPath:          "example.com/my/package",
+		},
+		{
+			name:              "a non-positive timeout-max is ignored",
+			timeoutMax:        "0s",
+			wantExecutionTime: expectedTimeout * engine.DefaultTimeoutCoefficient,
+			pkg:               "example.com/my/package",
+			callDir:           "test/dir",
+			tags:              "tag1,t1g2",
+			wantPath:          "example.com/my/package",
+		},
+		{
+			// The compile allowance moves the context deadline and must leave
+			// the run bound alone: it buys time for compiling, not for running.
+			name:             "compile-allowance extends the deadline but not the run bound",
+			compileAllowance: "3m",
+			pkg:              "example.com/my/package",
+			callDir:          "test/dir",
+			tags:             "tag1,t1g2",
+			wantPath:         "example.com/my/package",
+		},
+		{
+			name:             "a malformed compile-allowance falls back to the default",
+			compileAllowance: "three minutes",
+			pkg:              "example.com/my/package",
+			callDir:          "test/dir",
+			tags:             "tag1,t1g2",
+			wantPath:         "example.com/my/package",
+		},
+		{
+			name:             "a non-positive compile-allowance falls back to the default",
+			compileAllowance: "0s",
+			pkg:              "example.com/my/package",
+			callDir:          "test/dir",
+			tags:             "tag1,t1g2",
+			wantPath:         "example.com/my/package",
+		},
 	}
 	for _, tc := range testCases {
 		tc := tc
@@ -271,6 +361,12 @@ func TestMutatorRun(t *testing.T) {
 			}
 			if tc.timeoutCoefficient != 0 {
 				settings[configuration.UnleashTimeoutCoefficientKey] = tc.timeoutCoefficient
+			}
+			if tc.timeoutMax != "" {
+				settings[configuration.UnleashTimeoutMaxKey] = tc.timeoutMax
+			}
+			if tc.compileAllowance != "" {
+				settings[configuration.UnleashCompileAllowanceKey] = tc.compileAllowance
 			}
 			viperSet(settings)
 			defer viperReset()
@@ -304,21 +400,40 @@ func TestMutatorRun(t *testing.T) {
 			executor.Start(w)
 			wg.Wait()
 
-			wantTimeout := 2*time.Second + expectedTimeout*engine.DefaultTimeoutCoefficient
+			// -timeout carries the run bound verbatim. Nothing is added to it:
+			// the whole point is that the leash Go enforces on the test RUN is
+			// the tighter of the two bounds, so a slow compile cannot eat it.
+			wantRunBound := expectedTimeout * engine.DefaultTimeoutCoefficient
 			if tc.timeoutCoefficient != 0 {
-				wantTimeout = 2*time.Second + expectedTimeout*time.Duration(tc.timeoutCoefficient)
+				wantRunBound = expectedTimeout * time.Duration(tc.timeoutCoefficient)
 			}
-			want := fmt.Sprintf("go test -tags %s -timeout %s -failfast %s", tc.tags, wantTimeout, tc.wantPath)
+			if tc.wantExecutionTime != 0 {
+				wantRunBound = tc.wantExecutionTime
+			}
+			want := fmt.Sprintf("go test -vet=off -tags %s -timeout %s -failfast %s", tc.tags, wantRunBound, tc.wantPath)
 			got := fmt.Sprintf("go %v", strings.Join(holder.args, " "))
 
 			if !cmp.Equal(got, want) {
 				t.Errorf("\n+ %s\n- %s\n", got, want)
 			}
 
-			timeoutDifference := absTimeDiff(holder.timeout, expectedTimeout*2)
-			diffThreshold := 100 * time.Second
-			if timeoutDifference > diffThreshold {
-				t.Errorf("expected timeout to be within %s from the set timeout, got %s", diffThreshold, timeoutDifference)
+			// The context deadline is the backstop: the run bound PLUS the
+			// compile allowance, so compilation is charged to it and not to the
+			// run bound above.
+			wantAllowance := engine.DefaultCompileAllowance
+			if tc.compileAllowance != "" {
+				parsed, err := time.ParseDuration(tc.compileAllowance)
+				if err == nil && parsed > 0 {
+					wantAllowance = parsed
+				}
+			}
+			wantDeadline := wantRunBound + wantAllowance
+			// The deadline is read after the context is created, so a little of
+			// it has already elapsed; only scheduling slack is tolerated.
+			const deadlineSlack = 2 * time.Second
+			if d := absTimeDiff(holder.timeout, wantDeadline); d > deadlineSlack {
+				t.Errorf("expected the context deadline to be %s (run bound %s + compile allowance %s), got %s",
+					wantDeadline, wantRunBound, wantAllowance, holder.timeout)
 			}
 		})
 	}
@@ -435,11 +550,105 @@ func TestProcessTestsFailure(_ *testing.T) {
 	os.Exit(1) // skipcq: RVV-A0003
 }
 
+// TestProcessMarkerThenSuccess is the child-process entry point that prints the
+// bytes a timed-out test binary prints and then exits 0.
+func TestProcessMarkerThenSuccess(_ *testing.T) {
+	if os.Getenv("GO_TEST_PROCESS") != "1" {
+		return
+	}
+	fmt.Fprintln(os.Stdout, "panic: test timed out after 10m0s")
+	os.Exit(0) // skipcq: RVV-A0003
+}
+
 func TestProcessBuildFailure(_ *testing.T) {
 	if os.Getenv("GO_TEST_PROCESS") != "1" {
 		return
 	}
 	os.Exit(2) // skipcq: RVV-A0003
+}
+
+// TestProcessSleep is the child-process entry point used by the
+// SIGTERM-shutdown tests: it sleeps long enough that the parent ctx
+// will cancel it. ExecCommandContext kills the process tree on ctx
+// cancellation, so this child will exit non-zero (signal kill) and
+// the parent ctx.Err() will be non-nil.
+func TestProcessSleep(_ *testing.T) {
+	if os.Getenv("GO_TEST_PROCESS") != "1" {
+		return
+	}
+	time.Sleep(30 * time.Second)
+	os.Exit(0) // skipcq: RVV-A0003 — only reached if no one cancels us
+}
+
+func fakeExecCommandSleep(ctx context.Context, command string, args ...string) *exec.Cmd {
+	cs := []string{"-test.run=TestProcessSleep", "--", command}
+	cs = append(cs, args...)
+	return getCmd(ctx, cs)
+}
+
+// TestShutdownMidRun pins the fix for the bug where a SIGTERM from a CI
+// runner during `gremlins unleash` caused mutants that were still being
+// tested to be recorded as LIVED. The expected behaviour now: when the
+// engine's root ctx is cancelled mid-run, in-flight mutants are reported
+// with the status configured via --on-shutdown-status (default
+// not-run -> mutator.NotCovered), never LIVED.
+func TestShutdownMidRun(t *testing.T) {
+	cases := []struct {
+		name       string
+		flagValue  string
+		wantStatus mutator.Status
+	}{
+		{name: "default not-run maps to NotCovered", flagValue: "not-run", wantStatus: mutator.NotCovered},
+		{name: "timed-out maps to TimedOut", flagValue: "timed-out", wantStatus: mutator.TimedOut},
+		{name: "lived preserves legacy behaviour for opt-in", flagValue: "lived", wantStatus: mutator.Lived},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			viperSet(map[string]any{
+				configuration.UnleashDryRunKey:           false,
+				configuration.UnleashOnShutdownStatusKey: tc.flagValue,
+			})
+			defer viperReset()
+
+			wdDealer := newWdDealerStub(t)
+			mod := gomodule.GoModule{Name: "example.com", Root: ".", CallingDir: "."}
+			mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout,
+				engine.WithExecContext(fakeExecCommandSleep),
+			)
+			runCtx, cancel := context.WithCancel(context.Background())
+			mjd.SetRunCtx(runCtx)
+
+			mut := &mutantStub{
+				status:  mutator.Runnable,
+				mutType: mutator.ConditionalsBoundary,
+				pkg:     "example.com",
+			}
+			outCh := make(chan mutator.Mutator, 1)
+			wg := sync.WaitGroup{}
+			wg.Add(1)
+			executor := mjd.NewExecutor(mut, outCh, &wg)
+			w := &workerpool.Worker{Name: "test", ID: 1}
+
+			// Cancel the run a short moment after the executor starts, so
+			// the test subprocess is killed mid-flight.
+			go func() {
+				time.Sleep(100 * time.Millisecond)
+				cancel()
+			}()
+			executor.Start(w)
+			wg.Wait()
+
+			select {
+			case got := <-outCh:
+				if got.Status() != tc.wantStatus {
+					t.Fatalf("shutdown-mid-run: want %v, got %v", tc.wantStatus, got.Status())
+				}
+			case <-time.After(5 * time.Second):
+				t.Fatal("executor never wrote to outCh")
+			}
+		})
+	}
 }
 
 func TestMutatorRunInTheCorrectFolder(t *testing.T) {
@@ -573,6 +782,13 @@ func fakeExecCommandWithHolder(got *commandHolder, fakeCmd func(ctx context.Cont
 
 func fakeExecCommandTestsFailure(ctx context.Context, command string, args ...string) *exec.Cmd {
 	cs := []string{"-test.run=TestProcessTestsFailure", "--", command}
+	cs = append(cs, args...)
+
+	return getCmd(ctx, cs)
+}
+
+func fakeExecCommandMarkerThenSuccess(ctx context.Context, command string, args ...string) *exec.Cmd {
+	cs := []string{"-test.run=TestProcessMarkerThenSuccess", "--", command}
 	cs = append(cs, args...)
 
 	return getCmd(ctx, cs)

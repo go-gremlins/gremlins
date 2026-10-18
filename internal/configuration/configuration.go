@@ -42,12 +42,18 @@ const (
 	UnleashWorkersKey            = "unleash.workers"
 	UnleashTestCPUKey            = "unleash.test-cpu"
 	UnleashTimeoutCoefficientKey = "unleash.timeout-coefficient"
+	UnleashTimeoutMaxKey         = "unleash.timeout-max"
+	UnleashCompileAllowanceKey   = "unleash.compile-allowance"
 	UnleashIntegrationMode       = "unleash.integration"
 	UnleashExcludeFiles          = "unleash.exclude-files"
 	UnleashDiffRef               = "unleash.diff"
 	UnleashThresholdEfficacyKey  = "unleash.threshold.efficacy"
 	UnleashThresholdMCoverageKey = "unleash.threshold.mutant-coverage"
 	UnleashOutputDiffStatusesKey = "unleash.output-diff-statuses"
+	UnleashOnShutdownStatusKey   = "unleash.on-shutdown-status"
+	UnleashCacheDirKey           = "unleash.cache-dir"
+	UnleashCacheSaltKey          = "unleash.cache-salt"
+	UnleashCacheEnvIgnoreKey     = "unleash.cache-env-ignore"
 )
 
 const (
@@ -187,6 +193,15 @@ func Get[T any](k string) T {
 	r, _ = viper.Get(k).(T)
 
 	return r
+}
+
+// GetStringSlice offers synchronised access to a list value, whether it came
+// from a flag or from a configuration file.
+func GetStringSlice(k string) []string {
+	mutex.RLock()
+	defer mutex.RUnlock()
+
+	return viper.GetStringSlice(k)
 }
 
 // Reset is used mainly for testing purposes, in order to clean up the Viper

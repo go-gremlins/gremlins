@@ -54,13 +54,26 @@ func main() {
 }
 
 func ctxDoneOnSignal() context.Context {
-	done := make(chan os.Signal, 1)
+	// Buffer of 2 lets a follow-up signal be queued (e.g. CI runner sending
+	// SIGTERM then SIGKILL is masked, but Ctrl-C twice from a TTY isn't).
+	// We never close `done`: closing while `os/signal` may still write to it
+	// causes "panic: send on closed channel" from signal.process. Instead,
+	// we call signal.Stop to detach the runtime sender before we drop our
+	// reference to the channel.
+	done := make(chan os.Signal, 2)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		<-done
 		cancel()
-		close(done)
+		// A second signal forces immediate exit. The first one triggered
+		// the graceful-shutdown path via the cancelled ctx; if the user
+		// hits Ctrl-C again they want out _now_.
+		go func() {
+			<-done
+			signal.Stop(done)
+			os.Exit(130) // 128 + SIGINT
+		}()
 	}()
 
 	return ctx

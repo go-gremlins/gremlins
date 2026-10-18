@@ -182,14 +182,12 @@ func (c *Coverage) parse(data io.Reader) (Profile, error) {
 	status := make(Profile)
 	for _, p := range profiles {
 		for _, b := range p.Blocks {
-			if b.Count == 0 {
-				continue
-			}
 			block := Block{
-				StartLine: b.StartLine,
-				StartCol:  b.StartCol,
-				EndLine:   b.EndLine,
-				EndCol:    b.EndCol,
+				StartLine:   b.StartLine,
+				StartCol:    b.StartCol,
+				EndLine:     b.EndLine,
+				EndCol:      b.EndCol,
+				NotExecuted: b.Count == 0,
 			}
 			fn := c.removeModuleFromPath(p)
 			status[fn] = append(status[fn], block)

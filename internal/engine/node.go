@@ -26,6 +26,7 @@ import (
 type NodeToken struct {
 	tok    *token.Token
 	TokPos token.Pos
+	unary  bool
 }
 
 // NewTokenNode checks if the ast.Node implementation is supported by
@@ -35,6 +36,7 @@ type NodeToken struct {
 func NewTokenNode(n ast.Node) (*NodeToken, bool) {
 	var tok *token.Token
 	var pos token.Pos
+	var unary bool
 	switch n := n.(type) {
 	case *ast.AssignStmt:
 		tok = &n.Tok
@@ -51,6 +53,7 @@ func NewTokenNode(n ast.Node) (*NodeToken, bool) {
 	case *ast.UnaryExpr:
 		tok = &n.Op
 		pos = n.OpPos
+		unary = true
 	default:
 		return &NodeToken{}, false
 	}
@@ -58,7 +61,17 @@ func NewTokenNode(n ast.Node) (*NodeToken, bool) {
 	return &NodeToken{
 		tok:    tok,
 		TokPos: pos,
+		unary:  unary,
 	}, true
+}
+
+// IsUnary reports whether the token was read as the prefix operator of an
+// *ast.UnaryExpr rather than as an infix operator or a statement token. Go
+// spells four operators the same in both positions -- `+`, `-`, `&` and `^` --
+// and means something different by each, so the position a token was read in
+// decides which mutations may be applied to it. See unaryMutableOperators.
+func (n *NodeToken) IsUnary() bool {
+	return n.unary
 }
 
 // Tok returns the reference to the token.Token.

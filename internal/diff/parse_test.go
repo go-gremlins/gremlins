@@ -14,7 +14,7 @@ func TestNewWithCmd(t *testing.T) {
 	t.Run("must return nil on empty flag", func(t *testing.T) {
 		m := &mock{}
 
-		d, err := NewWithCmd(m.call)
+		d, err := NewWithCmd(m.call, "root")
 
 		if d != nil && err != nil {
 			t.Fatal("incorrect result")
@@ -28,7 +28,7 @@ func TestNewWithCmd(t *testing.T) {
 			outputErr: errors.New("test"),
 		}
 
-		_, err := NewWithCmd(m.call)
+		_, err := NewWithCmd(m.call, "root")
 		if err == nil {
 			t.Error("must return error")
 		}
@@ -37,7 +37,7 @@ func TestNewWithCmd(t *testing.T) {
 			t.Fatal("cmd not called")
 		}
 
-		expectedArgs := []string{"diff", "--merge-base", "test"}
+		expectedArgs := []string{"-C", "root", "diff", "--merge-base", "--relative", "test"}
 
 		if m.callName != "git" || !reflect.DeepEqual(m.callArgs, expectedArgs) {
 			t.Log("name", m.callName)
@@ -53,7 +53,7 @@ func TestNewWithCmd(t *testing.T) {
 			output: []byte(testErrDiff),
 		}
 
-		_, err := NewWithCmd(m.call)
+		_, err := NewWithCmd(m.call, "root")
 		if err == nil {
 			t.Error("must return error")
 		}
@@ -70,7 +70,7 @@ func TestNewWithCmd(t *testing.T) {
 			"test/test": {{StartLine: 44, EndLine: 44}},
 		}
 
-		result, err := NewWithCmd(m.call)
+		result, err := NewWithCmd(m.call, "root")
 
 		if err != nil || !reflect.DeepEqual(result, expected) {
 			t.Log("err", err)
@@ -78,6 +78,23 @@ func TestNewWithCmd(t *testing.T) {
 			t.Error("unexpected result")
 		}
 	})
+}
+
+func TestEveryAddedLineOfAFragmentIsAChange(t *testing.T) {
+	viper.Set(configuration.UnleashDiffRef, "test")
+	defer viper.Set(configuration.UnleashDiffRef, "")
+
+	result, err := NewWithCmd((&mock{output: []byte(testGappedDiff)}).call, "root")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := Diff{
+		"test/test": {{StartLine: 42, EndLine: 42}, {StartLine: 46, EndLine: 46}},
+	}
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("expected %v, got %v", expected, result)
+	}
 }
 
 type mock struct {
@@ -111,6 +128,26 @@ index 54051bc..b92c425 100644
  	test = "test"
  	test = "test"
 +	test = "test"
+ 	test = "test"
+ 	test = "test"
+ )
+`
+	// testGappedDiff has one fragment whose two added lines are separated by
+	// context, so a range derived from the fragment's first added line and
+	// its added count would cover line 42 only and miss line 46.
+	testGappedDiff = `
+diff --git a/test/test b/test/test
+index 54051bc..b92c425 100644
+--- a/test/test
++++ b/test/test
+@@ -41,8 +41,9 @@ const (
+ 	test = "test"
++	test = "added"
+ 	test = "test"
+ 	test = "test"
+ 	test = "test"
++	test = "added"
+-	test = "removed"
  	test = "test"
  	test = "test"
  )

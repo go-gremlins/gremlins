@@ -23,7 +23,9 @@ import (
 )
 
 // TokenMutantType is the mapping from each token.Token and all the
-// mutator.Type that can be applied to it.
+// mutator.Type that can be applied to it, read as the INFIX meaning of the
+// token. A token read in prefix position goes through MutantTypesFor, which
+// filters this table by unaryMutableOperators.
 var TokenMutantType = map[token.Token][]mutator.Type{
 	token.ADD:            {mutator.ArithmeticBase},
 	token.ADD_ASSIGN:     {mutator.InvertAssignments, mutator.RemoveSelfAssignments},
@@ -59,6 +61,46 @@ var TokenMutantType = map[token.Token][]mutator.Type{
 	token.SUB_ASSIGN:     {mutator.InvertAssignments, mutator.RemoveSelfAssignments},
 	token.XOR:            {mutator.InvertBitwise},
 	token.XOR_ASSIGN:     {mutator.RemoveSelfAssignments, mutator.InvertBitwiseAssignments},
+}
+
+// unaryMutableOperators are the prefix operators of an *ast.UnaryExpr whose
+// TokenMutantType entry may be applied as written. Go spells `+`, `-`, `&` and
+// `^` the same in prefix and infix position and means something different by
+// each, while TokenMutantType describes the infix meaning:
+//
+//   - `+x` and `-x` are the sign of a value, the same arithmetic their infix
+//     spellings perform, so ARITHMETIC_BASE and INVERT_NEGATIVES carry over
+//     unchanged: `-x` becomes `+x` and `+x` becomes `-x`, both of which are
+//     Go, and both of which change what the expression evaluates to.
+//   - `&x` is address-of, not bitwise AND. INVERT_BITWISE rewrites it to `|x`,
+//     which is not an expression at all: the compiler answers
+//     `syntax error: unexpected |, expected expression`.
+//   - `^x` is bitwise complement, not XOR. INVERT_BITWISE rewrites it to `&x`,
+//     which takes the operand's address and therefore no longer has the
+//     operand's type: `cannot use &u (value of type *uint) as uint value`.
+//
+// The last two are not mutants that a test suite failed to catch, they are
+// source a compiler rejected, so every verdict they can be given misdescribes
+// the suite. They are not generated rather than generated and reclassified:
+// reclassifying leaves the same numerator and denominator as never generating
+// them, but leaves a package's mutant set full of entries that mean nothing.
+var unaryMutableOperators = map[token.Token]bool{
+	token.ADD: true,
+	token.SUB: true,
+}
+
+// MutantTypesFor returns the mutator.Type set that may be applied to node. It
+// reports false when node's token carries no mutation in the position it was
+// read in -- either because the token has no TokenMutantType entry at all, or
+// because it is a prefix operator outside unaryMutableOperators.
+func MutantTypesFor(node *NodeToken) ([]mutator.Type, bool) {
+	if node.IsUnary() && !unaryMutableOperators[node.Tok()] {
+		return nil, false
+	}
+
+	mutantTypes, ok := TokenMutantType[node.Tok()]
+
+	return mutantTypes, ok
 }
 
 var tokenMutations = map[mutator.Type]map[token.Token]token.Token{

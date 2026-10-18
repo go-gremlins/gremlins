@@ -215,3 +215,40 @@ func TestIsCovered(t *testing.T) {
 		})
 	}
 }
+
+// TestAnUnexecutedBlockIsInABlockButNotCovered pins the two questions a
+// Profile answers apart. A position in a block no test executed is not
+// covered, but it is in a block; a position between blocks is in neither. The
+// engine reads a position's coverage off its enclosing statement only in the
+// second case, so collapsing the two would either hide real gaps or invent
+// coverage for code no test reaches.
+func TestAnUnexecutedBlockIsInABlockButNotCovered(t *testing.T) {
+	profile := coverage.Profile{
+		"f.go": {
+			{StartLine: 7, StartCol: 13, EndLine: 8, EndCol: 16},
+			{StartLine: 14, StartCol: 17, EndLine: 16, EndCol: 3, NotExecuted: true},
+		},
+	}
+	testCases := []struct {
+		name        string
+		line, col   int
+		wantCovered bool
+		wantInBlock bool
+	}{
+		{name: "an executed block", line: 8, col: 3, wantCovered: true, wantInBlock: true},
+		{name: "a block no test executed", line: 15, col: 3, wantCovered: false, wantInBlock: true},
+		{name: "a case expression between two blocks", line: 7, col: 9, wantCovered: false, wantInBlock: false},
+		{name: "a condition after a closure argument", line: 14, col: 10, wantCovered: false, wantInBlock: false},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			pos := token.Position{Filename: "f.go", Line: tc.line, Column: tc.col}
+			if got := profile.IsCovered(pos); got != tc.wantCovered {
+				t.Errorf("IsCovered = %v, want %v", got, tc.wantCovered)
+			}
+			if got := profile.InBlock(pos); got != tc.wantInBlock {
+				t.Errorf("InBlock = %v, want %v", got, tc.wantInBlock)
+			}
+		})
+	}
+}

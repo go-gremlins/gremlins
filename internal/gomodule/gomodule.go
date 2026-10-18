@@ -36,6 +36,12 @@ type GoModule struct {
 	CallingDir string
 }
 
+// ModulePath returns name, a path relative to CallingDir, as a slash-separated
+// path relative to Root.
+func (m GoModule) ModulePath(name string) string {
+	return filepath.ToSlash(filepath.Join(m.CallingDir, name))
+}
+
 // Init initializes the current module. It finds the module name and the root
 // of the module, then returns a GoModule struct.
 func Init(path string) (GoModule, error) {

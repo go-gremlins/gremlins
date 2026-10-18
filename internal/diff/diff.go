@@ -31,20 +31,29 @@ func newDiff(files []*gitdiff.File) Diff {
 	return result
 }
 
+// newChanges records each run of consecutive added lines as its own Change.
+// A fragment is not one run: it interleaves added lines with context and
+// deleted lines, so a range taken from its first added line and its added
+// count misses every added line after the first gap.
 func newChanges(file *gitdiff.File) (FileName, []Change) {
 	var changes []Change
 
 	for _, fragment := range file.TextFragments {
-		if fragment.LinesAdded == 0 {
-			continue
+		line := int(fragment.NewPosition)
+		for _, l := range fragment.Lines {
+			switch l.Op {
+			case gitdiff.OpAdd:
+				if n := len(changes); n > 0 && changes[n-1].EndLine == line-1 {
+					changes[n-1].EndLine = line
+				} else {
+					changes = append(changes, Change{StartLine: line, EndLine: line})
+				}
+				line++
+			case gitdiff.OpContext:
+				line++
+			case gitdiff.OpDelete:
+			}
 		}
-
-		startLine := int(fragment.NewPosition + fragment.LeadingContext)
-
-		changes = append(changes, Change{
-			StartLine: startLine,
-			EndLine:   startLine + int(fragment.LinesAdded-1),
-		})
 	}
 
 	return FileName(file.NewName), changes

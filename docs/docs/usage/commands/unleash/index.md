@@ -440,6 +440,72 @@ coefficient. For example:
 gremlins unleash --timeout-coefficient=10
 ```
 
+### Timeout max
+
+:material-flag: `--timeout-max` · :material-sign-direction:
+Default: `""` (no ceiling)
+
+An absolute ceiling on a single mutant's test RUN, as a Go duration. It caps
+the coefficient-derived timeout; it never raises it. It bounds only the run:
+compiling the mutated package is charged to `--compile-allowance` instead.
+
+The coefficient scales the timeout by how long the package's own tests take,
+which is unrelated to how much damage a mutant can do in that time. A mutant
+that inverts a loop-advance statement (`i++` → `i--`) inside a scanning loop
+that appends on every iteration never terminates and allocates until the
+machine runs out of memory. On a CI runner the OOM killer then reaps the
+runner agent itself and the job dies with no verdict at all. Because the
+coefficient hands the longest timeouts to the slowest-testing packages, those
+packages are the most exposed — which is backwards.
+
+This flag bounds that exposure independently of the baseline. Past the
+ceiling the mutant is killed and recorded as `TIMED OUT`, the honest verdict
+for a mutant that did not terminate.
+
+```shell
+gremlins unleash --timeout-max=15s
+```
+
+A malformed or non-positive value is reported on stderr and ignored, leaving
+the run with no ceiling.
+
+### Compile allowance
+
+:material-flag: `--compile-allowance` · :material-sign-direction:
+Default: `2m`
+
+How long a mutant is allowed to COMPILE, as a Go duration, on top of the bound
+on its test run.
+
+Compile time and run time scale with unrelated things: compile time with the
+size of the package and its dependency graph, run time with the test that
+adjudicates the mutant. Charging both to one number makes the slow-compiling
+packages the ones whose mutants time out — including mutants whose tests would
+have reached a verdict in milliseconds. So the two are bounded separately:
+`go test -timeout` gets the run bound, and a deadline of `run bound + compile
+allowance` covers compilation and the run together.
+
+That deadline is a backstop, not a second leash. No `-timeout` can bound a
+compile that has hung, because there is no test binary yet to enforce one, so
+something has to. A mutant killed by either bound is recorded `TIMED OUT`,
+which stays in the efficacy denominator and credits no test with a detection.
+
+```shell
+gremlins unleash --timeout-max=5s --compile-allowance=3m
+```
+
+A malformed or non-positive value is reported on stderr and ignored, leaving
+the default allowance in place.
+
+!!! note "Verdicts are read from the output, not the exit status"
+    `go test` reports a failing test, a package that does not build and a test
+    that ran past its `-timeout` all as exit status 1 — only the test *binary*
+    exits 2, and what Gremlins spawns is `go`. Gremlins therefore scans the
+    child's output to tell the three apart, so a timed-out mutant is recorded
+    `TIMED OUT` rather than credited as a detection, and a mutant that does not
+    compile is recorded `NOT VIABLE`. The output is scanned as it streams and
+    then discarded, so a mutant that prints without bound cannot exhaust memory.
+
 [//]: # (@formatter:off)
 !!! note "Result Consistency"
     You may observe small fluctuations in the number of
@@ -455,6 +521,106 @@ gremlins unleash --timeout-coefficient=10
     testing process. Large variations or progressive degradation would
     indicate an issue.
 [//]: # (@formatter:on)
+
+### Cache dir
+
+:material-flag: `--cache-dir` · :material-sign-direction: Default: `""` (no cache)
+
+A directory in which each adjudicated mutant's verdict is stored under a key
+derived from the content of everything the verdict depends on. A later run over
+the same content reuses the stored verdict instead of running the mutant's tests.
+The directory must lie outside the module.
+
+The key holds the Gremlins binary, the Go toolchain and its build environment,
+the environment the test binaries inherit (every variable but `PWD`, `OLDPWD`,
+`SHLVL`, `_`, `GOTMPDIR` and the ones `--cache-env-ignore` names),
+`--cache-salt`, `--tags` and `--test-cpu`, the mutation (file, mutator, position
+and the mutated file's content), and the content of the mutated package's
+`go test` dependency closure from `go list -deps -test <pkg>`. A package outside
+the module contributes the files that build it. A package inside the module
+contributes every file of its directory tree, stopping at a nested module; the
+test files of a package other than the mutated one are left out. `go.mod`,
+`go.sum`, and any `go.work` and `go.work.sum` complete it.
+
+The mutant's test binary is also run with `-test.testlogfile`, the log `go test`
+uses for its own result cache, and `-test.memprofile`, which the binary writes
+only after it has flushed that log. The entry records a digest of every file the
+tests opened or stat-ed, a missing one included, and of every environment
+variable they read. Paths under `GOROOT`, the module cache, the build cache and
+Gremlins' own working directory are not recorded. A lookup misses when any
+recorded input differs. The digests
+are taken from the copy the test ran in, and the entry is stored only when that
+copy still holds the content the key describes.
+
+| status                       | stored                                                                    |
+|------------------------------|---------------------------------------------------------------------------|
+| `KILLED`                     | only with a complete test log                                             |
+| `LIVED`                      | only with a complete test log and a `go test` that exited 0               |
+| `NOT VIABLE`                 | only for a build failure whose compiler diagnostic names the mutated file |
+| `TIMED OUT`, `RUN TIMED OUT` | never                                                                     |
+| a shutdown status            | never                                                                     |
+
+The run bound is not part of the key. An entry that is malformed, corrupted, or
+does not match is a miss. The cache is not used in integration mode or in a dry
+run.
+
+```shell
+gremlins unleash --cache-dir="$HOME/.cache/gremlins"
+```
+
+### Cache salt
+
+:material-flag: `--cache-salt` · :material-sign-direction: Default: `""`
+
+A string entered into every cache key, for anything that can change a verdict
+and that Gremlins cannot see:
+
+- a `go test -exec` wrapper named in `GOFLAGS`, whose path is in the key but
+  whose content is not;
+- files a package-level initialiser or a `TestMain` reads outside the package
+  trees of the closure, which no test log records;
+- what a child process started by a test reads;
+- anything a test reaches over a network.
+
+```shell
+gremlins unleash --cache-dir="$HOME/.cache/gremlins" --cache-salt="$(sha256sum wrapper.sh)"
+```
+
+### Cache env ignore
+
+:material-flag: `--cache-env-ignore` · :material-sign-direction: Default: `[]`
+
+Environment variables left out of every cache key, each a name or a prefix
+ending in `*`, as a comma-separated list. The flag can also be repeated. Because the key holds the whole environment, a variable whose
+value changes on every run, such as a CI system's run or job identifier
+(`GITHUB_RUN_ID`, `CI_JOB_ID`), makes every lookup miss until it is listed
+here. List only variables that nothing reads before a test starts: a test's own
+reads of them are still recorded, but a read by a package-level initialiser or
+by a `TestMain` before `testing.M.Run` is not.
+
+```shell
+gremlins unleash --cache-dir="$HOME/.cache/gremlins" --cache-env-ignore='GITHUB_RUN_*,RUNNER_TRACKING_ID'
+```
+
+### On-shutdown status
+
+:material-flag: `--on-shutdown-status` · :material-sign-direction: Default: `not-run`
+
+Controls the `Status` recorded for mutants that were still in-flight when the run was cancelled
+(e.g. `SIGTERM` from a CI runner that hit its job timeout, or Ctrl-C from the terminal).
+
+Allowed values:
+
+- `not-run` (default) — record cancelled-in-flight mutants as `NOT COVERED`. Truthful: they were
+  never observed.
+- `timed-out` — record them as `TIMED OUT`. Useful if you want test-efficacy
+  (`KILLED / (KILLED + LIVED)`) to ignore them.
+- `lived` — legacy behaviour: record them as `LIVED`. Available for backwards compatibility,
+  but misleading — these mutants were not tested, so they should not be counted as survivors.
+
+```shell
+gremlins unleash --on-shutdown-status=timed-out
+```
 
 ### Workers
 
