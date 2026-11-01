@@ -150,6 +150,9 @@ type Mutator interface {
 	// we can consider a refactoring to remove its use and only use Mutator.Pos.
 	Position() token.Position
 
+	// EndPosition returns the token.Position where the mutated token ends.
+	EndPosition() token.Position
+
 	// Pos returns the token.Pos of the Mutator.
 	Pos() token.Pos
 

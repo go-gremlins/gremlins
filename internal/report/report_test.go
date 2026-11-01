@@ -588,6 +588,12 @@ func (s stubMutant) Position() token.Position {
 	return s.position
 }
 
+func (s stubMutant) EndPosition() token.Position {
+	p := s.position
+	p.Column++
+	return p
+}
+
 func (stubMutant) Pos() token.Pos {
 	return 123
 }

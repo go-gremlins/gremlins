@@ -28,24 +28,32 @@
         {
           "line": 10,
           "column": 3,
+          "end_line": 10,
+          "end_column": 4,
           "type": "CONDITIONALS_NEGATION",
           "status": "KILLED"
         },
         {
           "line": 20,
           "column": 8,
+          "end_line": 20,
+          "end_column": 9,
           "type": "ARITHMETIC_BASE",
           "status": "LIVED"
         },
         {
           "line": 40,
           "column": 7,
+          "end_line": 40,
+          "end_column": 8,
           "type": "INCREMENT_DECREMENT",
           "status": "NOT COVERED"
         },
         {
           "line": 10,
           "column": 8,
+          "end_line": 10,
+          "end_column": 9,
           "type": "INVERT_ASSIGNMENTS",
           "status": "NOT VIABLE"
         }
@@ -57,36 +65,48 @@
         {
           "line": 20,
           "column": 3,
+          "end_line": 20,
+          "end_column": 4,
           "type": "INVERT_LOOPCTRL",
           "status": "NOT COVERED"
         },
         {
           "line": 44,
           "column": 17,
+          "end_line": 44,
+          "end_column": 18,
           "type": "INCREMENT_DECREMENT",
           "status": "KILLED"
         },
         {
           "line": 500,
           "column": 3,
+          "end_line": 500,
+          "end_column": 4,
           "type": "CONDITIONALS_BOUNDARY",
           "status": "NOT COVERED"
         },
         {
           "line": 100,
           "column": 3,
+          "end_line": 100,
+          "end_column": 4,
           "type": "INVERT_BITWISE",
           "status": "LIVED"
         },
         {
           "line": 10,
           "column": 4,
+          "end_line": 10,
+          "end_column": 5,
           "type": "INVERT_BWASSIGN",
           "status": "KILLED"
         },
         {
           "line": 11,
           "column": 4,
+          "end_line": 11,
+          "end_column": 5,
           "type": "INVERT_LOGICAL",
           "status": "LIVED"
         }
@@ -98,12 +118,16 @@
         {
           "line": 200,
           "column": 4,
+          "end_line": 200,
+          "end_column": 5,
           "type": "INVERT_NEGATIVES",
           "status": "NOT VIABLE"
         },
         {
           "line": 100,
           "column": 4,
+          "end_line": 100,
+          "end_column": 5,
           "type": "REMOVE_SELF_ASSIGNMENTS",
           "status": "KILLED"
         }

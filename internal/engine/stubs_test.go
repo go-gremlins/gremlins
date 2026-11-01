@@ -64,12 +64,12 @@ func loadFixture(fixture, fromPackage string) (fstest.MapFS, gomodule.GoModule, 
 	}
 
 	return mapFS, gomodule.GoModule{
-			Name:       "example.com",
-			Root:       ".",
-			CallingDir: fromPackage,
-		}, func() {
-			_ = f.Close()
-		}
+		Name:       "example.com",
+		Root:       ".",
+		CallingDir: fromPackage,
+	}, func() {
+		_ = f.Close()
+	}
 }
 
 func filenameFromFixture(fix string) string {
@@ -157,6 +157,10 @@ func (m *mutantStub) SetStatus(s mutator.Status) {
 }
 
 func (m *mutantStub) Position() token.Position {
+	return m.position
+}
+
+func (m *mutantStub) EndPosition() token.Position {
 	return m.position
 }
 

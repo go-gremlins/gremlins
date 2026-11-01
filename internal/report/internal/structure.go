@@ -40,10 +40,12 @@ type OutputFile struct {
 
 // Mutation represents a single mutation in the OutputResult data structure.
 type Mutation struct {
-	Type   string `json:"type"`
-	Status string `json:"status"`
-	Line   int    `json:"line"`
-	Column int    `json:"column"`
+	Type      string `json:"type"`
+	Status    string `json:"status"`
+	Line      int    `json:"line"`
+	Column    int    `json:"column"`
+	EndLine   int    `json:"end_line"`
+	EndColumn int    `json:"end_column"`
 }
 
 // MutatorType contains the list of all supported mutator types.
