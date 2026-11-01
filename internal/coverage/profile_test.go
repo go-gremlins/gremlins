@@ -20,7 +20,7 @@ import (
 	"go/token"
 	"testing"
 
-	"github.com/go-gremlins/gremlins/internal/coverage"
+	"github.com/OpenRAE/go-rae-gremlins/internal/coverage"
 )
 
 const testFilename = "test"

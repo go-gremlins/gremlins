@@ -24,12 +24,12 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/go-gremlins/gremlins/internal/configuration"
-	"github.com/go-gremlins/gremlins/internal/coverage"
-	"github.com/go-gremlins/gremlins/internal/diff"
-	"github.com/go-gremlins/gremlins/internal/engine"
-	"github.com/go-gremlins/gremlins/internal/gomodule"
-	"github.com/go-gremlins/gremlins/internal/mutator"
+	"github.com/OpenRAE/go-rae-gremlins/internal/configuration"
+	"github.com/OpenRAE/go-rae-gremlins/internal/coverage"
+	"github.com/OpenRAE/go-rae-gremlins/internal/diff"
+	"github.com/OpenRAE/go-rae-gremlins/internal/engine"
+	"github.com/OpenRAE/go-rae-gremlins/internal/gomodule"
+	"github.com/OpenRAE/go-rae-gremlins/internal/mutator"
 )
 
 const (

@@ -27,17 +27,17 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/go-gremlins/gremlins/cmd/internal/flags"
-	"github.com/go-gremlins/gremlins/internal/configuration"
-	"github.com/go-gremlins/gremlins/internal/coverage"
-	"github.com/go-gremlins/gremlins/internal/diff"
-	"github.com/go-gremlins/gremlins/internal/engine"
-	"github.com/go-gremlins/gremlins/internal/engine/workdir"
-	"github.com/go-gremlins/gremlins/internal/exclusion"
-	"github.com/go-gremlins/gremlins/internal/gomodule"
-	"github.com/go-gremlins/gremlins/internal/log"
-	"github.com/go-gremlins/gremlins/internal/mutator"
-	"github.com/go-gremlins/gremlins/internal/report"
+	"github.com/OpenRAE/go-rae-gremlins/cmd/internal/flags"
+	"github.com/OpenRAE/go-rae-gremlins/internal/configuration"
+	"github.com/OpenRAE/go-rae-gremlins/internal/coverage"
+	"github.com/OpenRAE/go-rae-gremlins/internal/diff"
+	"github.com/OpenRAE/go-rae-gremlins/internal/engine"
+	"github.com/OpenRAE/go-rae-gremlins/internal/engine/workdir"
+	"github.com/OpenRAE/go-rae-gremlins/internal/exclusion"
+	"github.com/OpenRAE/go-rae-gremlins/internal/gomodule"
+	"github.com/OpenRAE/go-rae-gremlins/internal/log"
+	"github.com/OpenRAE/go-rae-gremlins/internal/mutator"
+	"github.com/OpenRAE/go-rae-gremlins/internal/report"
 )
 
 type unleashCmd struct {

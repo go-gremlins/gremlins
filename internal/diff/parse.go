@@ -7,8 +7,8 @@ import (
 
 	"github.com/bluekeyes/go-gitdiff/gitdiff"
 
-	"github.com/go-gremlins/gremlins/internal/configuration"
-	"github.com/go-gremlins/gremlins/internal/log"
+	"github.com/OpenRAE/go-rae-gremlins/internal/configuration"
+	"github.com/OpenRAE/go-rae-gremlins/internal/log"
 )
 
 // New creates a new Diff by parsing git diff output using the default command executor.
