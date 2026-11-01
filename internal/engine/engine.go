@@ -126,18 +126,19 @@ func (mu *Engine) runOnFile(fileName string) {
 	file, _ := parser.ParseFile(set, fileName, src, parser.ParseComments)
 	_ = src.Close()
 
+	cases := evaluatedCases(set, file, mu.codeData.Cov)
 	ast.Inspect(file, func(node ast.Node) bool {
 		n, ok := NewTokenNode(node)
 		if !ok {
 			return true
 		}
-		mu.findMutations(fileName, set, file, n)
+		mu.findMutations(fileName, set, file, n, cases)
 
 		return true
 	})
 }
 
-func (mu *Engine) findMutations(fileName string, set *token.FileSet, file *ast.File, node *NodeToken) {
+func (mu *Engine) findMutations(fileName string, set *token.FileSet, file *ast.File, node *NodeToken, cases []caseSpan) {
 	mutantTypes, ok := TokenMutantType[node.Tok()]
 	if !ok {
 		return
@@ -151,7 +152,7 @@ func (mu *Engine) findMutations(fileName string, set *token.FileSet, file *ast.F
 		mutantType := mt
 		tm := NewTokenMutant(pkg, set, file, node)
 		tm.SetType(mutantType)
-		tm.SetStatus(mu.mutationStatus(set.Position(node.TokPos)))
+		tm.SetStatus(mu.mutationStatus(set.Position(node.TokPos), inCases(cases, node.TokPos)))
 
 		mu.mutantStream <- tm
 	}
@@ -185,10 +186,10 @@ func normalisePkgPath(pkg string) string {
 	return strings.ReplaceAll(pkg, sep, "/")
 }
 
-func (mu *Engine) mutationStatus(pos token.Position) mutator.Status {
+func (mu *Engine) mutationStatus(pos token.Position, evaluatedCase bool) mutator.Status {
 	var status mutator.Status
 
-	if mu.codeData.Cov.IsCovered(pos) {
+	if evaluatedCase || mu.codeData.Cov.IsCovered(pos) {
 		status = mutator.Runnable
 	}
 
