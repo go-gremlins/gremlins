@@ -3,7 +3,7 @@ GO_TEST=${GO_CMD} test
 GO_BUILD=${GO_CMD} build
 RELEASER_CMD=goreleaser
 RELEASE=${RELEASER_CMD} release
-LINTER_CMD=golangci-lint
+LINTER_CMD=mise exec -- golangci-lint
 LINT=${LINTER_CMD} run
 BINARY_NAME=gremlins
 COVER_OUT=coverage.out
@@ -39,9 +39,17 @@ requirements:
 lint:
 	${LINT} ./...
 
+.PHONY: policy
+policy:
+	pre-commit run --all-files
+
+.PHONY: hooks
+hooks:
+	bash scripts/install-hooks.sh
+
 .PHONY: goimports
 goimports:
-	goimports --local 'github.com/go-gremlins/gremlins' -v -w .
+	goimports --local 'github.com/OpenRAE/go-rae-gremlins' -v -w .
 
 .PHONY: fieldalignment
 fieldalignment:

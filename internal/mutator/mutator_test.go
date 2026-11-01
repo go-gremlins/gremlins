@@ -21,7 +21,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/go-gremlins/gremlins/internal/mutator"
+	"github.com/OpenRAE/go-rae-gremlins/internal/mutator"
 )
 
 func TestStatusString(t *testing.T) {

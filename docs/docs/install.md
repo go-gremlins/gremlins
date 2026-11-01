@@ -87,7 +87,7 @@ sudo cp gremlins_{{ release.full_version }}_linux_amd64/gremlins /usr/bin
 Gremlins can be installed with the Go install command. Only the [Go compiler](https://go.dev) is needed.
 
 ```sh
-go install github.com/go-gremlins/gremlins/cmd/gremlins@v{{ release.full_version }}
+go install github.com/OpenRAE/go-rae-gremlins/cmd/gremlins@v{{ release.full_version }}
 ```
 
 ### :material-ninja: Ninja style

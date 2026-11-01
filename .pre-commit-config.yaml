@@ -1,0 +1,66 @@
+fail_fast: true
+default_stages: [pre-commit]
+
+# Each hook repository is pinned to a commit, because a tag can move.
+repos:
+  # ===========================================================================
+  # STAGE 1: Fast checks (linting, formatting, syntax)
+  # ===========================================================================
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # frozen: v6.0.0
+    hooks:
+      # The testdata files are test inputs. Their exact bytes are part of the tests.
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+        exclude: (^|/)testdata/
+      - id: end-of-file-fixer
+        exclude: (^|/)testdata/
+      - id: check-yaml
+        args: [--unsafe]
+      - id: check-json
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  # golangci-lint runs the linters and the goimports formatter of .golangci.yml.
+  - repo: local
+    hooks:
+      - id: golangci-lint
+        name: golangci-lint (make lint)
+        entry: make lint
+        language: system
+        files: (\.go$|^\.golangci\.yml$|^go\.(mod|sum)$)
+        pass_filenames: false
+
+  # ===========================================================================
+  # STAGE 2: Security
+  # ===========================================================================
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: 83d9cd684c87d95d656c1458ef04895a7f1cbd8e # frozen: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  - repo: local
+    hooks:
+      - id: govulncheck
+        name: govulncheck (Go vulnerability database)
+        entry: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+        language: system
+        files: (\.go$|^go\.(mod|sum)$)
+        pass_filenames: false
+
+  # ===========================================================================
+  # STAGE 4: Tests
+  # ===========================================================================
+
+  - repo: local
+    hooks:
+      - id: go-test
+        name: go test -race (make test)
+        entry: make test
+        language: system
+        files: (\.go$|^go\.(mod|sum)$|/testdata/)
+        pass_filenames: false

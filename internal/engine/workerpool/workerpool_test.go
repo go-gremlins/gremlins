@@ -21,9 +21,9 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/go-gremlins/gremlins/internal/configuration"
-	"github.com/go-gremlins/gremlins/internal/engine/workerpool"
-	"github.com/go-gremlins/gremlins/internal/mutator"
+	"github.com/OpenRAE/go-rae-gremlins/internal/configuration"
+	"github.com/OpenRAE/go-rae-gremlins/internal/engine/workerpool"
+	"github.com/OpenRAE/go-rae-gremlins/internal/mutator"
 )
 
 type ExecutorMock struct {

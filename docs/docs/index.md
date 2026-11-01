@@ -11,7 +11,7 @@ As of now, Gremlins doesn't work very well on very big Go modules, mainly becaus
 
 [//]: # (@formatter:off)
 !!! warning
-    Gremlins is still in its 0.x.x release, which, as per SemVer, doesn't guarantee backward compatibility. What this 
+    Gremlins is still in its 0.x.x release, which, as per SemVer, doesn't guarantee backward compatibility. What this
     means for Gremlins is that configuration flags and/or configuration files can change among minor releases. This may
     be important if you use Gremlins in automated builds, for example in _continuous integration_ pipelines.
 

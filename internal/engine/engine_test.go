@@ -24,12 +24,12 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/go-gremlins/gremlins/internal/configuration"
-	"github.com/go-gremlins/gremlins/internal/coverage"
-	"github.com/go-gremlins/gremlins/internal/diff"
-	"github.com/go-gremlins/gremlins/internal/engine"
-	"github.com/go-gremlins/gremlins/internal/gomodule"
-	"github.com/go-gremlins/gremlins/internal/mutator"
+	"github.com/OpenRAE/go-rae-gremlins/internal/configuration"
+	"github.com/OpenRAE/go-rae-gremlins/internal/coverage"
+	"github.com/OpenRAE/go-rae-gremlins/internal/diff"
+	"github.com/OpenRAE/go-rae-gremlins/internal/engine"
+	"github.com/OpenRAE/go-rae-gremlins/internal/gomodule"
+	"github.com/OpenRAE/go-rae-gremlins/internal/mutator"
 )
 
 const (
@@ -602,7 +602,7 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 		"folder1/file": {Data: file},
 	}
 	mod := gomodule.GoModule{
-		Name:       "example.com",
+		Name:       expectedModule,
 		Root:       ".",
 		CallingDir: ".",
 	}
@@ -625,7 +625,7 @@ func TestSkipNotDiffMutants(t *testing.T) {
 		"file.go": {Data: file},
 	}
 	mod := gomodule.GoModule{
-		Name:       "example.com",
+		Name:       expectedModule,
 		Root:       ".",
 		CallingDir: ".",
 	}
@@ -675,7 +675,7 @@ func TestPackageDiscovery(t *testing.T) {
 			name:     "from root, normal mode",
 			fromPkg:  ".",
 			intMode:  false,
-			wantPath: "example.com",
+			wantPath: expectedModule,
 		},
 		{
 			name:     "from subpackage, normal mode",

@@ -23,6 +23,11 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	testCfgKey = "test.cfg"
+	testUsage  = "test usage"
+)
+
 type unsupportedType int
 
 type testCase struct {
@@ -35,101 +40,101 @@ func TestSet(t *testing.T) {
 		{
 			flag: Flag{
 				Name:      "bool-flag-no-sh",
-				CfgKey:    "test.cfg",
+				CfgKey:    testCfgKey,
 				Shorthand: "",
 				DefaultV:  true,
-				Usage:     "test usage",
+				Usage:     testUsage,
 			},
 		},
 		{
 			flag: Flag{
 				Name:      "bool-flag-sh",
-				CfgKey:    "test.cfg",
+				CfgKey:    testCfgKey,
 				Shorthand: "t",
 				DefaultV:  true,
-				Usage:     "test usage",
+				Usage:     testUsage,
 			},
 		},
 
 		{
 			flag: Flag{
 				Name:      "string-flag-no-sh",
-				CfgKey:    "test.cfg",
+				CfgKey:    testCfgKey,
 				Shorthand: "",
 				DefaultV:  "test",
-				Usage:     "test usage",
+				Usage:     testUsage,
 			},
 		},
 		{
 			flag: Flag{
 				Name:      "string-flag-sh",
-				CfgKey:    "test.cfg",
+				CfgKey:    testCfgKey,
 				Shorthand: "t",
 				DefaultV:  "test",
-				Usage:     "test usage",
+				Usage:     testUsage,
 			},
 		},
 		{
 			flag: Flag{
 				Name:      "int-flag-no-sh",
-				CfgKey:    "test.cfg",
+				CfgKey:    testCfgKey,
 				Shorthand: "",
 				DefaultV:  0,
-				Usage:     "test usage",
+				Usage:     testUsage,
 			},
 		},
 		{
 			flag: Flag{
 				Name:      "int-flag-sh",
-				CfgKey:    "test.cfg",
+				CfgKey:    testCfgKey,
 				Shorthand: "t",
 				DefaultV:  0,
-				Usage:     "test usage",
+				Usage:     testUsage,
 			},
 		},
 		{
 			flag: Flag{
 				Name:      "float64-flag-no-sh",
-				CfgKey:    "test.cfg",
+				CfgKey:    testCfgKey,
 				Shorthand: "",
 				DefaultV:  float64(0),
-				Usage:     "test usage",
+				Usage:     testUsage,
 			},
 		},
 		{
 			flag: Flag{
 				Name:      "float64-flag-sh",
-				CfgKey:    "test.cfg",
+				CfgKey:    testCfgKey,
 				Shorthand: "t",
 				DefaultV:  float64(0),
-				Usage:     "test usage",
+				Usage:     testUsage,
 			},
 		},
 		{
 			flag: Flag{
 				Name:      "[]string-flag-no-sh",
-				CfgKey:    "test.cfg",
+				CfgKey:    testCfgKey,
 				Shorthand: "",
 				DefaultV:  []string{},
-				Usage:     "test usage",
+				Usage:     testUsage,
 			},
 		},
 		{
 			flag: Flag{
 				Name:      "[]string-flag-sh",
-				CfgKey:    "test.cfg",
+				CfgKey:    testCfgKey,
 				Shorthand: "t",
 				DefaultV:  []string{},
-				Usage:     "test usage",
+				Usage:     testUsage,
 			},
 		},
 		{
 			flag: Flag{
 				Name:      "not-supported-type",
-				CfgKey:    "test.cfg",
+				CfgKey:    testCfgKey,
 				Shorthand: "t",
 				DefaultV:  unsupportedType(0),
-				Usage:     "test usage",
+				Usage:     testUsage,
 			},
 			expectError: true,
 		},

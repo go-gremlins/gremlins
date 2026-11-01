@@ -27,17 +27,17 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/go-gremlins/gremlins/cmd/internal/flags"
-	"github.com/go-gremlins/gremlins/internal/configuration"
-	"github.com/go-gremlins/gremlins/internal/coverage"
-	"github.com/go-gremlins/gremlins/internal/diff"
-	"github.com/go-gremlins/gremlins/internal/engine"
-	"github.com/go-gremlins/gremlins/internal/engine/workdir"
-	"github.com/go-gremlins/gremlins/internal/exclusion"
-	"github.com/go-gremlins/gremlins/internal/gomodule"
-	"github.com/go-gremlins/gremlins/internal/log"
-	"github.com/go-gremlins/gremlins/internal/mutator"
-	"github.com/go-gremlins/gremlins/internal/report"
+	"github.com/OpenRAE/go-rae-gremlins/cmd/internal/flags"
+	"github.com/OpenRAE/go-rae-gremlins/internal/configuration"
+	"github.com/OpenRAE/go-rae-gremlins/internal/coverage"
+	"github.com/OpenRAE/go-rae-gremlins/internal/diff"
+	"github.com/OpenRAE/go-rae-gremlins/internal/engine"
+	"github.com/OpenRAE/go-rae-gremlins/internal/engine/workdir"
+	"github.com/OpenRAE/go-rae-gremlins/internal/exclusion"
+	"github.com/OpenRAE/go-rae-gremlins/internal/gomodule"
+	"github.com/OpenRAE/go-rae-gremlins/internal/log"
+	"github.com/OpenRAE/go-rae-gremlins/internal/mutator"
+	"github.com/OpenRAE/go-rae-gremlins/internal/report"
 )
 
 type unleashCmd struct {
@@ -88,13 +88,13 @@ func longExplainer() string {
 		first gathering the coverage of the test suite and then analysing the source
 		code to look for supported mutants.
 
-		Unleash only tests covered mutants, since it doesn't make sense to test mutants 
+		Unleash only tests covered mutants, since it doesn't make sense to test mutants
 		that no test case is able to catch.
 
 		In 'dry-run' mode, unleash only performs the analysis of the source code, but it
 		doesn't actually perform the test.
 
-		Thresholds are configurable quality gates that make gremlins exit with an error 
+		Thresholds are configurable quality gates that make gremlins exit with an error
 		if those values are not met. Efficacy is the percent of KILLED mutants over
 		the total KILLED and LIVED mutants. Mutant coverage is the percent of total
 		KILLED + LIVED mutants, over the total mutants.

@@ -31,9 +31,9 @@ jobs:
 
 | Name          | Type     | Default  | Description                                              |
 |---------------|----------|----------|----------------------------------------------------------|
-| `version`[^1] | `string` | `latest` | Te version of Gremlins to use                            | 
+| `version`[^1] | `string` | `latest` | Te version of Gremlins to use                            |
 | `args`        | `string` |          | The command line arguments to pass to `gremlins unleash` |
-| `workdir`     | `string` | `.`      | Working directory relative to repository root            |  
+| `workdir`     | `string` | `.`      | Working directory relative to repository root            |
 
 [^1]: Can be `latest`, a fixed version like `v0.1.2` or a semver range like `~0.2`. In this case this will
      return `v0.2.2`.

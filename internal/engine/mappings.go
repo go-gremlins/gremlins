@@ -19,7 +19,7 @@ package engine
 import (
 	"go/token"
 
-	"github.com/go-gremlins/gremlins/internal/mutator"
+	"github.com/OpenRAE/go-rae-gremlins/internal/mutator"
 )
 
 // TokenMutantType is the mapping from each token.Token and all the

@@ -4,9 +4,9 @@ package report
 import (
 	"errors"
 
-	"github.com/go-gremlins/gremlins/internal/configuration"
-	"github.com/go-gremlins/gremlins/internal/log"
-	"github.com/go-gremlins/gremlins/internal/mutator"
+	"github.com/OpenRAE/go-rae-gremlins/internal/configuration"
+	"github.com/OpenRAE/go-rae-gremlins/internal/log"
+	"github.com/OpenRAE/go-rae-gremlins/internal/mutator"
 )
 
 // Filter maps mutation statuses to filter which mutants are logged.
