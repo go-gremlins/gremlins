@@ -39,6 +39,10 @@ requirements:
 lint:
 	${LINT} ./...
 
+.PHONY: hooks
+hooks:
+	bash scripts/install-hooks.sh
+
 .PHONY: goimports
 goimports:
 	goimports --local 'github.com/go-gremlins/gremlins' -v -w .

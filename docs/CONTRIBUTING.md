@@ -67,6 +67,18 @@ Before a release, the code base will be frozen and no _pull request_ will be acc
 the only exception of bug fixes. If you send a _pull request_ during a code freeze, you will have to wait a little more
 before seeing it merged.
 
+### Commit hooks
+
+The `.pre-commit-config.yaml` file defines the commit hooks. The hooks need
+[pre-commit](https://pre-commit.com), Go, and golangci-lint v2 on your `PATH`.
+To activate and verify the hooks in your clone, run:
+
+```shell
+make hooks
+```
+
+Git does not copy hooks when you clone a repository. Run `make hooks` in each new clone.
+
 ### Commit messages
 
 Commit messages follow a convention. Here is an example:
