@@ -20,92 +20,14 @@ builds:
     ignore:
       - goos: darwin
         goarch: "386"
+# release-please makes the GitHub release. goreleaser adds the assets to it.
 release:
-  github:
-  draft: true
-  prerelease: auto
-dockers:
-  - image_templates: ["docker.io/gogremlins/{{ .ProjectName }}:{{ .Version }}-386"]
-    use: buildx
-    goos: linux
-    goarch: "386"
-    build_flag_templates:
-      - --platform=linux/386
-      - --label=org.opencontainers.image.title={{ .ProjectName }}
-      - --label=org.opencontainers.image.description="A mutation testing tool for Go"
-      - --label=org.opencontainers.image.url=https://gremlins.dev
-      - --label=org.opencontainers.image.source=https://github.com/go-gremlins/{{ .ProjectName }}
-      - --label=org.opencontainers.image.version={{ .Version }}
-      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
-      - --label=org.opencontainers.image.revision={{ .FullCommit }}
-      - --label=org.opencontainers.image.licenses=Apache-2.0
-  - image_templates: ["docker.io/gogremlins/{{ .ProjectName }}:{{ .Version }}-amd64"]
-    use: buildx
-    goos: linux
-    goarch: "amd64"
-    build_flag_templates:
-      - --platform=linux/amd64
-      - --label=org.opencontainers.image.title={{ .ProjectName }}
-      - --label=org.opencontainers.image.description="A mutation testing tool for Go"
-      - --label=org.opencontainers.image.url=https://github.com/go-gremlins/{{ .ProjectName }}
-      - --label=org.opencontainers.image.url=https://gremlins.dev
-      - --label=org.opencontainers.image.version={{ .Version }}
-      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
-      - --label=org.opencontainers.image.revision={{ .FullCommit }}
-      - --label=org.opencontainers.image.licenses=Apache-2.0
-  - image_templates: ["docker.io/gogremlins/{{ .ProjectName }}:{{ .Version }}-arm64"]
-    use: buildx
-    goos: linux
-    goarch: "arm64"
-    build_flag_templates:
-      - --platform=linux/arm64/v8
-      - --label=org.opencontainers.image.title={{ .ProjectName }}
-      - --label=org.opencontainers.image.description="A mutation testing tool for Go"
-      - --label=org.opencontainers.image.url=https://gremlins.dev
-      - --label=org.opencontainers.image.source=https://github.com/go-gremlins/{{ .ProjectName }}
-      - --label=org.opencontainers.image.version={{ .Version }}
-      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
-      - --label=org.opencontainers.image.revision={{ .FullCommit }}
-      - --label=org.opencontainers.image.licenses=Apache-2.0
-docker_manifests:
-  - name_template: docker.io/gogremlins/{{ .ProjectName }}:{{ .Version }}
-    image_templates:
-      - docker.io/gogremlins/{{ .ProjectName }}:{{ .Version }}-amd64
-      - docker.io/gogremlins/{{ .ProjectName }}:{{ .Version }}-arm64
-      - docker.io/gogremlins/{{ .ProjectName }}:{{ .Version }}-386
-  - name_template: docker.io/gogremlins/{{ .ProjectName }}:latest
-    image_templates:
-      - docker.io/gogremlins/{{ .ProjectName }}:{{ .Version }}-amd64
-      - docker.io/gogremlins/{{ .ProjectName }}:{{ .Version }}-arm64
-      - docker.io/gogremlins/{{ .ProjectName }}:{{ .Version }}-386
-nfpms:
-  - homepage: https://gremlins.dev
-    description: A mutation testing tool for Go.
-    license: Apache-2.0 License
-    maintainer: Davide Petilli <davide.petilli@gmail.com>
-    formats:
-      - deb
-      - rpm
-brews:
-  - repository:
-      owner: go-gremlins
-      name: homebrew-tap
-      branch: main
-      token: "{{ .Env.GITHUB_TOKEN }}"
-    directory: Formula
-    homepage: https://gremlins.dev
-    description: A mutation testing tool for Go.
-    license: Apache-2.0 License
-    skip_upload: auto
-    test: |
-      system "#{bin}/gremlins --version"
+  mode: append
 checksum:
   name_template: 'checksums.txt'
 source:
   enabled: true
 changelog:
-  disable: false
-  sort: asc
-  use: github-native
+  disable: true
 snapshot:
   name_template: "{{ .Tag }}-next"
