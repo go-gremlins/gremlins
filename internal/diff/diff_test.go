@@ -8,6 +8,11 @@ import (
 	"github.com/bluekeyes/go-gitdiff/gitdiff"
 )
 
+const (
+	testFile  = "test"
+	testFile1 = "test1"
+)
+
 func TestDiff_IsChanged(t *testing.T) {
 	tests := []struct {
 		name string
@@ -30,25 +35,25 @@ func TestDiff_IsChanged(t *testing.T) {
 		{
 			name: "must be changed if in range",
 			d: map[FileName][]Change{
-				"test": {{StartLine: 21, EndLine: 21}},
+				testFile: {{StartLine: 21, EndLine: 21}},
 			},
-			pos:  token.Position{Filename: "test", Line: 21},
+			pos:  token.Position{Filename: testFile, Line: 21},
 			want: true,
 		},
 		{
 			name: "must be unchanged if outside range",
 			d: map[FileName][]Change{
-				"test": {{StartLine: 21, EndLine: 21}},
+				testFile: {{StartLine: 21, EndLine: 21}},
 			},
-			pos:  token.Position{Filename: "test", Line: 22},
+			pos:  token.Position{Filename: testFile, Line: 22},
 			want: false,
 		},
 		{
 			name: "must be unchanged if no such file",
 			d: map[FileName][]Change{
-				"test": {{StartLine: 21, EndLine: 21}},
+				testFile: {{StartLine: 21, EndLine: 21}},
 			},
-			pos:  token.Position{Filename: "test1", Line: 21},
+			pos:  token.Position{Filename: testFile1, Line: 21},
 			want: false,
 		},
 	}
@@ -67,7 +72,7 @@ func Test_newDiff(t *testing.T) {
 
 	files := []*gitdiff.File{
 		{
-			NewName:       "test1",
+			NewName:       testFile1,
 			TextFragments: fragments,
 		},
 		{
@@ -77,8 +82,8 @@ func Test_newDiff(t *testing.T) {
 	}
 
 	expected := Diff{
-		"test1": {{StartLine: 25, EndLine: 25}},
-		"test2": {{StartLine: 25, EndLine: 25}},
+		testFile1: {{StartLine: 25, EndLine: 25}},
+		"test2":   {{StartLine: 25, EndLine: 25}},
 	}
 
 	result := newDiff(files)
@@ -98,7 +103,7 @@ func Test_newChanges(t *testing.T) {
 		fragment(231, 201),
 	}
 	file := &gitdiff.File{
-		NewName:       "test",
+		NewName:       testFile,
 		TextFragments: fragments,
 	}
 
@@ -111,7 +116,7 @@ func Test_newChanges(t *testing.T) {
 
 	name, changes := newChanges(file)
 
-	if name != "test" {
+	if name != testFile {
 		t.Fatalf("name %s unexpected", name)
 	}
 	if !reflect.DeepEqual(changes, expect) {

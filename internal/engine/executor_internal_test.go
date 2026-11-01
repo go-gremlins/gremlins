@@ -23,6 +23,16 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+// Arguments that the tests expect in the go test command line.
+const (
+	goTestArg       = "test"
+	failFastArg     = "-failfast"
+	allPackagesArg  = "./..."
+	timeoutArg      = "-timeout"
+	expectedTimeout = "12s"
+	examplePackage  = "example.com/my/package"
+)
+
 func TestGetTestArgs(t *testing.T) {
 	t.Parallel()
 
@@ -36,51 +46,51 @@ func TestGetTestArgs(t *testing.T) {
 	}{
 		"should_not_include_tags_flag_when_build_tags_are_empty": {
 			testExecutionTime: 10 * time.Second,
-			pkg:               "example.com/my/package",
-			want:              []string{"test", "-timeout", "12s", "-failfast", "example.com/my/package"},
+			pkg:               examplePackage,
+			want:              []string{goTestArg, timeoutArg, expectedTimeout, failFastArg, examplePackage},
 		},
 		"should_include_tags_flag_when_build_tags_are_set": {
 			buildTags:         "tag1,tag2",
 			testExecutionTime: 10 * time.Second,
-			pkg:               "example.com/my/package",
-			want:              []string{"test", "-tags", "tag1,tag2", "-timeout", "12s", "-failfast", "example.com/my/package"},
+			pkg:               examplePackage,
+			want:              []string{goTestArg, "-tags", "tag1,tag2", timeoutArg, expectedTimeout, failFastArg, examplePackage},
 		},
 		"should_compute_timeout_as_two_seconds_plus_execution_time": {
 			testExecutionTime: 30 * time.Second,
-			pkg:               "example.com/my/package",
-			want:              []string{"test", "-timeout", "32s", "-failfast", "example.com/my/package"},
+			pkg:               examplePackage,
+			want:              []string{goTestArg, timeoutArg, "32s", failFastArg, examplePackage},
 		},
 		"should_not_include_cpu_flag_when_test_cpu_is_zero": {
 			testExecutionTime: 10 * time.Second,
 			testCPU:           0,
-			pkg:               "example.com/my/package",
-			want:              []string{"test", "-timeout", "12s", "-failfast", "example.com/my/package"},
+			pkg:               examplePackage,
+			want:              []string{goTestArg, timeoutArg, expectedTimeout, failFastArg, examplePackage},
 		},
 		"should_include_cpu_flag_when_test_cpu_is_nonzero": {
 			testExecutionTime: 10 * time.Second,
 			testCPU:           4,
-			pkg:               "example.com/my/package",
-			want:              []string{"test", "-timeout", "12s", "-failfast", "-cpu", "4", "example.com/my/package"},
+			pkg:               examplePackage,
+			want:              []string{goTestArg, timeoutArg, expectedTimeout, failFastArg, "-cpu", "4", examplePackage},
 		},
 		"should_use_package_path_when_integration_mode_is_disabled": {
 			testExecutionTime: 10 * time.Second,
 			integrationMode:   false,
-			pkg:               "example.com/my/package",
-			want:              []string{"test", "-timeout", "12s", "-failfast", "example.com/my/package"},
+			pkg:               examplePackage,
+			want:              []string{goTestArg, timeoutArg, expectedTimeout, failFastArg, examplePackage},
 		},
 		"should_use_dot_dot_dot_path_when_integration_mode_is_enabled": {
 			testExecutionTime: 10 * time.Second,
 			integrationMode:   true,
-			pkg:               "example.com/my/package",
-			want:              []string{"test", "-timeout", "12s", "-failfast", "./..."},
+			pkg:               examplePackage,
+			want:              []string{goTestArg, timeoutArg, expectedTimeout, failFastArg, allPackagesArg},
 		},
 		"should_include_all_flags_when_all_options_are_configured": {
 			buildTags:         "integration",
 			testExecutionTime: 10 * time.Second,
 			testCPU:           2,
 			integrationMode:   true,
-			pkg:               "example.com/my/package",
-			want:              []string{"test", "-tags", "integration", "-timeout", "12s", "-failfast", "-cpu", "2", "./..."},
+			pkg:               examplePackage,
+			want:              []string{goTestArg, "-tags", "integration", timeoutArg, expectedTimeout, failFastArg, "-cpu", "2", allPackagesArg},
 		},
 	}
 

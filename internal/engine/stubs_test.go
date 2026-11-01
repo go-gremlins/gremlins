@@ -64,7 +64,7 @@ func loadFixture(fixture, fromPackage string) (fstest.MapFS, gomodule.GoModule, 
 	}
 
 	return mapFS, gomodule.GoModule{
-			Name:       "example.com",
+			Name:       expectedModule,
 			Root:       ".",
 			CallingDir: fromPackage,
 		}, func() {

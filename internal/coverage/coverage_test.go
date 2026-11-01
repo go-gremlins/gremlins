@@ -32,6 +32,11 @@ import (
 	"github.com/go-gremlins/gremlins/internal/gomodule"
 )
 
+const (
+	allPackages   = "./..."
+	exampleModule = "example.com"
+)
+
 type commandHolder struct {
 	events []struct {
 		command string
@@ -49,7 +54,7 @@ func TestCoverageRun(t *testing.T) {
 		{
 			name:     "from root, normal mode",
 			callPath: ".",
-			wantPath: "./...",
+			wantPath: allPackages,
 			intMode:  false,
 		},
 		{
@@ -61,13 +66,13 @@ func TestCoverageRun(t *testing.T) {
 		{
 			name:     "from root, integration mode",
 			callPath: ".",
-			wantPath: "./...",
+			wantPath: allPackages,
 			intMode:  true,
 		},
 		{
 			name:     "from folder, integration mode",
 			callPath: "test/dir",
-			wantPath: "./...",
+			wantPath: allPackages,
 			intMode:  true,
 		},
 	}
@@ -85,7 +90,7 @@ func TestCoverageRun(t *testing.T) {
 			wantFilePath := wantWorkdir + "/" + wantFilename
 			holder := &commandHolder{}
 			mod := gomodule.GoModule{
-				Name:       "example.com",
+				Name:       exampleModule,
 				Root:       ".",
 				CallingDir: tc.callPath,
 			}
@@ -115,8 +120,8 @@ func TestCoverageRun(t *testing.T) {
 
 func TestCoverageRunFails(t *testing.T) {
 	mod := gomodule.GoModule{
-		Name:       "example.com",
-		CallingDir: "./...",
+		Name:       exampleModule,
+		CallingDir: allPackages,
 	}
 
 	t.Run("failure of: go mod download", func(t *testing.T) {
@@ -135,7 +140,7 @@ func TestCoverageRunFails(t *testing.T) {
 }
 
 func TestCoverageParsesOutput(t *testing.T) {
-	module := "example.com"
+	module := exampleModule
 	mod := gomodule.GoModule{
 		Name:       module,
 		CallingDir: "path",
@@ -178,8 +183,8 @@ func TestCoverageParsesOutput(t *testing.T) {
 
 func TestParseOutputFail(t *testing.T) {
 	mod := gomodule.GoModule{
-		Name:       "example.com",
-		CallingDir: "./...",
+		Name:       exampleModule,
+		CallingDir: allPackages,
 	}
 	cov := coverage.NewWithCmd(fakeExecCommandSuccess(nil), "testdata/invalid", mod)
 

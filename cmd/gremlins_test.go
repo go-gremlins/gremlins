@@ -21,9 +21,16 @@ import (
 	"testing"
 )
 
-func TestGremlins(t *testing.T) {
-	const boolType = "bool"
+// Flag types and default values that the command tests compare.
+const (
+	boolType   = "bool"
+	intType    = "int"
+	stringType = "string"
+	trueValue  = "true"
+	falseValue = "false"
+)
 
+func TestGremlins(t *testing.T) {
 	c, err := newRootCmd(context.Background(), "1.2.3")
 	if err != nil {
 		t.Fatal("newRootCmd should not fail")
@@ -39,7 +46,7 @@ func TestGremlins(t *testing.T) {
 	if cfgFile == nil {
 		t.Fatal("expected to have a config flag")
 	}
-	if cfgFile.Value.Type() != "string" {
+	if cfgFile.Value.Type() != stringType {
 		t.Errorf("expected value type to be 'string', got %v", cfgFile.Value.Type())
 	}
 	if cfgFile.DefValue != "" {
@@ -53,7 +60,7 @@ func TestGremlins(t *testing.T) {
 	if silentFlag.Value.Type() != boolType {
 		t.Errorf("expected value type to be 'bool', got %v", silentFlag.Value.Type())
 	}
-	if silentFlag.DefValue != "false" {
+	if silentFlag.DefValue != falseValue {
 		t.Errorf("expected default value to be false, got %v", silentFlag.DefValue)
 	}
 }

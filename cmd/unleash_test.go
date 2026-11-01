@@ -47,98 +47,98 @@ func TestUnleash(t *testing.T) {
 	}{
 		{
 			name:     "arithmetic-base",
-			flagType: "bool",
-			defValue: "true",
+			flagType: boolType,
+			defValue: trueValue,
 		},
 		{
 			name:     "conditionals-boundary",
-			flagType: "bool",
-			defValue: "true",
+			flagType: boolType,
+			defValue: trueValue,
 		},
 		{
 			name:     "conditionals_negation",
-			flagType: "bool",
-			defValue: "true",
+			flagType: boolType,
+			defValue: trueValue,
 		},
 		{
 			name:     "coverpkg",
-			flagType: "string",
+			flagType: stringType,
 			defValue: "",
 		},
 		{
 			name:      "diff",
 			shorthand: "D",
-			flagType:  "string",
+			flagType:  stringType,
 			defValue:  "",
 		},
 		{
 			name:      "dry-run",
 			shorthand: "d",
-			flagType:  "bool",
-			defValue:  "false",
+			flagType:  boolType,
+			defValue:  falseValue,
 		},
 		{
 			name:     "increment-decrement",
-			flagType: "bool",
-			defValue: "true",
+			flagType: boolType,
+			defValue: trueValue,
 		},
 		{
 			name:      "integration",
 			shorthand: "i",
-			flagType:  "bool",
-			defValue:  "false",
+			flagType:  boolType,
+			defValue:  falseValue,
 		},
 		{
 			name:     "invert-assignments",
-			flagType: "bool",
-			defValue: "false",
+			flagType: boolType,
+			defValue: falseValue,
 		},
 		{
 			name:     "invert-bitwise",
-			flagType: "bool",
-			defValue: "false",
+			flagType: boolType,
+			defValue: falseValue,
 		},
 		{
 			name:     "invert-bwassign",
-			flagType: "bool",
-			defValue: "false",
+			flagType: boolType,
+			defValue: falseValue,
 		},
 
 		{
 			name:     "invert-logical",
-			flagType: "bool",
-			defValue: "false",
+			flagType: boolType,
+			defValue: falseValue,
 		},
 		{
 			name:     "invert-loopctrl",
-			flagType: "bool",
-			defValue: "false",
+			flagType: boolType,
+			defValue: falseValue,
 		},
 		{
 			name:     "invert-negatives",
-			flagType: "bool",
-			defValue: "true",
+			flagType: boolType,
+			defValue: trueValue,
 		},
 		{
 			name:      "output",
 			shorthand: "o",
-			flagType:  "string",
+			flagType:  stringType,
 			defValue:  "",
 		},
 		{
 			name:     "remove-self-assignments",
-			flagType: "bool",
-			defValue: "false",
+			flagType: boolType,
+			defValue: falseValue,
 		},
 		{
 			name:      "tags",
 			shorthand: "t",
-			flagType:  "string",
+			flagType:  stringType,
 			defValue:  "",
 		},
 		{
 			name:     "test-cpu",
-			flagType: "int",
+			flagType: intType,
 			defValue: "0",
 		},
 		{
@@ -153,12 +153,12 @@ func TestUnleash(t *testing.T) {
 		},
 		{
 			name:     "timeout-coefficient",
-			flagType: "int",
+			flagType: intType,
 			defValue: "0",
 		},
 		{
 			name:     "workers",
-			flagType: "int",
+			flagType: intType,
 			defValue: "0",
 		},
 	}
@@ -192,8 +192,8 @@ func TestUnleash(t *testing.T) {
 			continue
 		}
 
-		if mtf.Value.Type() != "bool" {
-			t.Errorf("expected %q to be a %q, got %q", s, "bool", mtf.Value.Type())
+		if mtf.Value.Type() != boolType {
+			t.Errorf("expected %q to be a %q, got %q", s, boolType, mtf.Value.Type())
 		}
 		wantDef := fmt.Sprintf("%v", configuration.IsDefaultEnabled(mt))
 		if mtf.DefValue != wantDef {

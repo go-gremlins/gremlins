@@ -29,6 +29,11 @@ import (
 	"github.com/go-gremlins/gremlins/internal/mutator"
 )
 
+const (
+	testTags    = "tag1,tag2,tag3"
+	testConfig1 = "./testdata/config1"
+)
+
 type envEntry struct {
 	name  string
 	value string
@@ -46,44 +51,44 @@ func TestConfiguration(t *testing.T) {
 			name:        "from single file",
 			configPaths: []string{"testdata/config1/.gremlins.yaml"},
 			wantedConfig: map[string]interface{}{
-				"unleash.dry-run": true,
-				"unleash.tags":    "tag1,tag2,tag3",
+				UnleashDryRunKey: true,
+				UnleashTagsKey:   testTags,
 			},
 		},
 		{
 			name:        "from returns error if unreadable",
 			configPaths: []string{"testdata/config1/.gremlin"},
 			wantedConfig: map[string]interface{}{
-				"unleash.dry-run": true,
-				"unleash.tags":    "tag1,tag2,tag3",
+				UnleashDryRunKey: true,
+				UnleashTagsKey:   testTags,
 			},
 			expectErr: true,
 		},
 		{
 			name:        "from cfg",
-			configPaths: []string{"./testdata/config1"},
+			configPaths: []string{testConfig1},
 			wantedConfig: map[string]interface{}{
-				"unleash.dry-run": true,
-				"unleash.tags":    "tag1,tag2,tag3",
+				UnleashDryRunKey: true,
+				UnleashTagsKey:   testTags,
 			},
 		},
 		{
 			name:        "from cfg multi",
-			configPaths: []string{"./testdata/config2", "./testdata/config1"},
+			configPaths: []string{"./testdata/config2", testConfig1},
 			wantedConfig: map[string]interface{}{
-				"unleash.dry-run": true,
-				"unleash.tags":    "tag1.2,tag2.2,tag3.2",
+				UnleashDryRunKey: true,
+				UnleashTagsKey:   "tag1.2,tag2.2,tag3.2",
 			},
 		},
 		{
 			name: "from env",
 			envEntries: []envEntry{
 				{name: "GREMLINS_UNLEASH_DRY_RUN", value: "true"},
-				{name: "GREMLINS_UNLEASH_TAGS", value: "tag1,tag2,tag3"},
+				{name: "GREMLINS_UNLEASH_TAGS", value: testTags},
 			},
 			wantedConfig: map[string]interface{}{
-				"unleash.dry-run": "true",
-				"unleash.tags":    "tag1,tag2,tag3",
+				UnleashDryRunKey: "true",
+				UnleashTagsKey:   testTags,
 			},
 		},
 		{
@@ -91,10 +96,10 @@ func TestConfiguration(t *testing.T) {
 			envEntries: []envEntry{
 				{name: "GREMLINS_UNLEASH_TAGS", value: "tag1env,tag2env,tag3env"},
 			},
-			configPaths: []string{"./testdata/config1"},
+			configPaths: []string{testConfig1},
 			wantedConfig: map[string]interface{}{
-				"unleash.dry-run": true,
-				"unleash.tags":    "tag1env,tag2env,tag3env",
+				UnleashDryRunKey: true,
+				UnleashTagsKey:   "tag1env,tag2env,tag3env",
 			},
 		},
 	}
