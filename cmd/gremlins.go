@@ -95,7 +95,7 @@ func newRootCmd(ctx context.Context, version string) (*gremlinsCmd, error) {
 
 func shortExplainer() string {
 	return heredoc.Doc(`
-		Gremlins is a mutation testing tool for Go projects, made with love by k3rn31 
+		Gremlins is a mutation testing tool for Go projects, made with love by k3rn31
 		and friends.
 	`)
 }
