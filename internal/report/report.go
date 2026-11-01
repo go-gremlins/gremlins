@@ -81,10 +81,12 @@ func newReport(results Results) (*reportStatus, bool) {
 	rep.files = make(map[string][]internal.Mutation)
 	for _, m := range results.Mutants {
 		rep.files[m.Position().Filename] = append(rep.files[m.Position().Filename], internal.Mutation{
-			Line:   m.Position().Line,
-			Column: m.Position().Column,
-			Type:   m.Type().String(),
-			Status: m.Status().String(),
+			Line:      m.Position().Line,
+			Column:    m.Position().Column,
+			EndLine:   m.EndPosition().Line,
+			EndColumn: m.EndPosition().Column,
+			Type:      m.Type().String(),
+			Status:    m.Status().String(),
 		})
 
 		reportMutationStatus(m, rep)

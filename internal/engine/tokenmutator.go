@@ -88,6 +88,11 @@ func (m *TokenMutator) Position() token.Position {
 	return m.fs.Position(m.tokenNode.TokPos)
 }
 
+// EndPosition returns the token.Position where the token of the TokenMutator ends.
+func (m *TokenMutator) EndPosition() token.Position {
+	return m.fs.Position(m.tokenNode.TokEnd)
+}
+
 // Pos returns the token.Pos where the TokenMutator resides.
 func (m *TokenMutator) Pos() token.Pos {
 	return m.tokenNode.TokPos

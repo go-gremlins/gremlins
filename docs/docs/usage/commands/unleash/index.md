@@ -330,6 +330,8 @@ The output file in JSON format and has the following structure:
         {
           "line": 10,
           "column": 8,
+          "end_line": 10,
+          "end_column": 10,
           "type": "CONDITIONALS_NEGATION",
           "status": "KILLED"
         }
