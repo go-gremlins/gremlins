@@ -8,8 +8,9 @@ workflow:
   # make all runs make lint, make test, and make build. CI owns this gate.
   completion_command: make all
   lint_command: make lint
-  # The formatter of .golangci.yml is goimports. golangci-lint fmt applies it.
-  format_command: golangci-lint fmt ./...
+  # The formatter of .golangci.yml is goimports. golangci-lint fmt, at the
+  # version that mise.toml pins, applies it.
+  format_command: mise exec -- golangci-lint fmt ./...
   # make policy runs the hooks of .pre-commit-config.yaml on all files: file
   # checks, golangci-lint, gitleaks, govulncheck, and the race tests.
   policy_command: make policy

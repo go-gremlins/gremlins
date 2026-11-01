@@ -70,7 +70,7 @@ before seeing it merged.
 ### Commit hooks
 
 The `.pre-commit-config.yaml` file defines the commit hooks. The hooks need
-[pre-commit](https://pre-commit.com), Go, and golangci-lint v2 on your `PATH`.
+[pre-commit](https://pre-commit.com), Go, and [mise](https://mise.jdx.dev) on your `PATH`. mise installs the golangci-lint version that `mise.toml` pins.
 To activate and verify the hooks in your clone, run:
 
 ```shell
