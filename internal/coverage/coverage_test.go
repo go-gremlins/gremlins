@@ -163,6 +163,15 @@ func TestCoverageParsesOutput(t *testing.T) {
 				EndCol:    16,
 			},
 		},
+		// A nested file keeps a slash-separated name on each platform.
+		"sub/file3.go": {
+			{
+				StartLine: 10,
+				StartCol:  2,
+				EndLine:   11,
+				EndCol:    16,
+			},
+		},
 	}
 	want := coverage.Result{
 		Profile: profile,
