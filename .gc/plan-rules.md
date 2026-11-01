@@ -6,5 +6,5 @@
   pages in `docs/docs/usage/` in the same change.
 - Keep the CLI flags, the configuration keys, the JSON report, and the exit codes stable unless the issue asks for a
   change. autarchy-ai/coldlight and OpenRAE/env-packs depend on them.
-- Do not change the module path `github.com/go-gremlins/gremlins` before an ADR records the decision (#69).
+- Take upstream changes only as `docs/adr/0003-upstream-changes.md` describes.
 - Do not edit or reformat files in `testdata` directories unless the change is to the test fixture itself.

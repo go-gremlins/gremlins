@@ -10,10 +10,9 @@ workflow:
   lint_command: make lint
   # The formatter of .golangci.yml is goimports. golangci-lint fmt applies it.
   format_command: golangci-lint fmt ./...
-  # The repository has no make policy target. Its gates are the hooks of
-  # .pre-commit-config.yaml: file checks, golangci-lint, gitleaks, govulncheck,
-  # and the race tests.
-  policy_command: pre-commit run --all-files
+  # make policy runs the hooks of .pre-commit-config.yaml on all files: file
+  # checks, golangci-lint, gitleaks, govulncheck, and the race tests.
+  policy_command: make policy
   precommit_command: pre-commit run --hook-stage pre-commit
   base_branch: dev
   pr_title:
@@ -23,8 +22,8 @@ workflow:
   codex_review:
     pre_push_cap: 1
 sonarcloud:
-  project_key: go-rae-gremlins_go-rae-gremlins
-  organization: go-rae-gremlins
+  project_key: OpenRAE_go-rae-gremlins
+  organization: raesystem
 rules:
   plan_rules: .gc/plan-rules.md
 docs:
@@ -39,7 +38,7 @@ example_paths:
   test: internal/engine/
 cross_cutting_concerns:
   description: |
-    Module: github.com/go-gremlins/gremlins, the OpenRAE fork of go-gremlins/gremlins. go 1.25.0, toolchain go1.26.10.
+    Module: github.com/OpenRAE/go-rae-gremlins, the OpenRAE fork of go-gremlins/gremlins (docs/adr/0001-module-path.md). go 1.25.0, toolchain go1.26.10.
     CLI: cobra commands in cmd/ (gremlins.go, unleash.go). The binary entry point is cmd/gremlins/main.go.
     Configuration: Viper. Flags override .gremlins.yaml, and .gremlins.yaml overrides the defaults. The keys are constants in internal/configuration/configuration.go. Environment variables use the GREMLINS prefix. docs/docs/schema/configuration.json is the JSON schema of the configuration file, and docs/docs/usage/ documents the flags and keys.
     Logging: internal/log (Init, Infof, Infoln, Errorf, Errorln, and the silent mode).
@@ -77,5 +76,5 @@ architecture:
         The downstream contracts are the CLI flags, the configuration keys and their JSON schema, the JSON report, and the exit codes.
     anti_recommendations:
       - Do not change a CLI flag, a configuration key, the JSON report, or an exit code unless the issue asks for it.
-      - Do not change the module path before an ADR records the decision (#69).
+      - Take upstream changes only as docs/adr/0003-upstream-changes.md describes.
       - Do not reformat files in testdata directories. They are byte-exact test inputs.

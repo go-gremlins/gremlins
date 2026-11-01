@@ -39,13 +39,17 @@ requirements:
 lint:
 	${LINT} ./...
 
+.PHONY: policy
+policy:
+	pre-commit run --all-files
+
 .PHONY: hooks
 hooks:
 	bash scripts/install-hooks.sh
 
 .PHONY: goimports
 goimports:
-	goimports --local 'github.com/go-gremlins/gremlins' -v -w .
+	goimports --local 'github.com/OpenRAE/go-rae-gremlins' -v -w .
 
 .PHONY: fieldalignment
 fieldalignment:

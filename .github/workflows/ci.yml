@@ -2,37 +2,172 @@ name: CI
 
 on:
   push:
-    branches: [ 'main', 'dev' ]
+    branches: [main, dev]
   pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   lint:
-    name: Validate source code with linters
+    name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          go-version-file: 'go.mod'
-      - name: Run lint
-        uses: golangci/golangci-lint-action@v9
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          version: latest
-          skip-cache: true
+          go-version-file: go.mod
+          cache: false
+      # golangci-lint at the version that mise.toml pins.
+      - uses: jdx/mise-action@6612f0ef07ed2a736cd1e00a94a065522dd41195 # v5.2.5
+        with:
+          version: 2026.10.25
+          install_args: aqua:golangci/golangci-lint
+          cache: false
+      - run: make lint
 
   test:
-    name: Run the tests suite
-    needs: lint
-    runs-on: ${{ matrix.os }}
+    name: Test (${{ matrix.os }})
     strategy:
+      fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macOS-latest, windows-latest ]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          go-version-file: 'go.mod'
-      - name: Run tests with coverage
-        run: make cover
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+      - run: make cover
+      - if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage
+          path: coverage.out
+          if-no-files-found: error
+          retention-days: 1
+
+  # The hooks of .pre-commit-config.yaml on all files (make policy).
+  policy:
+    name: Policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+      - uses: jdx/mise-action@6612f0ef07ed2a736cd1e00a94a065522dd41195 # v5.2.5
+        with:
+          version: 2026.10.25
+          install_args: aqua:golangci/golangci-lint
+          cache: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - run: "python -m pip install --only-binary :all: 'pre-commit==4.3.0'"
+      - run: make policy
+
+  # Checks the coverage report and the scanner settings before the scan. It
+  # runs no candidate code and holds no secret. Secrets are not available to
+  # pull requests from other repositories, so those skip the Sonar jobs.
+  sonar-admission:
+    name: Sonar admission
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: coverage
+          path: coverage
+      - name: Require exactly the coverage profile
+        run: |
+          report=coverage/coverage.out
+          if [ -L "$report" ] || [ ! -f "$report" ] || [ ! -s "$report" ]; then
+            echo "::error::Missing, empty or linked coverage report: $report"
+            exit 1
+          fi
+          if find coverage -mindepth 1 ! -path "$report" | grep .; then
+            echo "::error::Unexpected entries in the coverage directory"
+            exit 1
+          fi
+      # The scanner reads sonar-project.properties from the candidate. Reject
+      # any setting outside this list and any path outside the checkout.
+      - name: Allow only reviewed Sonar settings
+        run: |
+          settings=sonar-project.properties
+          allowed='^sonar\.(projectKey|organization|sources|exclusions|tests|test\.inclusions|test\.exclusions|go\.coverage\.reportPaths)=[A-Za-z0-9_./*,-]*$'
+          test -f "$settings"
+          if grep -n '[\]' "$settings"; then
+            echo "::error file=$settings::Backslash escapes and continuations are not allowed"
+            exit 1
+          fi
+          if grep -nvE -e "$allowed" -e '^#' -e '^$' "$settings"; then
+            echo "::error file=$settings::Unreviewed Sonar setting"
+            exit 1
+          fi
+          if grep -nE -e '=/|,/' -e '\.\.' "$settings"; then
+            echo "::error file=$settings::Absolute and parent paths are not allowed"
+            exit 1
+          fi
+          if grep -vE -e '^#' -e '^$' "$settings" | cut -d= -f1 | sort | uniq -d | grep .; then
+            echo "::error file=$settings::Duplicate Sonar setting"
+            exit 1
+          fi
+
+  # Holds SONAR_TOKEN, so it runs no commands.
+  sonar:
+    name: SonarCloud
+    needs: sonar-admission
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: coverage
+          path: coverage
+      - name: Analyze and wait for the quality gate
+        uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304 # v8.4.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: -Dsonar.qualitygate.wait=true
+
+  gate:
+    name: PR Gate
+    if: always()
+    needs: [lint, test, policy, sonar]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require lint, tests, policy, and SonarCloud
+        env:
+          LINT_RESULT: ${{ needs.lint.result }}
+          TEST_RESULT: ${{ needs.test.result }}
+          POLICY_RESULT: ${{ needs.policy.result }}
+          SONAR_RESULT: ${{ needs.sonar.result }}
+          FOREIGN_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+        run: |
+          test "$LINT_RESULT" = success
+          test "$TEST_RESULT" = success
+          test "$POLICY_RESULT" = success
+          if [ "$FOREIGN_PR" = true ]; then
+            test "$SONAR_RESULT" = skipped
+          else
+            test "$SONAR_RESULT" = success
+          fi

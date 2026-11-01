@@ -1,0 +1,132 @@
+name: Sync main -> dev
+
+# Keep `dev` in sync with `main` after a release.
+#
+# Release Please cuts releases on `main`: when its `chore(main): release ...` PR merges,
+# the version bump + CHANGELOG commit lives ONLY on `main`. This workflow opens a
+# back-merge PR (main -> dev) so `dev` catches up automatically — a human just merges it.
+#
+# Why `push: main` and not `release: published`: Release Please creates the GitHub Release
+# with GITHUB_TOKEN, and GITHUB_TOKEN-created events do not trigger other workflows — a
+# release trigger would never fire. The human merging the release PR pushes `main`, which
+# triggers reliably. `workflow_dispatch` allows a manual resync with the same ref guard.
+#
+# Why it opens a PR instead of auto-merging: a bot-opened PR does not trigger `dev`'s
+# required status checks (GITHUB_TOKEN limitation), so auto-merge would stall. Opening the
+# PR for maintainer review behaves the same before and after required checks are
+# added — no silent stalls, and the human merge gate is preserved.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write # force-update the dedicated automation branch (never main/dev)
+  pull-requests: write # open/maintain the back-merge PR
+
+concurrency:
+  group: sync-main-to-dev
+  cancel-in-progress: false
+
+jobs:
+  backmerge:
+    name: Open main -> dev back-merge PR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Open or update the back-merge PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [[ ${GITHUB_REF} != "refs/heads/main" ]]; then
+            echo "Refusing to sync from non-main ref ${GITHUB_REF}." >&2
+            exit 1
+          fi
+          git fetch --quiet origin main dev
+
+          # Compare committed TREES, not commit counts: after a normal dev -> main
+          # promotion the histories differ while the content is identical, and there is
+          # nothing to back-merge.
+          if git diff --quiet origin/dev origin/main; then
+            echo "dev and main content already match; nothing to sync."
+            exit 0
+          fi
+
+          # The disposable branch is mutable only while an open PR proves it is
+          # still owned by this workflow. Bind every update to the remote OID read
+          # in this run so a concurrent or human update fails instead of being lost.
+          branch="sync/main-to-dev"
+          main_sha="$(git rev-parse origin/main)"
+          remote_sha="$(git ls-remote --heads origin "refs/heads/${branch}" | awk '{print $1}')"
+          existing_json="$(gh pr list --head "${branch}" --base dev --state open \
+            --json number,author,headRefOid --jq '.[0] // {}')"
+          existing="$(jq -r '.number // empty' <<<"${existing_json}")"
+          owner="$(jq -r '.author.login // empty' <<<"${existing_json}")"
+          head_sha="$(jq -r '.headRefOid // empty' <<<"${existing_json}")"
+
+          is_actions_owner() {
+            case "$1" in
+              "github-actions[bot]"|"app/github-actions") return 0 ;;
+              *) return 1 ;;
+            esac
+          }
+
+          skip_push=false
+          if [ -n "${remote_sha}" ] && [ -n "${existing}" ]; then
+            case "${owner}" in
+              "github-actions[bot]"|"app/github-actions") ;;
+              *)
+                echo "Refusing to overwrite an automation branch whose PR is not bot-owned." >&2
+                exit 1
+                ;;
+            esac
+            if [ "${head_sha}" != "${remote_sha}" ]; then
+              echo "Refusing inconsistent PR and remote branch ownership evidence." >&2
+              exit 1
+            fi
+          elif [ -n "${remote_sha}" ] && [ "${remote_sha}" = "${main_sha}" ]; then
+            # The preceding run may have pushed successfully and then lost its
+            # PR-create API call. The branch already has the exact intended tree,
+            # so recover by creating the PR without rewriting any remote ref.
+            echo "Automation branch already points at main; retrying PR creation."
+            skip_push=true
+          elif [ -n "${remote_sha}" ]; then
+            # A merged back-merge PR can leave its source branch behind. Only a
+            # completed Actions-owned PR whose recorded head is the observed
+            # remote OID authorizes recycling that branch for the next release.
+            completed_json="$(gh pr list --head "${branch}" --base dev --state merged \
+              --limit 1 --json number,author,headRefOid --jq '.[0] // {}')"
+            completed="$(jq -r '.number // empty' <<<"${completed_json}")"
+            completed_owner="$(jq -r '.author.login // empty' <<<"${completed_json}")"
+            completed_head_sha="$(jq -r '.headRefOid // empty' <<<"${completed_json}")"
+            if [ -z "${completed}" ] || ! is_actions_owner "${completed_owner}"; then
+              echo "Refusing to overwrite an automation branch without bot-owned PR history." >&2
+              exit 1
+            fi
+            if [ "${completed_head_sha}" != "${remote_sha}" ]; then
+              echo "Refusing stale or inconsistent completed-PR ownership evidence." >&2
+              exit 1
+            fi
+          elif [ -n "${existing}" ]; then
+            echo "Refusing an open sync PR whose remote branch is absent." >&2
+            exit 1
+          fi
+
+          if [ "${skip_push}" != true ]; then
+            # The token is in this one command only, not in the Git configuration.
+            git push --force-with-lease="refs/heads/${branch}:${remote_sha}" \
+              "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+              "origin/main:refs/heads/${branch}"
+          fi
+
+          if [ -n "${existing}" ]; then
+            echo "Back-merge PR #${existing} already open; its branch now points at latest main."
+          else
+            gh pr create --base dev --head "${branch}" \
+              --title "chore: sync main -> dev" \
+              --body "Automated back-merge: brings release commit(s) from \`main\` into \`dev\` so the branches stay in sync. \`main\` is ahead of \`dev\` only by the release commit. \`dev\`'s required checks do not run on this bot-opened PR — maintainer review and merge is required; this is a real PR with normal conflict handling, never an auto-merge around branch protection."
+          fi

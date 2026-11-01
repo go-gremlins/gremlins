@@ -2,20 +2,23 @@ name: Gremlins
 
 on:
   push:
-    branches: [ 'main' ]
+    branches: [main, dev]
   pull_request:
+    branches: [main, dev]
+
+permissions:
+  contents: read
 
 jobs:
+  # Mutation testing of the repository with the Gremlins of the same commit.
   gremlins:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - name: Set up Go
-        uses: actions/setup-go@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          go-version-file: 'go.mod'
-      - name: Run Gremlins
-        uses: go-gremlins/gremlins-action@v1
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          version: latest
-          args: --silent
+          go-version-file: go.mod
+          cache: false
+      - run: go run ./cmd/gremlins unleash --silent
