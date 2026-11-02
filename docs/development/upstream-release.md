@@ -1,7 +1,7 @@
 # Upstream build and release
 
 This page describes how upstream Gremlins (`go-gremlins/gremlins`) builds and releases. ADR 0002 records what the
-fork publishes.
+fork publishes, and `release.md` describes the release of the fork.
 
 ## Build
 
