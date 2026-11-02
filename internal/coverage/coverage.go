@@ -200,8 +200,12 @@ func (c *Coverage) parse(data io.Reader) (Profile, error) {
 }
 
 func (c *Coverage) removeModuleFromPath(p *cover.Profile) string {
-	path := strings.ReplaceAll(p.FileName, c.mod.Name+"/", "")
+	// Remove only the leading module path. A directory can have the name of
+	// the module.
+	path := strings.TrimPrefix(p.FileName, c.mod.Name+"/")
 	path, _ = filepath.Rel(c.mod.CallingDir, path)
 
-	return path
+	// The engine walks an fs.FS and looks the coverage up by a
+	// slash-separated name, but filepath.Rel writes backslashes on Windows.
+	return filepath.ToSlash(path)
 }

@@ -163,6 +163,24 @@ func TestCoverageParsesOutput(t *testing.T) {
 				EndCol:    16,
 			},
 		},
+		// A nested file keeps a slash-separated name on each platform.
+		"sub/file3.go": {
+			{
+				StartLine: 10,
+				StartCol:  2,
+				EndLine:   11,
+				EndCol:    16,
+			},
+		},
+		// A directory with the name of the module stays in the path.
+		"example.com/file4.go": {
+			{
+				StartLine: 20,
+				StartCol:  2,
+				EndLine:   21,
+				EndCol:    16,
+			},
+		},
 	}
 	want := coverage.Result{
 		Profile: profile,
