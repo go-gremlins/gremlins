@@ -49,8 +49,9 @@ Please refer to the [documentation](https://gremlins.dev) for instructions on ho
 This is just to get you started, do not forget to check the complete [documentation](https://gremlins.dev).
 
 Download the pre-built binary for your OS/ARCH from
-the [release page](https://github.com/go-gremlins/gremlins/releases/latest)
-and put it somewhere in the `PATH`, then:
+the [release page](https://github.com/OpenRAE/go-rae-gremlins/releases/latest)
+and put it somewhere in the `PATH`, or run
+`go install github.com/OpenRAE/go-rae-gremlins/cmd/gremlins@latest`, then:
 
 ```shell
 gremlins unleash
