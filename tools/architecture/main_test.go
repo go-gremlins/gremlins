@@ -314,3 +314,23 @@ func TestEmptyCanonicalNamesRejected(t *testing.T) {
 		}
 	}
 }
+
+func TestScanResolvesCheckoutParentAliases(t *testing.T) {
+	parent := t.TempDir()
+	realParent := filepath.Join(parent, "real")
+	if err := os.MkdirAll(filepath.Join(realParent, "checkout"), 0750); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(realParent, filepath.Join(parent, "alias")); err != nil {
+		t.Skip(err)
+	}
+	root := filepath.Join(parent, "alias", "checkout")
+	writeFile(t, root, appFile, "package app")
+	writeFile(t, root, "docs/source.md", "documentation")
+	if err := os.Symlink("source.md", filepath.Join(root, "docs/link.md")); err != nil {
+		t.Skip(err)
+	}
+	if findings, err := scan(root, testModel(t)); err != nil || len(findings) != 0 {
+		t.Fatalf("findings=%v error=%v", findings, err)
+	}
+}

@@ -108,7 +108,11 @@ func checkLink(root, absolute, relative string) error {
 	if err != nil {
 		return fmt.Errorf("broken link %q; fix: restore its checkout target", relative)
 	}
-	rel, err := filepath.Rel(root, target)
+	canonicalRoot, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		return fmt.Errorf("cannot resolve checkout; fix: restore the checkout path")
+	}
+	rel, err := filepath.Rel(canonicalRoot, target)
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel) || strings.HasSuffix(relative, ".go") {
 		return fmt.Errorf("unsafe link %q; fix: use regular Go files and checkout-local documentation links", relative)
 	}
