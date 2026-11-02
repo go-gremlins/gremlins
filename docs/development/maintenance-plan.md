@@ -26,6 +26,7 @@ Each review has a record, a baseline, and decisions. The reviews do not fix code
   [CONTRIBUTING.md](../CONTRIBUTING.md)
 - #76 Model the architecture as code and check designs against the model
 - #77 Set the coding standards for strict linting and the Google Go Style rules
+  ([standard and comparison](coding-standards.md), [design](lint-design.md), [preflight](lint-preflight.md))
 - #78 Define the test standard
 - #79 Gate changes on mutation testing of changed lines and on regression proof
 - #80 Review the code quality

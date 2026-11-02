@@ -38,6 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -49,7 +50,22 @@ jobs:
           version: 2026.10.25
           install_args: aqua:golangci/golangci-lint
           cache: false
-      - run: make lint
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - name: Provision Go modules before offline analysis
+        run: go mod download
+      - run: make lint-test
+      - name: Check lint with the pinned lint comparison
+        env:
+          LINT_ADOPTION_BASE: ${{ (github.base_ref == 'main' || github.ref == 'refs/heads/main') && 'origin/dev' || '' }}
+          COMPARISON: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/dev' }}
+        run: |
+          if [ "$COMPARISON" = 0000000000000000000000000000000000000000 ]; then
+            COMPARISON=origin/dev
+          fi
+          export LINT_BASE="$COMPARISON"
+          make lint
 
   test:
     name: Test (${{ matrix.os }})
@@ -82,6 +98,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -96,7 +113,18 @@ jobs:
         with:
           python-version: '3.12'
       - run: "python -m pip install --only-binary :all: 'pre-commit==4.3.0'"
-      - run: make policy
+      - name: Provision Go modules before offline analysis
+        run: go mod download
+      - name: Check policy with the pinned lint comparison
+        env:
+          LINT_ADOPTION_BASE: ${{ (github.base_ref == 'main' || github.ref == 'refs/heads/main') && 'origin/dev' || '' }}
+          COMPARISON: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/dev' }}
+        run: |
+          if [ "$COMPARISON" = 0000000000000000000000000000000000000000 ]; then
+            COMPARISON=origin/dev
+          fi
+          export LINT_BASE="$COMPARISON"
+          make policy
 
   # Checks the coverage report and the scanner settings before the scan. It
   # runs no candidate code and holds no secret. Secrets are not available to
