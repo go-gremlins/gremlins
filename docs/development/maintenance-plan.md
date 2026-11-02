@@ -22,7 +22,8 @@ ADRs 0001 to 0003 (module path, binary name and versions, upstream changes), and
 
 Each review has a record, a baseline, and decisions. The reviews do not fix code.
 
-- #75 Review the development process and merge the upstream conventions with ours
+- #75 [Review the development process](process-review.md) and document the merged process in
+  [CONTRIBUTING.md](../CONTRIBUTING.md)
 - #76 Model the architecture as code and check designs against the model
 - #77 Set the coding standards for strict linting and the Google Go Style rules
 - #78 Define the test standard
