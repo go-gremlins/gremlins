@@ -1,0 +1,212 @@
+{
+  "version": 1,
+  "module": "github.com/OpenRAE/go-rae-gremlins",
+  "rules": [
+    {
+      "id": "ARCH001",
+      "kind": "ownership",
+      "description": "Each Go package has an explicit architecture owner.",
+      "fix": "Declare the package and its intended dependencies in .architecture/model.json."
+    },
+    {
+      "id": "ARCH002",
+      "kind": "imports",
+      "description": "Internal imports follow the declared package boundaries.",
+      "fix": "Remove this dependency or obtain a reviewed model change before adding it."
+    },
+    {
+      "id": "ARCH003",
+      "kind": "contracts",
+      "description": "Canonical contract files remain in the checkout, and proposed contract changes preserve approved compatibility.",
+      "fix": "Restore the canonical file and preserve compatibility, or obtain a reviewed architecture decision before coding."
+    },
+    {
+      "id": "ARCH004",
+      "kind": "trust",
+      "description": "Proposed development-check data flows and execution remain within approved trust boundaries.",
+      "fix": "Remove the prohibited transfer or execution, or obtain a reviewed boundary change before coding."
+    }
+  ],
+  "packages": {
+    "cmd": {
+      "allow": [
+        "cmd/internal/flags",
+        "internal/configuration",
+        "internal/coverage",
+        "internal/diff",
+        "internal/engine",
+        "internal/engine/workdir",
+        "internal/exclusion",
+        "internal/gomodule",
+        "internal/log",
+        "internal/mutator",
+        "internal/report"
+      ],
+      "test_allow": [
+        "internal/configuration",
+        "internal/mutator"
+      ]
+    },
+    "cmd/gremlins": {
+      "allow": [
+        "cmd",
+        "internal/execution",
+        "internal/log"
+      ],
+      "test_allow": []
+    },
+    "cmd/internal/flags": {
+      "allow": [],
+      "test_allow": []
+    },
+    "internal/configuration": {
+      "allow": [
+        "internal/mutator"
+      ],
+      "test_allow": []
+    },
+    "internal/coverage": {
+      "allow": [
+        "internal/configuration",
+        "internal/gomodule",
+        "internal/log"
+      ],
+      "test_allow": []
+    },
+    "internal/diff": {
+      "allow": [
+        "internal/configuration",
+        "internal/log"
+      ],
+      "test_allow": []
+    },
+    "internal/engine": {
+      "allow": [
+        "internal/configuration",
+        "internal/coverage",
+        "internal/diff",
+        "internal/engine/workdir",
+        "internal/engine/workerpool",
+        "internal/exclusion",
+        "internal/gomodule",
+        "internal/log",
+        "internal/mutator",
+        "internal/report"
+      ],
+      "test_allow": []
+    },
+    "internal/engine/workdir": {
+      "allow": [
+        "internal/log"
+      ],
+      "test_allow": []
+    },
+    "internal/engine/workerpool": {
+      "allow": [
+        "internal/configuration"
+      ],
+      "test_allow": [
+        "internal/mutator"
+      ]
+    },
+    "internal/exclusion": {
+      "allow": [
+        "internal/configuration"
+      ],
+      "test_allow": []
+    },
+    "internal/execution": {
+      "allow": [],
+      "test_allow": []
+    },
+    "internal/gomodule": {
+      "allow": [],
+      "test_allow": []
+    },
+    "internal/log": {
+      "allow": [
+        "internal/configuration"
+      ],
+      "test_allow": []
+    },
+    "internal/mutator": {
+      "allow": [],
+      "test_allow": []
+    },
+    "internal/report": {
+      "allow": [
+        "internal/configuration",
+        "internal/execution",
+        "internal/log",
+        "internal/mutator",
+        "internal/report/internal"
+      ],
+      "test_allow": []
+    },
+    "internal/report/internal": {
+      "allow": [],
+      "test_allow": []
+    },
+    "tools/architecture": {
+      "allow": [
+        "internal/log"
+      ],
+      "test_allow": []
+    }
+  },
+  "contracts": {
+    "cli": "cmd/unleash.go",
+    "configuration": "internal/configuration/configuration.go",
+    "schema": "docs/docs/schema/configuration.json",
+    "report": "internal/report/internal/structure.go",
+    "exit_codes": "internal/execution/execution.go",
+    "cli_persistent": "cmd/gremlins.go",
+    "cli_binding": "cmd/internal/flags/flags.go"
+  },
+  "policies": {
+    "model": ".architecture/model.json",
+    "baseline": ".architecture/baseline.json",
+    "ci": ".github/workflows/ci.yml",
+    "build": "Makefile",
+    "plan": ".gc/plan-rules.md",
+    "guidance": "CLAUDE.md",
+    "contributing": "docs/CONTRIBUTING.md",
+    "hooks": ".pre-commit-config.yaml",
+    "lint": ".golangci.yml",
+    "workflow": ".ground-control.yaml",
+    "design_step": "scripts/check-design.sh"
+  },
+  "contract_changes": {
+    "cli": [
+      "compatible"
+    ],
+    "configuration": [
+      "compatible"
+    ],
+    "schema": [
+      "compatible"
+    ],
+    "report": [
+      "compatible"
+    ],
+    "exit_codes": [
+      "compatible"
+    ],
+    "cli_persistent": [
+      "compatible"
+    ],
+    "cli_binding": [
+      "compatible"
+    ]
+  },
+  "trust_boundaries": {
+    "development_checks": {
+      "destinations": [
+        "local",
+        "existing-ci"
+      ],
+      "network": false,
+      "execute_source": false
+    }
+  }
+}

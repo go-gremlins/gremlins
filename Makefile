@@ -64,3 +64,12 @@ clean:
 	go clean
 	rm -rf -- ${TARGET}
 	rm -f -- coverage.out
+
+# Architecture policy has no runtime CLI or configuration impact.
+ARCHITECTURE_BASE ?= origin/dev
+.PHONY: architecture architecture-design
+architecture:
+	${GO_CMD} run ./tools/architecture -base "${ARCHITECTURE_BASE}"
+
+architecture-design:
+	bash scripts/check-design.sh

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "issue": 76,
+  "summary": "Reject an incompatible proposed design.",
+  "trust_boundaries": "Explicit development-check boundary review.",
+  "contracts": [
+    "cli"
+  ],
+  "contract_changes": {
+    "cli": "breaking"
+  },
+  "trust_changes": {
+    "development_checks": {
+      "destinations": [
+        "local"
+      ]
+    }
+  }
+}

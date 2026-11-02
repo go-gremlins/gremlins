@@ -196,3 +196,11 @@ internal/
 - Test coverage tracked (Codecov integration)
 - All commits must pass: lint, tests, build
 - Mutation testing runs on itself (`.gremlins.yaml` configured)
+
+## Architecture design check
+
+Before coding, update `.architecture/design.json` and run `make architecture-design`.
+Record the model digest, affected rules, and result in the issue plan.
+Resolve conflicts before implementation. Repeat after model or design changes.
+See [the architecture model and design check](docs/development/architecture.md).
+CI runs `make architecture` and rejects baseline growth and missing design coverage.

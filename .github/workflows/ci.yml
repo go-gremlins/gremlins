@@ -11,6 +11,27 @@ permissions:
   contents: read
 
 jobs:
+  architecture:
+    name: Architecture
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Check model, design, and shrink-only baseline
+        env:
+          COMPARISON: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/dev' }}
+        run: |
+          if [ "$COMPARISON" = 0000000000000000000000000000000000000000 ]; then
+            COMPARISON=''
+          fi
+          go run ./tools/architecture -base "$COMPARISON"
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -152,17 +173,19 @@ jobs:
   gate:
     name: PR Gate
     if: always()
-    needs: [lint, test, policy, sonar]
+    needs: [architecture, lint, test, policy, sonar]
     runs-on: ubuntu-latest
     steps:
-      - name: Require lint, tests, policy, and SonarCloud
+      - name: Require architecture, lint, tests, policy, and SonarCloud
         env:
+          ARCHITECTURE_RESULT: ${{ needs.architecture.result }}
           LINT_RESULT: ${{ needs.lint.result }}
           TEST_RESULT: ${{ needs.test.result }}
           POLICY_RESULT: ${{ needs.policy.result }}
           SONAR_RESULT: ${{ needs.sonar.result }}
           FOREIGN_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
         run: |
+          test "$ARCHITECTURE_RESULT" = success
           test "$LINT_RESULT" = success
           test "$TEST_RESULT" = success
           test "$POLICY_RESULT" = success
