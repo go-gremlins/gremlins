@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "issue": 76,
+  "summary": "Reject an upward dependency before implementation.",
+  "changes": [{"package": "internal/mutator", "imports": ["cmd"]}],
+  "trust_boundaries": "No new trust boundary."
+}

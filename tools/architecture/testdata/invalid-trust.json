@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "issue": 76,
+  "summary": "Reject an incompatible proposed design.",
+  "trust_boundaries": "Explicit development-check boundary review.",
+  "trust_changes": {
+    "development_checks": {
+      "destinations": [
+        "new-service"
+      ]
+    }
+  }
+}

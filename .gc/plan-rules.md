@@ -8,3 +8,7 @@
   change. autarchy-ai/coldlight and OpenRAE/env-packs depend on them.
 - Take upstream changes only as `docs/adr/0003-upstream-changes.md` describes.
 - Do not edit or reformat files in `testdata` directories unless the change is to the test fixture itself.
+- Before coding, update `.architecture/design.json` and run `make architecture-design`. Record the model digest,
+  affected rules, and result in the issue plan. Resolve every design conflict first. Recheck after model changes.
+  Follow [ADR 0004](../docs/adr/0004-architecture-model-checks.md) and the
+  [architecture design check](../docs/development/architecture.md).

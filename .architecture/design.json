@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "issue": 76,
+  "summary": "Add a local architecture evaluator and CI gate outside the shipped CLI.",
+  "changes": [
+    {
+      "package": "tools/architecture",
+      "imports": [
+        "internal/log"
+      ]
+    }
+  ],
+  "contracts": [],
+  "trust_boundaries": "Read checkout and pinned Git objects only. Run in a secret-free CI job. No network or source execution.",
+  "conflicts": [],
+  "policies": [
+    "model",
+    "baseline",
+    "ci",
+    "build",
+    "plan",
+    "guidance",
+    "contributing",
+    "design_step"
+  ],
+  "trust_changes": {
+    "development_checks": {
+      "destinations": [
+        "local",
+        "existing-ci"
+      ],
+      "network": false,
+      "execute_source": false
+    }
+  }
+}
