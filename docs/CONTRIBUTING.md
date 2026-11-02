@@ -106,7 +106,7 @@ The current hosted checks are defined in the repository:
 
 | Workflow | Verification |
 | --- | --- |
-| [CI](../.github/workflows/ci.yml) | Architecture model/design checks, shrink-only baselines, lint, race tests and coverage on Linux/macOS/Windows, policy hooks, Sonar admission, and SonarCloud. `PR Gate` combines architecture, lint, tests, policy, and Sonar results. |
+| [CI](../.github/workflows/ci.yml) | Architecture model/design checks, shrink-only baselines, lint, Python line/branch coverage, race tests and Go coverage on Linux/macOS/Windows, policy hooks, Sonar admission, and SonarCloud. `PR Gate` combines architecture, lint, tests, policy, and Sonar results. |
 | [Gremlins](../.github/workflows/gremlins.yml) | Mutation testing with the Gremlins source from the candidate commit. |
 | [PR title](../.github/workflows/pr-title.yml) | A Conventional Commit PR title with a lowercase subject. |
 

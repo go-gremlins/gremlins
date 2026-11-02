@@ -1,0 +1,5 @@
+[run]
+branch = True
+relative_files = True
+source = scripts
+omit = scripts/test_lint.py

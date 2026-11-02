@@ -10,6 +10,9 @@ Passing lint does not prove full compliance.
 The fixtures assert 64 checker predicates, formatter simplification, Windows-only source coverage, and documented exceptions.
 They use local stand-ins for blocked assertion packages. They download no test dependency and execute no Go fixture.
 Baseline tests cover growth, substitutions, occurrences, stale entries, history, initial adoption, and malformed input.
+CI uses Coverage.py 7.16.0 for the Python adapter, with line and branch reporting through the existing Sonar pipeline.
+The admission check requires both coverage reports and rejects unexpected files, links, and XML entity declarations.
+Use `make lint-cover` when the pinned Coverage.py is installed; `make lint-test` needs only the standard library.
 
 Reference snapshots reviewed for issue #77:
 
@@ -31,7 +34,7 @@ Use `make lint` for the authoritative gate, including format checks and all supp
 | Source section or rule | Deterministic check | Review boundary |
 | --- | --- | --- |
 | Guide: formatting | `gofmt` with simplification and `goimports`, checked separately with `fmt --diff`. | None for formatter output. |
-| Guide: line length | No fixed length check. | Split lines when readability improves. Google sets no fixed maximum. |
+| Guide: line length | No golangci length limit. The existing Sonar profile checks 120 characters. | Split lines when readability improves. Google sets no fixed maximum; Sonar is a separate fork quality check. |
 | Guide: MixedCaps; Decisions: underscores, constant names, initialisms | Revive `var-naming`; Staticcheck `ST1003`. | Domain abbreviations, generated names, and required external names. |
 | Package names | Revive `package-naming` and Staticcheck `ST1003`. | Concision, shadowing risk, and useful package meaning. |
 | Receiver names | Revive `receiver-naming`, `recvcheck`, Staticcheck `ST1016`. | Choose a useful short name. |

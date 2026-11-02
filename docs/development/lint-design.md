@@ -27,12 +27,21 @@ flowchart LR
   baseline[(Candidate lint baseline)] -->|identities and occurrence counts| gate
   history[(Pinned Git commit)] -->|previous lint baseline| gate
   gate -->|escaped findings and pass or failure| logs[Local or existing CI logs]
+  checkout -->|Python adapter and tests| coverage[Coverage.py in secret-free CI]
+  coverage -->|relative line and branch hits| artifact[(Existing CI coverage artifacts)]
+  artifact -->|Go and Python reports| admission[Secret-free report admission]
+  admission -->|validated reports| scanner[Existing token-bearing Sonar scanner]
 ```
 
-All stores remain in the checkout or its Git history.
+Source and lint baselines remain in the checkout or its Git history.
+Coverage reports use the existing GitHub artifact store and existing Sonar project.
 Candidate code runs only in existing CI jobs without secrets.
 The Sonar token boundary stays in its separate job.
 Sonar classifies the new Python test module as test code, alongside Go tests.
+The lint job uses pinned Coverage.py to report Python line and branch coverage.
+Only the XML report passes through the existing GitHub coverage-artifact flow.
+Admission requires the exact Go and Python reports and rejects linked or unexpected files.
+It rejects XML entity and document-type declarations before the token-bearing scanner runs.
 There is no runtime deployment or runtime data-flow change.
 
 The configuration uses explicit linters and settings rather than enabling every available linter.
@@ -82,6 +91,9 @@ The helper executes development-tool code. It parses scanned source without exec
 
 PR checks use the event's base SHA. Push checks use the preceding commit SHA.
 Manual and local checks resolve `origin/dev`, unless an explicit comparison is supplied.
+Comparisons accept a named Git ref or a full commit hash.
+Reject options, range syntax, and revision expressions before invoking Git.
+Pass ref queries through cat-file stdin, never as command arguments.
 An initial branch push uses `origin/dev`. Missing comparison history fails.
 Lint and policy jobs fetch history and receive the same comparison.
 For the first promotion to `main`, CI supplies `origin/dev` as an explicit adoption base.
@@ -115,8 +127,10 @@ Its model records the lint adapter, baseline, and version pin as policy owners.
 - [golangci-lint v2.15.0 reference](https://raw.githubusercontent.com/golangci/golangci-lint/v2.15.0/.golangci.reference.yml), settings and output: explicit checks, filters, and formatter separation.
 - [Revive rule descriptions](https://github.com/revive-lint/revive/blob/master/RULES_DESCRIPTIONS.md), individual rule predicates: supported automatic coverage.
 - [Go parser](https://pkg.go.dev/go/parser), Go 1.26.10 `ParseFile`: enclosing declarations without source execution.
+- [Coverage.py 7.16.0 configuration](https://coverage.readthedocs.io/en/7.16.0/config.html), branch and relative-file reporting: portable Python coverage.
+- [Sonar Python coverage](https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/test-coverage/python-test-coverage), report path: import the existing CI coverage artifact.
 - [Python 3.12 subprocess](https://docs.python.org/3.12/library/subprocess.html), `run`: fixed arguments, timeouts, and failure handling.
-- [Git revision parsing](https://git-scm.com/docs/git-rev-parse), verification options: pin comparison commits before reading objects.
+- [Git object inspection](https://git-scm.com/docs/git-cat-file), batch-check: resolve validated stdin queries to commit identities.
 - [ASD-STE100](https://www.asd-ste100.org/), writing reference: short sentences and consistent terms. Automated access returned HTTP 403; no formal compliance claim is made.
 
 Existing ADRs 0003 and 0004 cover upstream imports and architecture policy.

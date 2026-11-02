@@ -182,7 +182,9 @@
     "lint_baseline": ".lint/baseline.json",
     "lint_gate": "scripts/lint.py",
     "lint_version": "mise.toml",
-    "sonar": "sonar-project.properties"
+    "sonar": "sonar-project.properties",
+    "lint_coverage": ".coveragerc",
+    "coverage_admission": "scripts/check-coverage.sh"
   },
   "contract_changes": {
     "cli": [

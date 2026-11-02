@@ -67,41 +67,53 @@ func declarations(source string) ([]declaration, error) {
 func describe(positions *token.FileSet, node ast.Decl) ([]declaration, error) {
 	switch decl := node.(type) {
 	case *ast.FuncDecl:
-		name := "func:" + decl.Name.Name
-		if decl.Recv != nil && len(decl.Recv.List) == 1 {
-			var receiver bytes.Buffer
-			if err := format.Node(&receiver, positions, decl.Recv.List[0].Type); err != nil {
-				return nil, fmt.Errorf("format receiver identity: %w", err)
-			}
-			name = "method:" + receiver.String() + "." + decl.Name.Name
-		}
-		start := decl.Pos()
-		if decl.Doc != nil {
-			start = decl.Doc.Pos()
-		}
-
-		return []declaration{{Start: positions.Position(start).Line, End: positions.Position(decl.End()).Line, Name: name}}, nil
+		return describeFunction(positions, decl)
 	case *ast.GenDecl:
-		result := make([]declaration, 0, len(decl.Specs))
-		for index, spec := range decl.Specs {
-			start := spec.Pos()
-			if doc := specDoc(spec); doc != nil {
-				start = doc.Pos()
-			}
-			if index == 0 && decl.Doc != nil {
-				start = decl.Doc.Pos()
-			}
-			result = append(result, declaration{
-				Start: positions.Position(start).Line,
-				End:   positions.Position(spec.End()).Line,
-				Name:  decl.Tok.String() + ":" + specName(spec),
-			})
-		}
-
-		return result, nil
+		return describeSpecs(positions, decl), nil
 	default:
 		return nil, errors.New("unsupported declaration")
 	}
+}
+
+func describeFunction(positions *token.FileSet, decl *ast.FuncDecl) ([]declaration, error) {
+	name := "func:" + decl.Name.Name
+	if decl.Recv != nil && len(decl.Recv.List) == 1 {
+		var receiver bytes.Buffer
+		if err := format.Node(&receiver, positions, decl.Recv.List[0].Type); err != nil {
+			return nil, fmt.Errorf("format receiver identity: %w", err)
+		}
+		name = "method:" + receiver.String() + "." + decl.Name.Name
+	}
+	start := decl.Pos()
+	if decl.Doc != nil {
+		start = decl.Doc.Pos()
+	}
+
+	return []declaration{{
+		Start: positions.Position(start).Line,
+		End:   positions.Position(decl.End()).Line,
+		Name:  name,
+	}}, nil
+}
+
+func describeSpecs(positions *token.FileSet, decl *ast.GenDecl) []declaration {
+	result := make([]declaration, 0, len(decl.Specs))
+	for index, spec := range decl.Specs {
+		start := spec.Pos()
+		if doc := specDoc(spec); doc != nil {
+			start = doc.Pos()
+		}
+		if index == 0 && decl.Doc != nil {
+			start = decl.Doc.Pos()
+		}
+		result = append(result, declaration{
+			Start: positions.Position(start).Line,
+			End:   positions.Position(spec.End()).Line,
+			Name:  decl.Tok.String() + ":" + specName(spec),
+		})
+	}
+
+	return result
 }
 
 func specDoc(spec ast.Spec) *ast.CommentGroup {

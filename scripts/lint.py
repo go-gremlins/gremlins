@@ -13,6 +13,8 @@ import tempfile
 
 
 BASELINE = ".lint/baseline.json"
+GO_MOD = "go.mod"
+LINT_CONFIG = ".golangci.yml"
 LIMIT = 32 * 1024 * 1024
 LINTER = ["mise", "exec", "--", "golangci-lint"]
 CONTEXTS = ("linux", "darwin", "windows")
@@ -38,7 +40,7 @@ def decode(data):
         raise LintError("input exceeds 32 MiB; analysis cannot be truncated")
     try:
         return json.loads(data, object_pairs_hook=unique_object)
-    except (ValueError, UnicodeError) as exc:
+    except ValueError as exc:
         raise LintError("invalid JSON input") from exc
 
 
@@ -76,7 +78,7 @@ def parse_baseline(data):
 
 
 def serialize(findings):
-    entries = [dict(linter=key[0], file=key[1], fingerprint=key[2], count=count)
+    entries = [{"linter": key[0], "file": key[1], "fingerprint": key[2], "count": count}
                for key, count in sorted(findings.items())]
     return (json.dumps({"version": 1, "findings": entries}, indent=2) + "\n").encode()
 
@@ -105,6 +107,32 @@ def local_file(root, name):
     return current
 
 
+def check_diagnostic(issue, root, sources):
+    if not isinstance(issue, dict):
+        raise LintError("invalid diagnostic")
+    checker, message, pos = issue.get("FromLinter"), issue.get("Text"), issue.get("Pos")
+    if (not isinstance(checker, str) or not re.fullmatch(r"[a-z][a-z0-9_]*", checker)
+            or checker == "typecheck" or not isinstance(message, str) or not message
+            or not isinstance(pos, dict)):
+        raise LintError("invalid or non-baselinable diagnostic")
+    name, line = pos.get("Filename"), pos.get("Line")
+    source = local_file(root, name)
+    if not name.endswith(".go") or type(line) is not int or line < 1:
+        raise LintError("invalid diagnostic location")
+    if name not in sources:
+        sources[name] = source.read_text(encoding="utf-8")
+    if line > len(sources[name].splitlines()):
+        raise LintError("diagnostic line is outside its source")
+    return checker, message, name, line
+
+
+def declaration_name(scopes, line):
+    for scope in scopes:
+        if scope["start"] <= line <= scope["end"]:
+            return scope["name"]
+    return "file"
+
+
 def parse_report(data, root, diagnostics=None):
     report = decode(data)
     if (not isinstance(report, dict) or "Issues" not in report
@@ -114,32 +142,11 @@ def parse_report(data, root, diagnostics=None):
         raise LintError("incomplete lint report or analysis warning/error")
     findings = collections.Counter()
     sources = {}
-    checked = []
-    for issue in report["Issues"] or []:
-        if not isinstance(issue, dict):
-            raise LintError("invalid diagnostic")
-        checker, message, pos = issue.get("FromLinter"), issue.get("Text"), issue.get("Pos")
-        if (not isinstance(checker, str) or not re.fullmatch(r"[a-z][a-z0-9_]*", checker)
-                or checker == "typecheck" or not isinstance(message, str) or not message
-                or not isinstance(pos, dict)):
-            raise LintError("invalid or non-baselinable diagnostic")
-        name, line = pos.get("Filename"), pos.get("Line")
-        source = local_file(root, name)
-        if not name.endswith(".go") or type(line) is not int or line < 1:
-            raise LintError("invalid diagnostic location")
-        if name not in sources:
-            sources[name] = source.read_text(encoding="utf-8")
-        lines = sources[name].splitlines()
-        if line > len(lines):
-            raise LintError("diagnostic line is outside its source")
-        checked.append((checker, message, name, line))
+    checked = [check_diagnostic(issue, root, sources) for issue in report["Issues"] or []]
     declarations = source_declarations(sources) if sources else {}
     for checker, message, name, line in checked:
         lines = sources[name].splitlines()
-        enclosing = "file"
-        for scope in declarations[name]:
-            if scope["start"] <= line <= scope["end"]:
-                enclosing = scope["name"]
+        enclosing = declaration_name(declarations[name], line)
         before = [s.strip() for s in lines[:line - 1] if s.strip()][-3:]
         after = [s.strip() for s in lines[line:] if s.strip()][:3]
         context = [before, lines[line - 1].strip(), after]
@@ -212,17 +219,21 @@ def validate_checkout(root):
             if (Path(directory) / name).is_symlink():
                 raise LintError("linked source directory; analysis must stay inside the checkout")
         for name in files:
-            if name.endswith(".go") or name in ("go.mod", "go.sum"):
-                local_file(root, (Path(directory) / name).relative_to(root).as_posix())
-                if name == "go.mod" and Path(directory) != root:
-                    raise LintError("unexpected nested module outside fixture/vendor/output paths")
+            check_source_file(root, Path(directory), name)
+
+
+def check_source_file(root, directory, name):
+    if name.endswith(".go") or name in (GO_MOD, "go.sum"):
+        local_file(root, (directory / name).relative_to(root).as_posix())
+        if name == GO_MOD and directory != root:
+            raise LintError("unexpected nested module outside fixture/vendor/output paths")
 
 
 def analyze(root, diagnostics=None):
     env = analysis_env()
     validate_checkout(root)
-    local_file(root, ".golangci.yml")
-    command(root, LINTER + ["config", "verify", "--config", ".golangci.yml"], env)
+    local_file(root, LINT_CONFIG)
+    command(root, LINTER + ["config", "verify", "--config", LINT_CONFIG], env)
     # go mod edit reads module metadata without downloading or executing modules.
     module = decode(command(root, ["go", "mod", "edit", "-json"], env))
     for replacement in module.get("Replace") or []:
@@ -231,28 +242,48 @@ def analyze(root, diagnostics=None):
             destination = (root / new["Path"]).resolve()
             if not destination.is_relative_to(root):
                 raise LintError("local module replacement escapes the checkout")
-    diff = command(root, LINTER + ["fmt", "--config", ".golangci.yml", "--diff", "./..."], env, allowed=(0, 1))
+    diff = command(root, LINTER + ["fmt", "--config", LINT_CONFIG, "--diff", "./..."], env, allowed=(0, 1))
     if diff.strip():
         raise LintError("formatting differs; run mise exec -- golangci-lint fmt on the changed files")
     actual = collections.Counter()
     for context in CONTEXTS:
         env["GOOS"] = context
         print(f"Analyzing {context}/amd64 (tests included)", flush=True)
-        data = command(root, LINTER + ["run", "--config", ".golangci.yml", "--issues-exit-code=0",
+        data = command(root, LINTER + ["run", "--config", LINT_CONFIG, "--issues-exit-code=0",
                        "--show-stats=false", "--output.json.path=stdout", f"--output.text.path={os.devnull}",
                        "--max-issues-per-linter=0", "--max-same-issues=0", "--uniq-by-line=false", "./..."], env)
         actual |= parse_report(data, root, diagnostics)
     return actual
 
 
-def git_read(root, *args):
-    return command(root, ["git", "--no-pager", "-c", "core.fsmonitor=false", *args], analysis_env())
+def git_read(root, *args, input_data=None):
+    return command(root, ["git", "--no-pager", "-c", "core.fsmonitor=false", *args], analysis_env(), input_data=input_data)
+
+
+def resolve_revision(root, ref):
+    match = re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,199}", ref)
+    if match is None or ".." in ref:
+        raise LintError("comparison must be a named Git ref or full commit hash, never options or revision expressions")
+    query = (match.group(0) + "^{commit}\n").encode()
+    result = git_read(root, "cat-file", "--batch-check=%(objectname) %(objecttype)", input_data=query).decode().split()
+    if len(result) != 2 or result[1] != "commit" or not re.fullmatch(r"[0-9a-f]{40,64}", result[0]):
+        raise LintError("comparison did not resolve to a commit")
+    return result[0]
+
+
+def promotion_findings(root, adoption_base):
+    adopted = resolve_revision(root, adoption_base)
+    ancestor = git_read(root, "merge-base", "HEAD", adopted).decode().strip()
+    if ancestor != adopted:
+        raise LintError("promotion head must contain the reviewed adoption commit")
+    allowed = target_findings(root, adopted)
+    if allowed is None:
+        raise LintError("promotion adoption base must already contain a lint baseline")
+    return allowed
 
 
 def target_findings(root, base, adoption_base=""):
-    revision = git_read(root, "rev-parse", "--verify", "--end-of-options", base + "^{commit}").decode().strip()
-    if not re.fullmatch(r"[0-9a-f]{40,64}", revision):
-        raise LintError("comparison did not resolve to a commit")
+    revision = resolve_revision(root, base)
     listing = git_read(root, "ls-tree", revision, "--", BASELINE)
     if listing:
         if not listing.startswith((b"100644 blob ", b"100755 blob ")):
@@ -263,15 +294,8 @@ def target_findings(root, base, adoption_base=""):
     if history.strip():
         raise LintError("established lint baseline is missing from the target")
     if adoption_base:
-        adopted = git_read(root, "rev-parse", "--verify", "--end-of-options", adoption_base + "^{commit}").decode().strip()
-        ancestor = git_read(root, "merge-base", "HEAD", adopted).decode().strip()
-        if ancestor != adopted:
-            raise LintError("promotion head must contain the reviewed adoption commit")
-        allowed = target_findings(root, adopted)
-        if allowed is None:
-            raise LintError("promotion adoption base must already contain a lint baseline")
-        return allowed
-    paths = ["*.go", "go.mod", "go.sum", "**/go.mod", "**/go.sum"]
+        return promotion_findings(root, adoption_base)
+    paths = ["*.go", GO_MOD, "go.sum", "**/go.mod", "**/go.sum"]
     changed = git_read(root, "diff", "--no-ext-diff", "--no-textconv", "--name-only", "-z", revision, "--", *paths)
     untracked = git_read(root, "ls-files", "--others", "--exclude-standard", "-z", "--", *paths)
     if changed or untracked:

@@ -51,10 +51,26 @@ func TestDeclarationScopes(t *testing.T) {
 		source string
 		want   []string
 	}{
-		{name: "functions", source: "package p\nfunc first() {}\nfunc second() {}", want: []string{"func:first", "func:second"}},
-		{name: "generic receivers", source: "package p\nfunc (a *A[T]) Same() {}\nfunc (b *B[T]) Same() {}", want: []string{"method:*A[T].Same", "method:*B[T].Same"}},
-		{name: "strings and comments", source: "package p\n// func fake() {}\nvar s = `func alsoFake() {}`\nfunc real() {}", want: []string{"var:s", "func:real"}},
-		{name: "types and values", source: "package p\ntype A int\nvar a, b int\nconst n = 1", want: []string{"type:A", "var:a,b", "const:n"}},
+		{
+			name:   "functions",
+			source: "package p\nfunc first() {}\nfunc second() {}",
+			want:   []string{"func:first", "func:second"},
+		},
+		{
+			name:   "generic receivers",
+			source: "package p\nfunc (a *A[T]) Same() {}\nfunc (b *B[T]) Same() {}",
+			want:   []string{"method:*A[T].Same", "method:*B[T].Same"},
+		},
+		{
+			name:   "strings and comments",
+			source: "package p\n// func fake() {}\nvar s = `func alsoFake() {}`\nfunc real() {}",
+			want:   []string{"var:s", "func:real"},
+		},
+		{
+			name:   "types and values",
+			source: "package p\ntype A int\nvar a, b int\nconst n = 1",
+			want:   []string{"type:A", "var:a,b", "const:n"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

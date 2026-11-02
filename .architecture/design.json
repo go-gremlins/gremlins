@@ -23,7 +23,9 @@
     "lint_baseline",
     "lint_gate",
     "lint_version",
-    "sonar"
+    "sonar",
+    "lint_coverage",
+    "coverage_admission"
   ],
   "trust_changes": {
     "development_checks": {

@@ -1,10 +1,13 @@
 """Behavioral tests for the repository's lint baseline gate."""
 
 import collections
+import contextlib
+import io
 import json
 from pathlib import Path
 import subprocess
 import shutil
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -119,13 +122,15 @@ class ReportTests(unittest.TestCase):
             cases.append(report)
         for report in cases:
             with self.subTest(report=report):
+                data = json.dumps(report).encode()
                 with self.assertRaises(lint.LintError):
-                    lint.parse_report(json.dumps(report).encode(), self.root)
+                    lint.parse_report(data, self.root)
 
     def test_symlink_input_is_rejected(self):
         (self.root / "linked.go").symlink_to(self.root / "a.go")
+        data = json.dumps(self.report(name="linked.go")).encode()
         with self.assertRaises(lint.LintError):
-            lint.parse_report(json.dumps(self.report(name="linked.go")).encode(), self.root)
+            lint.parse_report(data, self.root)
 
     def test_checkout_scan_rejects_linked_source_before_analysis(self):
         (self.root / "linked.go").symlink_to(self.root / "a.go")
@@ -145,8 +150,8 @@ class ReportTests(unittest.TestCase):
 
     def test_parser_uses_the_host_and_an_empty_standalone_build_path(self):
         def inspect_parser(root, args, env, **kwargs):
-            self.assertFalse("GOARCH" in env, "parser forces a target architecture")
-            self.assertFalse("GOOS" in env, "parser forces a target operating system")
+            self.assertNotIn("GOARCH", tuple(env))
+            self.assertNotIn("GOOS", tuple(env))
             self.assertEqual(env["GO111MODULE"], "off")
             self.assertEqual(list(Path(env["GOPATH"]).iterdir()), [])
             self.assertEqual(Path(args[-1]), lint.REPOSITORY / lint.CONTEXT_TOOL / "main.go")
@@ -157,7 +162,7 @@ class ReportTests(unittest.TestCase):
     def test_analysis_commands_do_not_inherit_credentials(self):
         env = lint.analysis_env({"PATH": "/bin", "HOME": str(self.root),
                                  "EXAMPLE_API_TOKEN": "synthetic-credential", "GOCACHE": str(self.root / "cache")})
-        self.assertFalse("EXAMPLE_API_TOKEN" in env, "analysis inherited a credential variable")
+        self.assertNotIn("EXAMPLE_API_TOKEN", tuple(env))
         self.assertEqual(env["PATH"], "/bin")
         self.assertEqual(env["GOCACHE"], str(self.root / "cache"))
 
@@ -281,6 +286,20 @@ class GitGateTests(unittest.TestCase):
         with self.assertRaises(lint.LintError):
             self.run_gate({self.a: 1})
 
+    def test_comparison_references_reject_options_and_revision_expressions(self):
+        for ref in ["-c", "--output=somewhere", "HEAD;touch", "HEAD\nmain", "HEAD~1", "main..dev"]:
+            with self.subTest(ref=ref), mock.patch.object(lint, "git_read") as git:
+                with self.assertRaises(lint.LintError):
+                    lint.resolve_revision(self.root, ref)
+                git.assert_not_called()
+
+    def test_ref_queries_are_stdin_data_and_not_command_arguments(self):
+        commit = "a" * 40
+        with mock.patch.object(lint, "git_read", return_value=(commit + " commit\n").encode()) as git:
+            self.assertEqual(lint.resolve_revision(self.root, "origin/dev"), commit)
+            self.assertNotIn("origin/dev", git.call_args.args)
+            self.assertEqual(git.call_args.kwargs["input_data"], b"origin/dev^{commit}\n")
+
     def test_linked_candidate_and_target_baselines_fail(self):
         self.baseline({self.a: 1})
         path = self.root / lint.BASELINE
@@ -328,6 +347,51 @@ class GitGateTests(unittest.TestCase):
         self.baseline({self.a: 1})
         with self.assertRaises(lint.LintError):
             self.run_gate({self.a: 1}, adoption_base="origin/dev")
+
+
+class CLIExitTests(unittest.TestCase):
+    def test_failed_gate_returns_a_nonzero_exit_status(self):
+        failure = lint.LintError("new finding")
+        with mock.patch.object(sys, "argv", ["lint.py", "--base", "HEAD"]), \
+                mock.patch.object(lint, "run_gate", side_effect=failure), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(lint.main(), 1)
+
+    def test_successful_gate_returns_zero(self):
+        with mock.patch.object(sys, "argv", ["lint.py", "--base", "HEAD"]), \
+                mock.patch.object(lint, "run_gate", return_value=None):
+            self.assertEqual(lint.main(), 0)
+
+
+class CoverageAdmissionTests(unittest.TestCase):
+    def test_reports_are_admitted_and_invalid_inputs_are_rejected(self):
+        script = lint.REPOSITORY / "scripts/check-coverage.sh"
+        for scenario in ("valid", "missing", "empty", "linked", "linked-directory", "extra", "doctype", "entity"):
+            with self.subTest(scenario=scenario), tempfile.TemporaryDirectory(dir=lint.REPOSITORY / ".git") as directory:
+                root = Path(directory)
+                reports = root / "coverage"
+                reports.mkdir()
+                (reports / "coverage.out").write_text("mode: atomic\n", encoding="utf-8")
+                xml = reports / "python-coverage.xml"
+                xml.write_text('<coverage/>\n', encoding="utf-8")
+                if scenario == "missing":
+                    xml.unlink()
+                elif scenario == "empty":
+                    xml.write_text("", encoding="utf-8")
+                elif scenario == "linked":
+                    xml.rename(root / "linked.xml")
+                    xml.symlink_to(root / "linked.xml")
+                elif scenario == "linked-directory":
+                    reports.rename(root / "other")
+                    reports.symlink_to(root / "other", target_is_directory=True)
+                elif scenario == "extra":
+                    (reports / "extra").write_text("unexpected", encoding="utf-8")
+                elif scenario == "doctype":
+                    xml.write_text('<!DOCTYPE coverage><coverage/>', encoding="utf-8")
+                elif scenario == "entity":
+                    xml.write_text('<!ENTITY example "unexpected"><coverage/>', encoding="utf-8")
+                result = subprocess.run(["bash", str(script)], cwd=root, env=lint.analysis_env(),
+                                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+                self.assertEqual(result.returncode == 0, scenario == "valid")
 
 
 class PinnedLinterTests(unittest.TestCase):

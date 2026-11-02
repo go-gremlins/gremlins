@@ -91,3 +91,5 @@ $RECYCLE.BIN/
 
 # Python development-check caches
 __pycache__/
+.coverage
+python-coverage.xml

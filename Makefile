@@ -40,12 +40,16 @@ requirements:
 lint:
 	python3 scripts/lint.py --base "${LINT_BASE}" --adoption-base "${LINT_ADOPTION_BASE}"
 
-.PHONY: lint-shrink lint-test
+.PHONY: lint-shrink lint-test lint-cover
 lint-shrink:
 	python3 scripts/lint.py --base "${LINT_BASE}" --adoption-base "${LINT_ADOPTION_BASE}" --shrink
 
 lint-test:
 	python3 -m unittest discover -s scripts -p test_lint.py
+
+lint-cover:
+	python3 -m coverage run -m unittest discover -s scripts -p test_lint.py
+	python3 -m coverage xml -o python-coverage.xml
 
 .PHONY: policy
 policy:
