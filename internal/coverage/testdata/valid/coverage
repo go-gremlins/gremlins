@@ -3,3 +3,4 @@ example.com/path/file1.go:47.2,48.16 2 1
 example.com/path/file1.go:48.4,49.20 2 0
 example.com/path/file2.go:52.2,53.16 2 1
 example.com/path/sub/file3.go:10.2,11.16 2 1
+example.com/path/example.com/file4.go:20.2,21.16 2 1

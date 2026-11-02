@@ -172,6 +172,15 @@ func TestCoverageParsesOutput(t *testing.T) {
 				EndCol:    16,
 			},
 		},
+		// A directory with the name of the module stays in the path.
+		"example.com/file4.go": {
+			{
+				StartLine: 20,
+				StartCol:  2,
+				EndLine:   21,
+				EndCol:    16,
+			},
+		},
 	}
 	want := coverage.Result{
 		Profile: profile,
