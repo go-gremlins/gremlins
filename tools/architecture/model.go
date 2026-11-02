@@ -54,54 +54,85 @@ func compile(m model) (*compiledModel, error) {
 		return nil, fmt.Errorf("invalid model version, module, packages, or contracts; fix: restore the version 1 model")
 	}
 	c := &compiledModel{model: m, byKind: map[string]rule{}, byID: map[string]rule{}}
-	for _, r := range m.Rules {
-		if !slices.Contains([]string{"ownership", "imports", "contracts", "trust"}, r.Kind) || r.ID == "" || strings.TrimSpace(r.Fix) == "" || strings.TrimSpace(r.Description) == "" {
-			return nil, fmt.Errorf("invalid rule %q; fix: supply a known kind, stable ID, explanation, and fix", r.ID)
-		}
-		if _, ok := c.byKind[r.Kind]; ok {
-			return nil, fmt.Errorf("duplicate rule kind %q; fix: retain one rule per kind", r.Kind)
-		}
-		if _, ok := c.byID[r.ID]; ok {
-			return nil, fmt.Errorf("duplicate rule ID %q; fix: use unique IDs", r.ID)
-		}
-		c.byKind[r.Kind] = r
-		c.byID[r.ID] = r
+	if err := c.compileRules(); err != nil {
+		return nil, err
 	}
-	if len(c.byKind) != 4 {
-		return nil, fmt.Errorf("missing architecture rules; fix: define ownership, imports, contracts, and trust")
+	if err := validatePackages(m.Packages); err != nil {
+		return nil, err
 	}
-	for pkg, comp := range m.Packages {
-		if !validPath(pkg) {
-			return nil, fmt.Errorf("invalid package %q; fix: use a clean relative package path", pkg)
-		}
-		for _, deps := range [][]string{comp.Allow, comp.TestAllow} {
-			seen := map[string]bool{}
-			for _, dep := range deps {
-				if _, ok := m.Packages[dep]; !ok || seen[dep] {
-					return nil, fmt.Errorf("invalid dependency %q in %q; fix: declare each target once", dep, pkg)
-				}
-				seen[dep] = true
-			}
-		}
+	if err := validateCanonicalPaths(m); err != nil {
+		return nil, err
 	}
-	for _, owners := range []map[string]string{m.Contracts, m.Policies} {
-		for name := range owners {
-			if strings.TrimSpace(name) == "" {
-				return nil, fmt.Errorf("empty canonical name; fix: name each contract and policy")
-			}
-		}
-	}
-	for name, p := range m.canonicalPaths() {
-		if name == "" || !validPath(p) {
-			return nil, fmt.Errorf("invalid contract %q path %q; fix: use a named checkout-relative file", name, p)
-		}
-	}
-
 	if err := validateProposalsModel(m); err != nil {
 		return nil, err
 	}
 
 	return c, nil
+}
+
+func (c *compiledModel) compileRules() error {
+	for _, r := range c.Rules {
+		supported := slices.Contains([]string{"ownership", "imports", "contracts", "trust"}, r.Kind)
+		if !supported || r.ID == "" || strings.TrimSpace(r.Fix) == "" || strings.TrimSpace(r.Description) == "" {
+			return fmt.Errorf("invalid rule %q; fix: supply a known kind, stable ID, explanation, and fix", r.ID)
+		}
+		if _, ok := c.byKind[r.Kind]; ok {
+			return fmt.Errorf("duplicate rule kind %q; fix: retain one rule per kind", r.Kind)
+		}
+		if _, ok := c.byID[r.ID]; ok {
+			return fmt.Errorf("duplicate rule ID %q; fix: use unique IDs", r.ID)
+		}
+		c.byKind[r.Kind] = r
+		c.byID[r.ID] = r
+	}
+	if len(c.byKind) != 4 {
+		return fmt.Errorf("missing architecture rules; fix: define ownership, imports, contracts, and trust")
+	}
+
+	return nil
+}
+
+func validatePackages(packages map[string]component) error {
+	for pkg, comp := range packages {
+		if !validPath(pkg) {
+			return fmt.Errorf("invalid package %q; fix: use a clean relative package path", pkg)
+		}
+		if err := validateDependencies(pkg, comp.Allow, packages); err != nil {
+			return err
+		}
+		if err := validateDependencies(pkg, comp.TestAllow, packages); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func validateDependencies(pkg string, deps []string, packages map[string]component) error {
+	seen := map[string]bool{}
+	for _, dep := range deps {
+		if _, ok := packages[dep]; !ok || seen[dep] {
+			return fmt.Errorf("invalid dependency %q in %q; fix: declare each target once", dep, pkg)
+		}
+		seen[dep] = true
+	}
+
+	return nil
+}
+
+func validateCanonicalPaths(m model) error {
+	for _, owners := range []map[string]string{m.Contracts, m.Policies} {
+		for name, p := range owners {
+			if strings.TrimSpace(name) == "" {
+				return fmt.Errorf("empty canonical name; fix: name each contract and policy")
+			}
+			if !validPath(p) {
+				return fmt.Errorf("invalid contract %q path %q; fix: use a named checkout-relative file", name, p)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (c *compiledModel) dependency(file, pkg, dep string, isTest bool) []finding {
@@ -110,7 +141,11 @@ func (c *compiledModel) dependency(file, pkg, dep string, isTest bool) []finding
 		return []finding{{Rule: c.byKind["ownership"].ID, File: file, Subject: pkg}}
 	}
 	_, known := c.Packages[dep]
-	if known && (slices.Contains(comp.Allow, dep) || (isTest && (pkg == dep || slices.Contains(comp.TestAllow, dep)))) {
+	allowed := slices.Contains(comp.Allow, dep)
+	if isTest {
+		allowed = allowed || pkg == dep || slices.Contains(comp.TestAllow, dep)
+	}
+	if known && allowed {
 		return nil
 	}
 

@@ -37,25 +37,41 @@ func checkDesign(c *compiledModel, d design) error {
 			return fmt.Errorf("unknown policy %q; fix: declare a canonical policy name", policy)
 		}
 	}
+	if err := checkPlannedPackages(c, d.Changes); err != nil {
+		return err
+	}
+
+	return checkProposals(c, d)
+}
+
+func checkPlannedPackages(c *compiledModel, changes []change) error {
 	seen := map[string]bool{}
-	for _, planned := range d.Changes {
+	for _, planned := range changes {
 		if _, ok := c.Packages[planned.Package]; !ok || seen[planned.Package] {
 			return fmt.Errorf("invalid design package %q; fix: declare each owned package once", planned.Package)
 		}
 		seen[planned.Package] = true
-		for _, isTest := range []bool{false, true} {
-			imports := planned.Imports
-			if isTest {
-				imports = planned.TestImports
-			}
-			for _, dep := range imports {
-				findings := c.dependency(planned.Package, planned.Package, dep, isTest)
-				if len(findings) > 0 {
-					return fmt.Errorf("design: %s", formatFinding(findings[0], c))
-				}
+		if err := checkPlannedImports(c, planned); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func checkPlannedImports(c *compiledModel, planned change) error {
+	for _, isTest := range []bool{false, true} {
+		imports := planned.Imports
+		if isTest {
+			imports = planned.TestImports
+		}
+		for _, dep := range imports {
+			findings := c.dependency(planned.Package, planned.Package, dep, isTest)
+			if len(findings) > 0 {
+				return fmt.Errorf("design: %s", formatFinding(findings[0], c))
 			}
 		}
 	}
 
-	return checkProposals(c, d)
+	return nil
 }

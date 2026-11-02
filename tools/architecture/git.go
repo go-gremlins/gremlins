@@ -103,7 +103,10 @@ func checkChangedDesign(root, revision string, c *compiledModel) error {
 		return nil
 	}
 	if !slices.Contains(paths, designFile) {
-		return fmt.Errorf("modeled changes need an updated design; fix: update %s and run the pre-code design check", designFile)
+		return fmt.Errorf(
+			"modeled changes need an updated design; fix: update %s and run the pre-code design check",
+			designFile,
+		)
 	}
 	var d design
 	if err := loadJSON(root, designFile, &d); err != nil {
@@ -112,6 +115,11 @@ func checkChangedDesign(root, revision string, c *compiledModel) error {
 	if err := checkDesign(c, d); err != nil {
 		return err
 	}
+
+	return checkDesignCoverage(d, packages, contracts, policies)
+}
+
+func checkDesignCoverage(d design, packages, contracts, policies []string) error {
 	for _, name := range contracts {
 		if !slices.Contains(d.Contracts, name) {
 			return fmt.Errorf("contract %q lacks design coverage; fix: declare its compatibility review in %s", name, designFile)

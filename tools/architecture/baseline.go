@@ -48,12 +48,22 @@ func ratchet(current, candidate, target []finding) error {
 	}
 	for f := range actual {
 		if !allowed[f] {
-			return fmt.Errorf("new finding %q at %q for %q; fix: repair the violation, never grow the baseline", f.Rule, f.File, f.Subject)
+			return fmt.Errorf(
+				"new finding %q at %q for %q; fix: repair the violation, never grow the baseline",
+				f.Rule,
+				f.File,
+				f.Subject,
+			)
 		}
 	}
 	for f := range allowed {
 		if !previous[f] {
-			return fmt.Errorf("baseline growth %q at %q for %q; fix: restore the target baseline and repair the violation", f.Rule, f.File, f.Subject)
+			return fmt.Errorf(
+				"baseline growth %q at %q for %q; fix: restore the target baseline and repair the violation",
+				f.Rule,
+				f.File,
+				f.Subject,
+			)
 		}
 		if !actual[f] {
 			return fmt.Errorf("stale baseline %q at %q for %q; fix: remove this baseline entry", f.Rule, f.File, f.Subject)

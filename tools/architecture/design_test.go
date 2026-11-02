@@ -21,7 +21,15 @@ func TestDesignContractCompatibility(t *testing.T) {
 		{"preserved", compatibleChange, false}, {"breaking", "breaking", true}, {unknownName, "unspecified", true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			d := design{Version: 1, Issue: 76, Summary: changeSummary, TrustBoundaries: localBoundary, TrustChanges: localTrust(), Contracts: []string{cliContract}, ContractChanges: map[string]string{cliContract: tc.kind}}
+			d := design{
+				Version:         1,
+				Issue:           76,
+				Summary:         changeSummary,
+				TrustBoundaries: localBoundary,
+				TrustChanges:    localTrust(),
+				Contracts:       []string{cliContract},
+				ContractChanges: map[string]string{cliContract: tc.kind},
+			}
 			err := checkDesign(testModel(t), d)
 			if (err != nil) != tc.bad {
 				t.Fatalf("error=%v", err)
@@ -46,7 +54,13 @@ func TestDesignTrustCompatibility(t *testing.T) {
 		{"missing destinations", trustBoundary{}, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			d := design{Version: 1, Issue: 76, Summary: changeSummary, TrustBoundaries: localBoundary, TrustChanges: map[string]trustBoundary{"checks": tc.proposal}}
+			d := design{
+				Version:         1,
+				Issue:           76,
+				Summary:         changeSummary,
+				TrustBoundaries: localBoundary,
+				TrustChanges:    map[string]trustBoundary{"checks": tc.proposal},
+			}
 			err := checkDesign(testModel(t), d)
 			if (err != nil) != tc.bad {
 				t.Fatalf("error=%v", err)
@@ -71,7 +85,13 @@ func TestDesignRequiresModeledAssertions(t *testing.T) {
 		{"undeclared contract", func(d *design) { d.ContractChanges = map[string]string{cliContract: compatibleChange} }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			d := design{Version: 1, Issue: 76, Summary: changeSummary, TrustBoundaries: localBoundary, TrustChanges: localTrust()}
+			d := design{
+				Version:         1,
+				Issue:           76,
+				Summary:         changeSummary,
+				TrustBoundaries: localBoundary,
+				TrustChanges:    localTrust(),
+			}
 			tc.change(&d)
 			if err := checkDesign(testModel(t), d); err == nil {
 				t.Fatal("incomplete assertions accepted")
@@ -110,7 +130,14 @@ func TestDesignTestDependencyScope(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			c := testModel(t)
 			c.Packages[corePackage] = component{TestAllow: []string{appPackage}}
-			d := design{Version: 1, Issue: 76, Summary: changeSummary, TrustBoundaries: localBoundary, TrustChanges: localTrust(), Changes: []change{{Package: corePackage, Imports: tc.imports, TestImports: tc.testImports}}}
+			d := design{
+				Version:         1,
+				Issue:           76,
+				Summary:         changeSummary,
+				TrustBoundaries: localBoundary,
+				TrustChanges:    localTrust(),
+				Changes:         []change{{Package: corePackage, Imports: tc.imports, TestImports: tc.testImports}},
+			}
 			if err := checkDesign(c, d); (err != nil) != tc.bad {
 				t.Fatalf("error=%v", err)
 			}

@@ -22,52 +22,44 @@ func scan(root string, c *compiledModel) ([]finding, error) {
 		if walkErr != nil {
 			return fmt.Errorf("incomplete scan; fix: restore read access to the checkout")
 		}
-		if entry.IsDir() && p != root && excludedDir(entry.Name()) {
-			return filepath.SkipDir
-		}
-		rel, err := filepath.Rel(root, p)
-		if err != nil {
-			return err
-		}
-		rel = filepath.ToSlash(rel)
-		if entry.Type()&os.ModeSymlink != 0 {
-			return checkLink(root, p, rel)
-		}
-		if entry.IsDir() {
-			return nil
-		}
-		if entry.Name() == "go.mod" && rel != "go.mod" {
-			return fmt.Errorf("nested module %q; fix: classify the nested module explicitly before scanning", rel)
-		}
-		if !strings.HasSuffix(rel, ".go") {
-			return nil
-		}
-		current, err := scanFile(p, rel, c)
-		if err != nil {
-			return err
-		}
+		current, err := scanEntry(root, p, entry, c)
 		findings = append(findings, current...)
 
-		return nil
+		return err
 	})
 	if err != nil {
 		return nil, err
 	}
-	for name, file := range c.canonicalPaths() {
-		p, err := localPath(root, file)
-		if err != nil {
-			findings = append(findings, finding{Rule: c.byKind["contracts"].ID, File: file, Subject: name})
+	findings = append(findings, canonicalFindings(root, c)...)
 
-			continue
-		}
-		info, err := os.Stat(p)
-		if err != nil || !info.Mode().IsRegular() {
-			findings = append(findings, finding{Rule: c.byKind["contracts"].ID, File: file, Subject: name})
-		}
-	}
 	slices.SortFunc(findings, compareFindings)
 
 	return findings, nil
+}
+
+func scanEntry(root, p string, entry fs.DirEntry, c *compiledModel) ([]finding, error) {
+	if entry.IsDir() && p != root && excludedDir(entry.Name()) {
+		return nil, filepath.SkipDir
+	}
+	rel, err := filepath.Rel(root, p)
+	if err != nil {
+		return nil, err
+	}
+	rel = filepath.ToSlash(rel)
+	if entry.Type()&os.ModeSymlink != 0 {
+		return nil, checkLink(root, p, rel)
+	}
+	if entry.IsDir() {
+		return nil, nil
+	}
+	if entry.Name() == "go.mod" && rel != "go.mod" {
+		return nil, fmt.Errorf("nested module %q; fix: classify the nested module explicitly before scanning", rel)
+	}
+	if !strings.HasSuffix(rel, ".go") {
+		return nil, nil
+	}
+
+	return scanFile(p, rel, c)
 }
 
 func scanFile(absolute, relative string, c *compiledModel) ([]finding, error) {
@@ -113,9 +105,28 @@ func checkLink(root, absolute, relative string) error {
 		return fmt.Errorf("cannot resolve checkout; fix: restore the checkout path")
 	}
 	rel, err := filepath.Rel(canonicalRoot, target)
-	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel) || strings.HasSuffix(relative, ".go") {
+	outside := rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel)
+	if err != nil || outside || strings.HasSuffix(relative, ".go") {
 		return fmt.Errorf("unsafe link %q; fix: use regular Go files and checkout-local documentation links", relative)
 	}
 
 	return nil
+}
+
+func canonicalFindings(root string, c *compiledModel) []finding {
+	var findings []finding
+	for name, file := range c.canonicalPaths() {
+		p, err := localPath(root, file)
+		if err != nil {
+			findings = append(findings, finding{Rule: c.byKind["contracts"].ID, File: file, Subject: name})
+
+			continue
+		}
+		info, err := os.Stat(p)
+		if err != nil || !info.Mode().IsRegular() {
+			findings = append(findings, finding{Rule: c.byKind["contracts"].ID, File: file, Subject: name})
+		}
+	}
+
+	return findings
 }

@@ -18,12 +18,20 @@ const cliContract = "cli"
 
 func testModel(t *testing.T) *compiledModel {
 	t.Helper()
-	m := model{ContractChanges: map[string][]string{cliContract: {compatibleChange}}, TrustBoundaries: localTrust(), Version: 1, Module: "example.org/app", Rules: []rule{
-		{ID: "OWN", Kind: "ownership", Description: "owned", Fix: "declare package"},
-		{ID: dependencyRule, Kind: "imports", Description: "boundary", Fix: "remove dependency"},
-		{ID: "CON", Kind: "contracts", Description: contractKind, Fix: "restore contract"},
-		{ID: "TRUST", Kind: "trust", Description: "trusted checks", Fix: "restore local boundary"},
-	}, Packages: map[string]component{appPackage: {Allow: []string{corePackage}}, corePackage: {}}, Contracts: map[string]string{cliContract: appFile}}
+	m := model{
+		ContractChanges: map[string][]string{cliContract: {compatibleChange}},
+		TrustBoundaries: localTrust(),
+		Version:         1,
+		Module:          "example.org/app",
+		Rules: []rule{
+			{ID: "OWN", Kind: "ownership", Description: "owned", Fix: "declare package"},
+			{ID: dependencyRule, Kind: "imports", Description: "boundary", Fix: "remove dependency"},
+			{ID: "CON", Kind: "contracts", Description: contractKind, Fix: "restore contract"},
+			{ID: "TRUST", Kind: "trust", Description: "trusted checks", Fix: "restore local boundary"},
+		},
+		Packages:  map[string]component{appPackage: {Allow: []string{corePackage}}, corePackage: {}},
+		Contracts: map[string]string{cliContract: appFile},
+	}
 	c, err := compile(m)
 	if err != nil {
 		t.Fatal(err)
@@ -47,7 +55,12 @@ func TestScanBoundaries(t *testing.T) {
 	for _, tc := range []struct{ name, file, source, want string }{
 		{"allowed", appFile, "package app; import _ `example.org/app/core`", ""},
 		{"forbidden alias", "core/a.go", "package core; import alias `example.org/app/app`", dependencyRule},
-		{"platform tag", "core/a_windows.go", "//go:build windows\n\npackage core; import _ `example.org/app/app`", dependencyRule},
+		{
+			"platform tag",
+			"core/a_windows.go",
+			"//go:build windows\n\npackage core; import _ `example.org/app/app`",
+			dependencyRule,
+		},
 		{"test scope", "core/a_test.go", "package core_test; import _ `example.org/app/app`", dependencyRule},
 		{"own external test", "core/a_test.go", "package core_test; import _ `example.org/app/core`", ""},
 		{"unowned", "new/a.go", "package new", "OWN"},
@@ -81,7 +94,19 @@ func TestBaselineRatchet(t *testing.T) {
 	}{
 		{"empty", nil, nil, nil, false}, {"retained", []finding{a}, []finding{a}, []finding{a}, false},
 		{"shrunk", nil, nil, []finding{a}, false}, {"new violation", []finding{a}, nil, nil, true},
-		{"grown", []finding{a}, []finding{a}, nil, true}, {"equal count substitution", []finding{b}, []finding{b}, []finding{a}, true},
+		{
+			"grown",
+			[]finding{a},
+			[]finding{a},
+			nil,
+			true,
+		}, {
+			"equal count substitution",
+			[]finding{b},
+			[]finding{b},
+			[]finding{a},
+			true,
+		},
 		{"stale", nil, []finding{a}, []finding{a}, true}, {"duplicate", []finding{a}, []finding{a, a}, []finding{a}, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -98,10 +123,37 @@ func TestDesignUsesCompiledRules(t *testing.T) {
 		name, pkg, dep string
 		bad            bool
 	}{
-		{"allowed", appPackage, corePackage, false}, {"forbidden", corePackage, appPackage, true}, {"unknown source", "other", appPackage, true}, {"unknown target", appPackage, "other", true},
+		{
+			"allowed",
+			appPackage,
+			corePackage,
+			false,
+		}, {
+			"forbidden",
+			corePackage,
+			appPackage,
+			true,
+		}, {
+			"unknown source",
+			"other",
+			appPackage,
+			true,
+		}, {
+			"unknown target",
+			appPackage,
+			"other",
+			true,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			d := design{Version: 1, Issue: 76, Summary: "planned change", TrustChanges: localTrust(), TrustBoundaries: "local only", Changes: []change{{Package: tc.pkg, Imports: []string{tc.dep}}}}
+			d := design{
+				Version:         1,
+				Issue:           76,
+				Summary:         "planned change",
+				TrustChanges:    localTrust(),
+				TrustBoundaries: "local only",
+				Changes:         []change{{Package: tc.pkg, Imports: []string{tc.dep}}},
+			}
 			err := checkDesign(testModel(t), d)
 			if (err != nil) != tc.bad {
 				t.Fatalf("error=%v", err)
@@ -111,7 +163,13 @@ func TestDesignUsesCompiledRules(t *testing.T) {
 }
 
 func TestStrictJSON(t *testing.T) {
-	for _, data := range []string{`{"version":1,"version":2}`, `{"version":1,"unknown":0}`, `{"version":1} {}`, `null`, `{"version":1,"findings":null}`} {
+	for _, data := range []string{
+		`{"version":1,"version":2}`,
+		`{"version":1,"unknown":0}`,
+		`{"version":1} {}`,
+		`null`,
+		`{"version":1,"findings":null}`,
+	} {
 		var b baseline
 		if err := decode([]byte(data), &b); err == nil {
 			t.Errorf("accepted %s", data)
@@ -125,9 +183,12 @@ func TestStrictJSON(t *testing.T) {
 
 func TestInvalidModels(t *testing.T) {
 	cases := []func(*model){
-		func(m *model) { m.Version = 2 }, func(m *model) { m.Rules[0].Fix = "" },
-		func(m *model) { m.Rules[1].ID = m.Rules[0].ID }, func(m *model) { m.Rules[1].Kind = "invalid" },
-		func(m *model) { m.Packages["../escape"] = component{} }, func(m *model) { m.Contracts[cliContract] = "/tmp/outside" },
+		func(m *model) { m.Version = 2 },
+		func(m *model) { m.Rules[0].Fix = "" },
+		func(m *model) { m.Rules[1].ID = m.Rules[0].ID },
+		func(m *model) { m.Rules[1].Kind = "invalid" },
+		func(m *model) { m.Packages["../escape"] = component{} },
+		func(m *model) { m.Contracts[cliContract] = "/tmp/outside" },
 		func(m *model) { m.Packages[appPackage] = component{Allow: []string{"missing"}} },
 	}
 	for i, mutate := range cases {
@@ -153,6 +214,8 @@ func TestScanFailsClosed(t *testing.T) {
 				writeFile(t, root, "core/a.go", "garbage")
 			case "nested module":
 				writeFile(t, root, "nested/go.mod", "module nested")
+			default:
+				t.Fatalf("unknown scan case %q", name)
 			}
 			if _, err := scan(root, testModel(t)); err == nil {
 				t.Fatal("scan succeeded")
@@ -181,8 +244,19 @@ func TestSafePathsAndDiagnostics(t *testing.T) {
 }
 
 func TestDesignConflictsAndContracts(t *testing.T) {
-	for _, tc := range []struct{ conflicts, contracts []string }{{conflicts: []string{"unresolved"}}, {contracts: []string{unknownName}}} {
-		d := design{Version: 1, Issue: 76, Summary: changeSummary, TrustChanges: localTrust(), TrustBoundaries: localBoundary, Conflicts: tc.conflicts, Contracts: tc.contracts}
+	for _, tc := range []struct{ conflicts, contracts []string }{
+		{conflicts: []string{"unresolved"}},
+		{contracts: []string{unknownName}},
+	} {
+		d := design{
+			Version:         1,
+			Issue:           76,
+			Summary:         changeSummary,
+			TrustChanges:    localTrust(),
+			TrustBoundaries: localBoundary,
+			Conflicts:       tc.conflicts,
+			Contracts:       tc.contracts,
+		}
 		if err := checkDesign(testModel(t), d); err == nil {
 			t.Fatal("accepted conflicting design")
 		}
@@ -225,7 +299,11 @@ func TestRunEndToEnd(t *testing.T) {
 		{name: "design", proposed: designFile},
 		{name: "first adoption"},
 		{name: "missing history", base: "unavailable", bad: true},
-		{name: "invalid model", edit: func(t *testing.T, r string) { writeFile(t, r, modelFile, `{"version":2}`) }, bad: true},
+		{
+			name: "invalid model",
+			edit: func(t *testing.T, r string) { writeFile(t, r, modelFile, `{"version":2}`) },
+			bad:  true,
+		},
 		{name: "malformed model", edit: func(t *testing.T, r string) { writeFile(t, r, modelFile, `{`) }, bad: true},
 		{name: "missing model", edit: func(t *testing.T, r string) {
 			if err := os.Remove(filepath.Join(r, modelFile)); err != nil {
@@ -233,13 +311,27 @@ func TestRunEndToEnd(t *testing.T) {
 			}
 		}, bad: true},
 		{name: "malformed baseline", edit: func(t *testing.T, r string) { writeFile(t, r, baselineFile, `{`) }, bad: true},
-		{name: "invalid baseline", edit: func(t *testing.T, r string) { writeFile(t, r, baselineFile, `{"version":2,"findings":[]}`) }, bad: true},
+		{
+			name: "invalid baseline",
+			edit: func(t *testing.T, r string) { writeFile(t, r, baselineFile, `{"version":2,"findings":[]}`) },
+			bad:  true,
+		},
 		{name: "new violation", edit: func(t *testing.T, r string) {
 			writeFile(t, r, "core/a.go", "package core; import _ `example.org/app/app`")
 		}, bad: true},
 		{name: "broken source", edit: func(t *testing.T, r string) { writeFile(t, r, "core/a.go", "not Go") }, bad: true},
-		{name: "invalid design", proposed: designFile, edit: func(t *testing.T, r string) { writeFile(t, r, designFile, `{"version":2}`) }, bad: true},
-		{name: "malformed design", proposed: designFile, edit: func(t *testing.T, r string) { writeFile(t, r, designFile, `{`) }, bad: true},
+		{
+			name:     "invalid design",
+			proposed: designFile,
+			edit:     func(t *testing.T, r string) { writeFile(t, r, designFile, `{"version":2}`) },
+			bad:      true,
+		},
+		{
+			name:     "malformed design",
+			proposed: designFile,
+			edit:     func(t *testing.T, r string) { writeFile(t, r, designFile, `{`) },
+			bad:      true,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			root := gitFixture(t)
@@ -250,7 +342,33 @@ func TestRunEndToEnd(t *testing.T) {
 			}
 			writeFile(t, root, modelFile, string(data))
 			writeFile(t, root, baselineFile, `{"version":1,"findings":[]}`)
-			writeFile(t, root, designFile, `{"version":1,"issue":76,"summary":"planned","trust_boundaries":"local","trust_changes":{"checks":{"destinations":["local"]}},"contract_changes":{"cli":"compatible"},"contracts":["cli"],"changes":[{"package":"app","imports":["core"]}]}`)
+			writeFile(t, root, designFile, `{
+  "version": 1,
+  "issue": 76,
+  "summary": "planned",
+  "trust_boundaries": "local",
+  "trust_changes": {
+    "checks": {
+      "destinations": [
+        "local"
+      ]
+    }
+  },
+  "contract_changes": {
+    "cli": "compatible"
+  },
+  "contracts": [
+    "cli"
+  ],
+  "changes": [
+    {
+      "package": "app",
+      "imports": [
+        "core"
+      ]
+    }
+  ]
+}`)
 			writeFile(t, root, appFile, "package app")
 			if tc.edit != nil {
 				tc.edit(t, root)

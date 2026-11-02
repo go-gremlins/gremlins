@@ -22,10 +22,15 @@ func validateProposalsModel(m model) error {
 			return fmt.Errorf("unknown contract policy %q; fix: declare the contract first", name)
 		}
 	}
-	if len(m.TrustBoundaries) == 0 {
+
+	return validateTrustModel(m.TrustBoundaries)
+}
+
+func validateTrustModel(boundaries map[string]trustBoundary) error {
+	if len(boundaries) == 0 {
 		return fmt.Errorf("missing trust boundaries; fix: model the development-check data and execution boundary")
 	}
-	for name, b := range m.TrustBoundaries {
+	for name, b := range boundaries {
 		if name == "" || len(b.Destinations) == 0 {
 			return fmt.Errorf("invalid trust boundary %q; fix: name the boundary and approved destinations", name)
 		}
@@ -49,14 +54,19 @@ func checkProposals(c *compiledModel, d design) error {
 			return proposalError(c, "contracts", name)
 		}
 	}
+
+	return checkTrustProposals(c, d.TrustChanges)
+}
+
+func checkTrustProposals(c *compiledModel, changes map[string]trustBoundary) error {
 	for name := range c.TrustBoundaries {
-		if _, ok := d.TrustChanges[name]; !ok {
+		if _, ok := changes[name]; !ok {
 			return proposalError(c, "trust", name)
 		}
 	}
-	for name, planned := range d.TrustChanges {
+	for name, planned := range changes {
 		allowed, ok := c.TrustBoundaries[name]
-		if !ok || len(planned.Destinations) == 0 || (planned.Network && !allowed.Network) || (planned.ExecuteSource && !allowed.ExecuteSource) {
+		if !ok || !trustPermitted(planned, allowed) {
 			return proposalError(c, "trust", name)
 		}
 		for _, destination := range planned.Destinations {
@@ -67,4 +77,15 @@ func checkProposals(c *compiledModel, d design) error {
 	}
 
 	return nil
+}
+
+func trustPermitted(planned, allowed trustBoundary) bool {
+	if len(planned.Destinations) == 0 {
+		return false
+	}
+	if planned.Network && !allowed.Network {
+		return false
+	}
+
+	return !planned.ExecuteSource || allowed.ExecuteSource
 }

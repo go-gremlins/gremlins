@@ -61,7 +61,12 @@ func run(base, proposed string) error {
 			ids = append(ids, id)
 		}
 		slices.Sort(ids)
-		log.Infof("Design #%d passed: model SHA256 %x; rules %q. Review contract and trust assertions against the implementation.\n", d.Issue, sha256.Sum256(data), strings.Join(ids, ", "))
+		log.Infof(
+			"Design #%d passed: model SHA256 %x; rules %q. Review contract and trust assertions against the implementation.\n",
+			d.Issue,
+			sha256.Sum256(data),
+			strings.Join(ids, ", "),
+		)
 
 		return nil
 	}

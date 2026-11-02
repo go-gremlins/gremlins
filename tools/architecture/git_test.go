@@ -12,7 +12,11 @@ import (
 func gitFixture(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
-	for _, args := range [][]string{{"init", "-q"}, {"config", "user.name", "Test"}, {"config", "user.email", "test@example.invalid"}} {
+	for _, args := range [][]string{
+		{"init", "-q"},
+		{"config", "user.name", "Test"},
+		{"config", "user.email", "test@example.invalid"},
+	} {
 		if _, err := gitRead(root, args...); err != nil {
 			t.Fatal(err)
 		}
@@ -57,7 +61,14 @@ func TestChangedDesignGate(t *testing.T) {
 	if err := checkChangedDesign(root, "HEAD", c); err == nil {
 		t.Fatal("missing design accepted")
 	}
-	d := design{Version: 1, Issue: 76, Summary: changeSummary, TrustChanges: localTrust(), TrustBoundaries: localBoundary, Changes: []change{{Package: appPackage, Imports: []string{corePackage}}}}
+	d := design{
+		Version:         1,
+		Issue:           76,
+		Summary:         changeSummary,
+		TrustChanges:    localTrust(),
+		TrustBoundaries: localBoundary,
+		Changes:         []change{{Package: appPackage, Imports: []string{corePackage}}},
+	}
 	data, err := json.Marshal(d)
 	if err != nil {
 		t.Fatal(err)
@@ -94,39 +105,45 @@ func TestGitDiagnosticDoesNotLeakSubprocessOutput(t *testing.T) {
 	}
 }
 
+func writeDesign(t *testing.T, root string, d design) {
+	t.Helper()
+	data, err := json.Marshal(d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, root, designFile, string(data))
+}
+
 func TestContractAndPolicyChangesNeedDesign(t *testing.T) {
-	for _, tc := range []struct{ name, path string }{
-		{contractKind, appFile}, {"policy", ".architecture/model.json"},
+	for _, tc := range []struct {
+		name, path          string
+		contracts, policies []string
+		contractChanges     map[string]string
+	}{
+		{contractKind, "schema.json", []string{cliContract}, nil, map[string]string{cliContract: compatibleChange}},
+		{"policy", modelFile, nil, []string{"model"}, nil},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			root := gitFixture(t)
 			c := testModel(t)
+			c.Contracts[cliContract] = "schema.json"
 			c.Policies = map[string]string{"model": modelFile}
-			// A non-Go canonical contract is subject to the same design step.
-			if tc.name == contractKind {
-				c.Contracts[cliContract] = "schema.json"
-				tc.path = "schema.json"
-			}
 			writeFile(t, root, tc.path, "changed")
 			if err := checkChangedDesign(root, "HEAD", c); err == nil {
 				t.Fatal("modeled change passed without a design")
 			}
-			writeFile(t, root, designFile, `{"version":1,"issue":76,"summary":"planned","trust_boundaries":"reviewed"}`)
+			d := design{
+				Version: 1, Issue: 76, Summary: changeSummary,
+				TrustChanges: localTrust(), TrustBoundaries: "reviewed",
+			}
+			writeDesign(t, root, d)
 			if err := checkChangedDesign(root, "HEAD", c); err == nil {
 				t.Fatal("undeclared modeled change passed")
 			}
-			d := design{Version: 1, Issue: 76, Summary: changeSummary, TrustChanges: localTrust(), TrustBoundaries: "reviewed"}
-			if tc.name == contractKind {
-				d.Contracts = []string{cliContract}
-				d.ContractChanges = map[string]string{cliContract: compatibleChange}
-			} else {
-				d.Policies = []string{"model"}
-			}
-			data, err := json.Marshal(d)
-			if err != nil {
-				t.Fatal(err)
-			}
-			writeFile(t, root, designFile, string(data))
+			d.Contracts = tc.contracts
+			d.Policies = tc.policies
+			d.ContractChanges = tc.contractChanges
+			writeDesign(t, root, d)
 			if err := checkChangedDesign(root, "HEAD", c); err != nil {
 				t.Fatal(err)
 			}
@@ -152,7 +169,7 @@ func TestPreCodeDesignStep(t *testing.T) {
 		{"prohibited transfer", "tools/architecture/testdata/invalid-trust.json", "ARCH004", true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			cmd := exec.Command("bash", "scripts/check-design.sh", tc.input) //nolint:gosec // Test inputs are literal repository fixture paths.
+			cmd := exec.Command("bash", "scripts/check-design.sh", tc.input) //nolint:gosec // Literal test fixture paths.
 			cmd.Dir = root
 			output, err := cmd.CombinedOutput()
 			if (err != nil) != tc.bad {
@@ -167,7 +184,19 @@ func TestPreCodeDesignStep(t *testing.T) {
 
 func TestDesignOnlyChangeEvaluated(t *testing.T) {
 	root := gitFixture(t)
-	writeFile(t, root, designFile, `{"version":1,"issue":76,"summary":"proposal","trust_boundaries":"local","trust_changes":{"checks":{"destinations":["new-service"]}}}`)
+	writeFile(t, root, designFile, `{
+  "version": 1,
+  "issue": 76,
+  "summary": "proposal",
+  "trust_boundaries": "local",
+  "trust_changes": {
+    "checks": {
+      "destinations": [
+        "new-service"
+      ]
+    }
+  }
+}`)
 	if err := checkChangedDesign(root, "HEAD", testModel(t)); err == nil {
 		t.Fatal("incompatible design-only change was not checked")
 	}
@@ -192,7 +221,14 @@ func TestCLIContractSourcesRequireCompatibilityReview(t *testing.T) {
 		t.Run(tc.contract, func(t *testing.T) {
 			root := gitFixture(t)
 			writeFile(t, root, tc.file, "package cmd")
-			d := design{Version: 1, Issue: 76, Summary: changeSummary, TrustBoundaries: localBoundary, TrustChanges: c.TrustBoundaries, Changes: []change{{Package: packageOf(tc.file), Imports: []string{}}}}
+			d := design{
+				Version:         1,
+				Issue:           76,
+				Summary:         changeSummary,
+				TrustBoundaries: localBoundary,
+				TrustChanges:    c.TrustBoundaries,
+				Changes:         []change{{Package: packageOf(tc.file), Imports: []string{}}},
+			}
 			data, err := json.Marshal(d)
 			if err != nil {
 				t.Fatal(err)
