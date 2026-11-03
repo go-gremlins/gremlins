@@ -165,11 +165,9 @@ make clean
 
 ## Testing Conventions
 
-- All test files use `_test.go` suffix
-- Tests use table-driven approach where applicable
-- Race detector always enabled: `-race` flag
-- Test names follow pattern: `Test<ComponentName><Behavior>`
-- Use `testdata/` directories for test fixtures
+Follow the [Go test standard](docs/development/test-standard.md) for all Go packages.
+The [test assessment](docs/development/test-assessment.md) records current gaps and evidence limits.
+Use the [contributor guide](docs/CONTRIBUTING.md#verify-the-change) for local and hosted verification.
 
 ## Module Structure
 
