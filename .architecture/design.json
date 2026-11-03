@@ -1,32 +1,12 @@
 {
   "version": 1,
-  "issue": 77,
-  "summary": "Enforce strict Google Go style through the pinned linter, a local shrink-only lint adapter, and existing CI.",
-  "changes": [
-    {
-      "package": "tools/lintcontext",
-      "imports": []
-    }
-  ],
+  "issue": 78,
+  "summary": "Document one Go test standard and a revision-specific gap assessment; link contributor guidance to that standard without changing executable verification policy.",
+  "changes": [],
   "contracts": [],
-  "trust_boundaries": "Read checkout source, pinned Git baseline objects, and pinned linter reports locally. Analyze Linux, Darwin, and Windows without running source or using analysis network access.",
+  "trust_boundaries": "Inspect repository source and existing test policies locally. Keep design guidance and the eventual standard and assessment in repository documentation. Documentation introduces no source-execution path, upload, runtime configuration, or CI permission change. Existing test execution and report admission boundaries remain unchanged.",
   "conflicts": [],
-  "policies": [
-    "model",
-    "ci",
-    "build",
-    "guidance",
-    "contributing",
-    "hooks",
-    "lint",
-    "workflow",
-    "lint_baseline",
-    "lint_gate",
-    "lint_version",
-    "sonar",
-    "lint_coverage",
-    "coverage_admission"
-  ],
+  "policies": ["guidance", "contributing"],
   "trust_changes": {
     "development_checks": {
       "destinations": [

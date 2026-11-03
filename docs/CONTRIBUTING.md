@@ -82,6 +82,9 @@ author, adapt the module path, and open a PR to `dev`. Do not merge an upstream 
 
 ## Verify the change
 
+Follow the [Go test standard](development/test-standard.md) for test behavior, isolation, and evidence.
+The [test assessment](development/test-assessment.md) records current gaps against that standard.
+
 Add a regression test for a bug or tests for new behavior. Run the narrowest relevant tests with the race detector,
 for example:
 
