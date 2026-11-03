@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "recorded_at": "2026-11-03T05:36:43.742529+00:00",
+  "recorded_at": "2026-11-03T05:50:42.250485+00:00",
   "release": "v1.9.0",
   "release_sha256": "bec0802871af2d8b816053d842150fce90b1e9e49faaa759726e113d249ea2f6",
   "source_commit": "235d70856616140ecbde8908124ba12da23f3329",
@@ -15,9 +15,9 @@
     ".github/workflows/ground-control-fork-finalization.yml": "0f1f6f58080c5768d96c7683d1254bb5bbdf625ed7eb21ea87fb6897004d1072",
     ".github/ground-control/package.json": "ba76bd06fc302103bea6b3be4c0f3f55c90851a5e0b4d0df0f785ed9cb574a4e",
     ".github/ground-control/package-lock.json": "d12190346d8b1f2b4b3d564db8f3d89e463af46c77641b09f0ccf69415b384f4",
-    ".github/ground-control/phase-e.integration.test.mjs": "838e90468785d3a704fdf56f61058e65d0ed1d7c1d57623aa4716e1b10636054",
+    ".github/ground-control/phase-e.integration.test.mjs": "7f9ead966ff8d01fab34ccef04ea839a6e32d39aeef4a3eff7a990b41962e052",
     ".github/ground-control/fixtures/github.cjs": "2561299d257d98d78f0749edb797c8b8626d3eed625e59b18a25d18845852a6f",
-    "docs/development/evidence/phase-e-v1.9.0.tap": "454d32f2f6c288583f9b6b0c3da32ea1371a345b0e5cb83bb324bbafb682d753"
+    "docs/development/evidence/phase-e-v1.9.0.tap": "6e42d73bdf11bf9452fdc48ae56363eaf7066573aba8022c0275548c74a0055f"
   },
   "local_verification_environment": {
     "reference_package": ".git/phase-e-validation/node_modules/grndctl",

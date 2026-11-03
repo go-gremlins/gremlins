@@ -7,33 +7,37 @@ import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { test, after } from 'node:test';
+import { test, before, after } from 'node:test';
 import { createHash } from 'node:crypto';
 
-assert.ok(process.env.GROUND_CONTROL_TEST_ROOT, 'set GROUND_CONTROL_TEST_ROOT to the pinned installed utility');
-const reference = resolve(process.env.GROUND_CONTROL_TEST_ROOT);
-const requireUtility = createRequire(join(reference, 'package.json'));
-const yaml = requireUtility('js-yaml');
 const here = dirname(fileURLToPath(import.meta.url));
-const workflow = yaml.load(readFileSync(join(here, '../workflows/ground-control-phase-e.yml'), 'utf8'));
-const job = workflow.jobs.finalize;
-const dispatcher = yaml.load(readFileSync(join(here, '../workflows/ground-control-fork-finalization.yml'), 'utf8'));
-const dispatchStep = dispatcher.jobs.dispatch.steps[0];
-const steps = Object.fromEntries(job.steps.filter(s => s.name).map(s => [s.name, s]));
-const asset = process.env.GROUND_CONTROL_RELEASE_ASSET || resolve(reference, '../..', job.env.GC_ASSET);
-const installation = mkdtempSync(join(tmpdir(), 'go-rae-verified-finalizer-'));
-const install = join(installation, 'ground-control');
-mkdirSync(install);
-for (const name of ['package.json', 'package-lock.json']) copyFileSync(join(here, name), join(install, name));
-copyFileSync(asset, join(install, job.env.GC_ASSET));
-assert.equal(createHash('sha256').update(readFileSync(join(install, job.env.GC_ASSET))).digest('hex'), job.env.GC_SHA256);
-execFileSync('npm', ['ci', '--ignore-scripts', '--omit=dev', '--no-audit', '--no-fund', '--userconfig=/dev/null',
-  `--globalconfig=${install}/global.npmrc`, `--cache=${installation}/cache`], { cwd: install, stdio: 'pipe' });
-const utility = join(install, 'node_modules/grndctl');
-assert.equal(JSON.parse(readFileSync(join(utility, 'package.json'), 'utf8')).version, job.env.GC_RELEASE.slice(1));
-after(() => rmSync(installation, { recursive: true, force: true }));
-const { buildDeliveryReadinessRecord, buildDeliveryPointerRecord } = await import(
-  pathToFileURL(join(utility, 'lib/delivery-readiness.js')).href);
+let job, dispatcher, dispatchStep, steps, asset, installation, utility;
+let buildDeliveryReadinessRecord, buildDeliveryPointerRecord;
+before(async () => {
+  assert.ok(process.env.GROUND_CONTROL_TEST_ROOT, 'set GROUND_CONTROL_TEST_ROOT to the pinned installed utility');
+  const reference = resolve(process.env.GROUND_CONTROL_TEST_ROOT);
+  const requireUtility = createRequire(join(reference, 'package.json'));
+  const yaml = requireUtility('js-yaml');
+  const workflow = yaml.load(readFileSync(join(here, '../workflows/ground-control-phase-e.yml'), 'utf8'));
+  job = workflow.jobs.finalize;
+  dispatcher = yaml.load(readFileSync(join(here, '../workflows/ground-control-fork-finalization.yml'), 'utf8'));
+  dispatchStep = dispatcher.jobs.dispatch.steps[0];
+  steps = Object.fromEntries(job.steps.filter(s => s.name).map(s => [s.name, s]));
+  asset = process.env.GROUND_CONTROL_RELEASE_ASSET || resolve(reference, '../..', job.env.GC_ASSET);
+  installation = mkdtempSync(join(tmpdir(), 'go-rae-verified-finalizer-'));
+  const install = join(installation, 'ground-control');
+  mkdirSync(install);
+  for (const name of ['package.json', 'package-lock.json']) copyFileSync(join(here, name), join(install, name));
+  copyFileSync(asset, join(install, job.env.GC_ASSET));
+  assert.equal(createHash('sha256').update(readFileSync(join(install, job.env.GC_ASSET))).digest('hex'), job.env.GC_SHA256);
+  execFileSync('npm', ['ci', '--ignore-scripts', '--omit=dev', '--no-audit', '--no-fund', '--userconfig=/dev/null',
+    `--globalconfig=${install}/global.npmrc`, `--cache=${installation}/cache`], { cwd: install, stdio: 'pipe' });
+  utility = join(install, 'node_modules/grndctl');
+  assert.equal(JSON.parse(readFileSync(join(utility, 'package.json'), 'utf8')).version, job.env.GC_RELEASE.slice(1));
+  ({ buildDeliveryReadinessRecord, buildDeliveryPointerRecord } = await import(
+    pathToFileURL(join(utility, 'lib/delivery-readiness.js')).href));
+});
+after(() => { if (installation) rmSync(installation, { recursive: true, force: true }); });
 const issue = 1103;
 const prNumber = 42;
 

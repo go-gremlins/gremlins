@@ -2,97 +2,97 @@ TAP version 13
 # Subtest: pull_request/dev: actual workflow-to-CLI path finalizes the correct issue and retries without duplicate writes
 ok 1 - pull_request/dev: actual workflow-to-CLI path finalizes the correct issue and retries without duplicate writes
   ---
-  duration_ms: 2262.964329
+  duration_ms: 2404.538265
   type: 'test'
   ...
 # Subtest: pull_request/main: actual workflow-to-CLI path finalizes the correct issue and retries without duplicate writes
 ok 2 - pull_request/main: actual workflow-to-CLI path finalizes the correct issue and retries without duplicate writes
   ---
-  duration_ms: 2335.466435
+  duration_ms: 2616.587931
   type: 'test'
   ...
 # Subtest: workflow_dispatch/dev: actual workflow-to-CLI path finalizes the correct issue and retries without duplicate writes
 ok 3 - workflow_dispatch/dev: actual workflow-to-CLI path finalizes the correct issue and retries without duplicate writes
   ---
-  duration_ms: 2252.865286
+  duration_ms: 2289.794853
   type: 'test'
   ...
 # Subtest: workflow_dispatch/main: actual workflow-to-CLI path finalizes the correct issue and retries without duplicate writes
 ok 4 - workflow_dispatch/main: actual workflow-to-CLI path finalizes the correct issue and retries without duplicate writes
   ---
-  duration_ms: 2246.754806
+  duration_ms: 2905.566747
   type: 'test'
   ...
 # Subtest: actual CLI refuses unmerged delivery without a final report or closure
 ok 5 - actual CLI refuses unmerged delivery without a final report or closure
   ---
-  duration_ms: 454.204985
+  duration_ms: 451.158558
   type: 'test'
   ...
 # Subtest: actual CLI refuses corrupted readiness without a final report or closure
 ok 6 - actual CLI refuses corrupted readiness without a final report or closure
   ---
-  duration_ms: 640.051503
+  duration_ms: 617.507051
   type: 'test'
   ...
 # Subtest: actual CLI refuses untrusted readiness author without a final report or closure
 ok 7 - actual CLI refuses untrusted readiness author without a final report or closure
   ---
-  duration_ms: 614.673902
+  duration_ms: 623.553397
   type: 'test'
   ...
 # Subtest: actual CLI refuses readiness for a different head without a final report or closure
 ok 8 - actual CLI refuses readiness for a different head without a final report or closure
   ---
-  duration_ms: 625.139414
+  duration_ms: 636.4502
   type: 'test'
   ...
 # Subtest: declared issue-write permission is necessary: a read-only installation cannot report or close
 ok 9 - declared issue-write permission is necessary: a read-only installation cannot report or close
   ---
-  duration_ms: 1052.555924
+  duration_ms: 1032.239938
   type: 'test'
   ...
 # Subtest: actual download step rejects a tampered release before installation
 ok 10 - actual download step rejects a tampered release before installation
   ---
-  duration_ms: 150.419691
+  duration_ms: 136.972014
   type: 'test'
   ...
 # Subtest: actual verified download and locked-install steps install the pinned executable
 ok 11 - actual verified download and locked-install steps install the pinned executable
   ---
-  duration_ms: 1776.272281
+  duration_ms: 1838.567073
   type: 'test'
   ...
 # Subtest: mismatched Actions provenance fails before the CLI can report or close
 ok 12 - mismatched Actions provenance fails before the CLI can report or close
   ---
-  duration_ms: 316.382912
+  duration_ms: 174.975232
   type: 'test'
   ...
 # Subtest: fork/dev: trusted dispatcher starts the supported workflow-dispatch finalizer
 ok 13 - fork/dev: trusted dispatcher starts the supported workflow-dispatch finalizer
   ---
-  duration_ms: 1434.325927
+  duration_ms: 1251.119251
   type: 'test'
   ...
 # Subtest: fork/main: trusted dispatcher starts the supported workflow-dispatch finalizer
 ok 14 - fork/main: trusted dispatcher starts the supported workflow-dispatch finalizer
   ---
-  duration_ms: 1279.943713
+  duration_ms: 1263.259585
   type: 'test'
   ...
 # Subtest: workflow refuses FAILURE required checks before any finalization
 ok 15 - workflow refuses FAILURE required checks before any finalization
   ---
-  duration_ms: 179.665286
+  duration_ms: 170.524298
   type: 'test'
   ...
 # Subtest: workflow refuses PENDING required checks before any finalization
 ok 16 - workflow refuses PENDING required checks before any finalization
   ---
-  duration_ms: 181.231503
+  duration_ms: 183.78143
   type: 'test'
   ...
 1..16
@@ -103,4 +103,4 @@ ok 16 - workflow refuses PENDING required checks before any finalization
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 19560.64816
+# duration_ms 20339.192735
