@@ -4,7 +4,8 @@ GO_BUILD=${GO_CMD} build
 RELEASER_CMD=goreleaser
 RELEASE=${RELEASER_CMD} release
 LINTER_CMD=mise exec -- golangci-lint
-LINT=${LINTER_CMD} run
+LINT_BASE ?= origin/dev
+LINT_ADOPTION_BASE ?=
 BINARY_NAME=gremlins
 COVER_OUT=coverage.out
 TARGET=dist
@@ -32,12 +33,23 @@ ${COVER_OUT}:
 
 .PHONY: requirements
 requirements:
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	mise install aqua:golangci/golangci-lint
 	go install golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment@latest
 
 .PHONY: lint
 lint:
-	${LINT} ./...
+	python3 scripts/lint.py --base "${LINT_BASE}" --adoption-base "${LINT_ADOPTION_BASE}"
+
+.PHONY: lint-shrink lint-test lint-cover
+lint-shrink:
+	python3 scripts/lint.py --base "${LINT_BASE}" --adoption-base "${LINT_ADOPTION_BASE}" --shrink
+
+lint-test:
+	python3 -m unittest discover -s scripts -p test_lint.py
+
+lint-cover:
+	python3 -m coverage run -m unittest discover -s scripts -p test_lint.py
+	python3 -m coverage xml -o python-coverage.xml
 
 .PHONY: policy
 policy:
@@ -49,7 +61,7 @@ hooks:
 
 .PHONY: goimports
 goimports:
-	goimports --local 'github.com/OpenRAE/go-rae-gremlins' -v -w .
+	${LINTER_CMD} fmt ./...
 
 .PHONY: fieldalignment
 fieldalignment:

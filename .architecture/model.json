@@ -152,6 +152,10 @@
         "internal/log"
       ],
       "test_allow": []
+    },
+    "tools/lintcontext": {
+      "allow": [],
+      "test_allow": []
     }
   },
   "contracts": {
@@ -174,7 +178,13 @@
     "hooks": ".pre-commit-config.yaml",
     "lint": ".golangci.yml",
     "workflow": ".ground-control.yaml",
-    "design_step": "scripts/check-design.sh"
+    "design_step": "scripts/check-design.sh",
+    "lint_baseline": ".lint/baseline.json",
+    "lint_gate": "scripts/lint.py",
+    "lint_version": "mise.toml",
+    "sonar": "sonar-project.properties",
+    "lint_coverage": ".coveragerc",
+    "coverage_admission": "scripts/check-coverage.sh"
   },
   "contract_changes": {
     "cli": [

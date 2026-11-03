@@ -1,27 +1,31 @@
 {
   "version": 1,
-  "issue": 76,
-  "summary": "Add a local architecture evaluator and CI gate outside the shipped CLI.",
+  "issue": 77,
+  "summary": "Enforce strict Google Go style through the pinned linter, a local shrink-only lint adapter, and existing CI.",
   "changes": [
     {
-      "package": "tools/architecture",
-      "imports": [
-        "internal/log"
-      ]
+      "package": "tools/lintcontext",
+      "imports": []
     }
   ],
   "contracts": [],
-  "trust_boundaries": "Read checkout and pinned Git objects only. Run in a secret-free CI job. No network or source execution.",
+  "trust_boundaries": "Read checkout source, pinned Git baseline objects, and pinned linter reports locally. Analyze Linux, Darwin, and Windows without running source or using analysis network access.",
   "conflicts": [],
   "policies": [
     "model",
-    "baseline",
     "ci",
     "build",
-    "plan",
     "guidance",
     "contributing",
-    "design_step"
+    "hooks",
+    "lint",
+    "workflow",
+    "lint_baseline",
+    "lint_gate",
+    "lint_version",
+    "sonar",
+    "lint_coverage",
+    "coverage_admission"
   ],
   "trust_changes": {
     "development_checks": {

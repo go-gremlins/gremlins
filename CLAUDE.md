@@ -35,7 +35,7 @@ make cover                    # Creates coverage.out
 # Run linter (golangci-lint)
 make lint
 
-# Format imports (with local package priority)
+# Format Go files and imports with the pinned tool
 make goimports
 
 # Fix struct field alignment
@@ -190,9 +190,12 @@ internal/
 
 ## Quality Standards
 
-- Go 1.21+ required
-- Comprehensive linter configuration (`.golangci.yml`) with 30+
-  enabled rules
+- Use the Go version and toolchain in `go.mod`.
+- Follow [the Go coding standard](docs/development/coding-standards.md).
+  `make lint` checks strict rules, formatting, and the shrink-only baseline.
+  Provision the mise-pinned linter and run `go mod download` before offline analysis.
+  Set `LINT_BASE` to the fetched comparison commit when needed.
+  Fix debt, then use `make lint-shrink`; never add baseline allowances.
 - Test coverage tracked (Codecov integration)
 - All commits must pass: lint, tests, build
 - Mutation testing runs on itself (`.gremlins.yaml` configured)

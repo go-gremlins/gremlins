@@ -66,6 +66,17 @@ a fetched target commit. Tests and platform files are included. Each finding giv
 Remove stale baseline entries when fixing violations. Never regenerate or enlarge the baseline. Architecture
 policy changes need maintainer review. CI runs this check without secrets and requires it in `PR Gate`.
 
+Follow the [Go coding standard and upstream comparison](development/coding-standards.md).
+Provision the pinned linter with mise and download Go modules before analysis.
+`make lint` checks formatting and analyzes Linux, Darwin, and Windows with tests.
+It compares lint identities and counts against the fetched target baseline.
+CI passes the event's comparison commit to both lint and policy checks.
+The first `main` promotion adopts the reviewed `dev` baseline, and rejects any additions to it.
+For local checks, use `make lint LINT_BASE=origin/dev` or another fetched target commit.
+Repair findings and run `make lint-shrink` to remove stale allowances.
+The shrink command cannot add or replace debt. Do not regenerate the baseline.
+Changes to rules, suppressions, contexts, and tool versions need explicit review.
+
 For upstream commits, follow [ADR 0003](adr/0003-upstream-changes.md): cherry-pick with `-x`, retain the original
 author, adapt the module path, and open a PR to `dev`. Do not merge an upstream branch into this fork.
 
@@ -95,7 +106,7 @@ The current hosted checks are defined in the repository:
 
 | Workflow | Verification |
 | --- | --- |
-| [CI](../.github/workflows/ci.yml) | Architecture model/design checks, shrink-only baselines, lint, race tests and coverage on Linux/macOS/Windows, policy hooks, Sonar admission, and SonarCloud. `PR Gate` combines architecture, lint, tests, policy, and Sonar results. |
+| [CI](../.github/workflows/ci.yml) | Architecture model/design checks, shrink-only baselines, lint, Python line/branch coverage, race tests and Go coverage on Linux/macOS/Windows, policy hooks, Sonar admission, and SonarCloud. `PR Gate` combines architecture, lint, tests, policy, and Sonar results. |
 | [Gremlins](../.github/workflows/gremlins.yml) | Mutation testing with the Gremlins source from the candidate commit. |
 | [PR title](../.github/workflows/pr-title.yml) | A Conventional Commit PR title with a lowercase subject. |
 

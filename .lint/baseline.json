@@ -1,0 +1,911 @@
+{
+  "version": 1,
+  "findings": [
+    {
+      "linter": "errcheck",
+      "file": "cmd/gremlins_test.go",
+      "fingerprint": "aa5603e588cc08acb55ce4e9e7f5b2743a7a4b722f33bee4fd9e7448cfcf2de8",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "cmd/unleash.go",
+      "fingerprint": "86b7e144feae443f9097bce0a1b4736dec163ad4eb2adc459e14f85d387d3ca0",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/configuration/configuration.go",
+      "fingerprint": "1434a864b92d907034465528082f879097d59012476f3efdc173b01158474a81",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/configuration/configuration.go",
+      "fingerprint": "4bfd8f560911e664080a9c41efafc15465eb08544c24f4a07663f71dcbaacd75",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/configuration/configuration.go",
+      "fingerprint": "65eb52db1f989ae60972a353592b392b2584cc47537d71f009d2e31c729013d6",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/configuration/configuration.go",
+      "fingerprint": "e0fd4e3d939ed2e4472aba29114e1b2a47e18c842fd472798b6219bc2f633ca5",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "03bcc44fadf8e7e3687101a7fc79776a85a9fd31d0b57ce46b3a36ba55a2be5d",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "087d6b2e525f9184ff36c2c70d7c3e34f28ff3171a04465dc653c72d63eafab0",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "08c2c011e772696b7dcd23b5aea67ac2313548b79135d9cd4378ae53af10d275",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "3de163b4a2667a9700ebd927cc51e75ef736f090680a7169380c3e8c94de5409",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "4e9d02efa3d593f71655dd1500854d969ed25c7cc4bd5342919534fb9d7926ad",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "565edc6dcc2a09cef18bb795a982e4d5ec29c11e923c4a44deda85f926db5536",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "60dda4562cb12f520392d7909ec3aeec64001ecd6d4f6c5943c98fab60216c65",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "61f9bb5f1f2bf107effdb1a8f5f5eb54e0c5b8b690d6b59c21f36efb42699db3",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "97e3b2a67256d6b094b4a6d8fec53d674c65f9c2a6dfdd27e72c9ed1f1a3f31c",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "adc0d0460afbd2b3dbaf5ad82775f9901cd855c4198fd8097625034a899328b0",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "bf2cdb7a870c4f1a4695f1110f773755f04b62f77078627c33b5d29752281996",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "fd445c8aeb19a5d60e072085983a2c1700acef347df9ed5cee352ee8e5607f71",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/coverage/coverage.go",
+      "fingerprint": "50aa115f427407dfe434c1e80a49d66dc028d3924a814e1e5a3a087275d15678",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/coverage/coverage.go",
+      "fingerprint": "b0e1b9ad8fa5b5eb0e9334d342bb180240c5edee3758b514145b387d04ef2f0c",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/coverage/coverage.go",
+      "fingerprint": "b5da5d3dadce2da6e85534e721621da6dc5920c07f9ea75763332a4bbc7d33e0",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/coverage/coverage_test.go",
+      "fingerprint": "4824de273874b047f126d977c826d18cf9a5d9137b233dcf40c43d4322fa240f",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/engine.go",
+      "fingerprint": "7ea1d9d8c6f14d394eddba5b99ea7382960daec0ff6f484ecbef94c8064a06cb",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/engine.go",
+      "fingerprint": "853c77ce4e871d138c9f61aa91c4da851bb883960892fa53abb809df9562e633",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/engine.go",
+      "fingerprint": "d2e52c206ce46aaa77cd1a30ea3a84193bc48bd17882dd44bf20971fc6e2bb90",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/engine.go",
+      "fingerprint": "f6afd70bfbc9d56e57b8727d2789823f047e7294a0558c64aa2311dc1bb10c39",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/engine_test.go",
+      "fingerprint": "0fc297550c3f11f44b5651851b128186132b92d9f3bf43ca9d3a5293ad93433e",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/engine_test.go",
+      "fingerprint": "b655d36aeff8b6c6db168cd6d57637010428dea60a17e73750db3b9e4301fbc1",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/engine_test.go",
+      "fingerprint": "f8ad71ad316874fdb5890978f902f1299a45ff33756e12b3bdc2cc360c2afaa6",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/engine_test.go",
+      "fingerprint": "fb607e6a597d9095d3c0aed05b70a2c74a0ca6719a300027f6280ad22ddf10c6",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/executor.go",
+      "fingerprint": "2a4470faa72bbb9ed8e2720d9a9c5a3a0eb976e428097a98204983e57bc07d32",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/executor.go",
+      "fingerprint": "3631ec323098147d672dd0d722e4fe6a42278d7b678ee16265b0b40bc7722041",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/executor.go",
+      "fingerprint": "867d17a3809b805c56c3ae055f6fe2c7934314e72238f3d39081eaad292c7f6b",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/executor.go",
+      "fingerprint": "b16bc319c3ed616495e2cd819583bd12ea4eddca4c81ccf7e982719f3caf7c73",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/executor_test.go",
+      "fingerprint": "7122d15791286c71efaf6822eac2fbac2f84e24a0b76bca2de5a58a5eae19fa5",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/executor_test.go",
+      "fingerprint": "8534c653874908f15dfd05e3dffb0dec6a530ba561fc88ee52572200949eeb16",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/stubs_test.go",
+      "fingerprint": "265aa6096179c7611f6c22ed2dfa55a860e9f3f0f5c71a8b1b288d4f8782dfa7",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/stubs_test.go",
+      "fingerprint": "3607364a47236bf0af5d30a82f0be36a9d5b4133ead6411206e6d5ad171260ff",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/stubs_test.go",
+      "fingerprint": "cf1a23369417f5d2c90b4d054eedf53b9424c2c51a7a80938a981deb12d788cc",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/workdir/workdir_test.go",
+      "fingerprint": "4ed2d9e5c93a7ce57d31496888e5ee367b757379ca539ee27b0ce92ee07a900b",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/workdir/workdir_test.go",
+      "fingerprint": "66255ac24093378532ff6b512bd9d97fc342d174e1d7b9cbec973cbb34a68a7d",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/engine/workdir/workdir_test.go",
+      "fingerprint": "e81b82a640640d3d4e7fab9fc6a31c56fe637fce2b60a79dccfbb95e748c8b9b",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/gomodule/gomodule.go",
+      "fingerprint": "7c3b9d17a7d16a609aa9bdca90bd76c05c559013bd3671d6b262ceddd6aebc5c",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/gomodule/gomodule.go",
+      "fingerprint": "92e202bd7244225a30e5062b458736e2b2189ae2467660bfb51b9ba4d46212df",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/gomodule/gomodule_test.go",
+      "fingerprint": "fd791ae2fec45080e45f483cf314235b9f660fde14958bff86ebf97815872c2e",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/log/log.go",
+      "fingerprint": "3300c24483c060dc3890ed3fdae373ebaed522f4bfcefc2bf4d22fc8fa02b50a",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/log/log.go",
+      "fingerprint": "77d59c32e25ff805df56fdf6f94050b23ca9d775fb2e5f4a17f23d0ea9fab167",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/log/log.go",
+      "fingerprint": "8c0c5b8f7b6581c0327f63a474d5e81fc7df7be4e5b9b0a15a6f20a3344a7dc2",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/log/log.go",
+      "fingerprint": "f3594aefa2b3ee575381f4328962e2570e08c2958de535e68169f583b484139b",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/report/report.go",
+      "fingerprint": "0e96a8733394445a4b7c135a4920e9d8b94544734d611999e52003810da58347",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/report/report.go",
+      "fingerprint": "8c0ce07a509f5e81e749e7fb9ae332bbaa166ff052ffee63459d6be5be3db437",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/report/report_test.go",
+      "fingerprint": "0b0bcb82db38ab38053cc3b63bc58bd36150bd55724a6546b6987b40f40c4f2e",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/report/report_test.go",
+      "fingerprint": "10d68ff54df89fd8a52e4f1fccecaa1b3fa461e914de3ef781a0b363911e237f",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/report/report_test.go",
+      "fingerprint": "5ab3d645a130b81000f0315196eccc59063685ccf5601a0ed6f276dd6992619c",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/report/report_test.go",
+      "fingerprint": "80c142d7d1b152b8baed26187fda8c7982adb116140a212811a687b08e1cfbe1",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/report/report_test.go",
+      "fingerprint": "859e0ac13723e14dd30c85919051c82427eaa16a8f0c9d5e0e133c4a5f09487e",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/report/report_test.go",
+      "fingerprint": "b296f73b507db632f792eb605bbd5727ae18fee02f7d854d25f37ae768e63517",
+      "count": 2
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/report/report_test.go",
+      "fingerprint": "bff0d9a2a1c4c5ccbc02f14bfaf6550c5fbf3790b7e813895920c6bb54a26a9e",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "internal/report/report_test.go",
+      "fingerprint": "c508cd318bd305c2aa3b46c140cb663c893f241a6b2aa4e8916bf43e1cffff57",
+      "count": 1
+    },
+    {
+      "linter": "errcheck",
+      "file": "tools/architecture/input.go",
+      "fingerprint": "97e3b6144fb8694a1d644217e2b83f80a923fd0784c9a48fcd6d679e69772c21",
+      "count": 1
+    },
+    {
+      "linter": "nlreturn",
+      "file": "internal/engine/process_windows.go",
+      "fingerprint": "6853fa00936905807f4c2321c33cb91638d7ef2045794fd7f223f4cc978ca2f0",
+      "count": 1
+    },
+    {
+      "linter": "noctx",
+      "file": "internal/coverage/coverage_test.go",
+      "fingerprint": "90b8d8823c2292e1c9042fcb01b385a663a7bb59e5b9a98ab7c7252a0acbc9b2",
+      "count": 1
+    },
+    {
+      "linter": "noctx",
+      "file": "internal/coverage/coverage_test.go",
+      "fingerprint": "d0de500e7d87cad0dc788be7e9bbbf71da012a1ba699be34d35264f9fbbbcaeb",
+      "count": 1
+    },
+    {
+      "linter": "noctx",
+      "file": "tools/architecture/git.go",
+      "fingerprint": "0ff040d58d52fdafc7a18fdbf5ee6da2918ed486fd40511afe75b1f66e42d0bf",
+      "count": 1
+    },
+    {
+      "linter": "noctx",
+      "file": "tools/architecture/git_test.go",
+      "fingerprint": "ee6848b5dddac2b3bee19e2df4bdf0331982ad565b3cf3f81c1f3bb0829bb0df",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "cmd/gremlins_test.go",
+      "fingerprint": "3c82302f20315357c457e747a9aa93974df58fc89ed3e73e04d204d10db3fbc6",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "cmd/gremlins_test.go",
+      "fingerprint": "fb383aef9e1c8743a96e977c9896b8988d3f5b5e2a105453d81ccd5f7f2f7fc7",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "cmd/internal/flags/flags_test.go",
+      "fingerprint": "87e9709c9b938ab863ebc98cf0bbcbe34157fd4f46615bee3baf0092abd900fa",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "cmd/internal/flags/flags_test.go",
+      "fingerprint": "8d4b2ceb5606b9ad9f7408d59dc3fb3b5973b21b4a3184629ac142b321fc212c",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "cmd/internal/flags/flags_test.go",
+      "fingerprint": "96361be6f2be480b4a2957cc96978a1ee2a10f1a77e88fcd8610264deafde820",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "cmd/internal/flags/flags_test.go",
+      "fingerprint": "cff4af078989ac5a1f5229b3772b0b5c0ba87ab103eab935fe15d4fbbc7a0a2d",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "cmd/unleash.go",
+      "fingerprint": "f176b463fd9be3d2f091aa2ed5c390f43484a7fc2d64b49ca6ca45770548b87f",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "08676bd212fd945b3ee34b0fa88e6c0775b5937ab09e432198f3f9f97692f655",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "3433ca0e5c9b025c5985cdb399bf7f7b5c48f983ff432da8d2351dc58cb2900e",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "42faf24bac3eb6af4e9d97323a91a59ba5aa2ad3f90decbc34cfa76f4493208d",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "569c802f0ae0ec2ea9ceaa7b609b70b9835135485410fb9ba48835bb7c20d293",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "77486eb9cfe0610b97b52fd53c4125d2da4234a0fdd2af0956f90f1df3e0204b",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "7de9c9e086038afc0e63da5689e2d887e408a68f8a0cfd844323da29023100cb",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "90ed0b1b5d347cc541cea9f439c4d4e5b1b8d3ef0ca61093b3582db71064ad21",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "d29854a95bc2d38120876927e7e7e26e5c4d3bcca95c62e5024e143faac3d3c5",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/coverage/coverage_test.go",
+      "fingerprint": "93462b83d4f63a9ad013cd967892092b391594d1656a8647209d94280416c9ff",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/coverage/coverage_test.go",
+      "fingerprint": "ccd71bb2b1458b1a46f55d7a86b9926b0244844cf6b9bd008f03e5cf5c4e71b3",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/diff/diff_test.go",
+      "fingerprint": "79b1c6945f7411f72d4677684139c4afae18ca28122eb9030c834fa8de87a90a",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/diff/diff_test.go",
+      "fingerprint": "a824f9bccbd096d6debf7905abc5774a6458d8a6bbcc1a21e4413f6d48b87fb1",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/engine_test.go",
+      "fingerprint": "1a442c8418dde8afd364623b2e78497d98114b0d57b7367e0716c9107c0ef284",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/engine_test.go",
+      "fingerprint": "3cbcfc73b3b11c1ceea92bf8de084fd1603ddcf1c430ce16b10566204270aca2",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/engine_test.go",
+      "fingerprint": "6af2652e58f9aeb00eb051a7aab74258ff0d188bd9a04058e279901b60c47a16",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/engine_test.go",
+      "fingerprint": "b15c00ea78766f3420bcbbb13b28b5d3abfed429a0463ae4062c78cb0e9ef25e",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/engine_test.go",
+      "fingerprint": "f0ea09b3c8a97f89b6392067d1517d807e5f47cf9e2755c22bba2d6766d8ca55",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/executor.go",
+      "fingerprint": "7d15ff0a6bda1364ec0489206408125b99c75cc8990232f2650eac498ac122c4",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/executor_test.go",
+      "fingerprint": "0533434bad91b03447355e2c5c21c3b15d6f3d6b03fdaf03435b8966ac859ae1",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/executor_test.go",
+      "fingerprint": "3a856b50da4f5f47a78c7d48eeeb94e461b0e8a30b3a1c26bb89c177e38f634e",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/executor_test.go",
+      "fingerprint": "410d1d4a73ae6a61f37d19b4ee1d14431f6273c235f4c4ad0c7ef8b74dd33d41",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/executor_test.go",
+      "fingerprint": "bd1d19d56cec7ecedd09b170dea0aae697d138a490916ee330fd00ee8ed90583",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/executor_test.go",
+      "fingerprint": "dfbde00d4eb87409a960ad7739dc3acce98c644928f72b5322d75008af8c9dc3",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/workdir/workdir.go",
+      "fingerprint": "38b6a949ba389b754f655a02a8732c4703e1a21e7eaf4199ce8524be33c3cbdb",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/workdir/workdir.go",
+      "fingerprint": "ba31851a85ca4bc83b50dee99414ea567957a1d436d22f72fa5fcc2dfba22380",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/workdir/workdir.go",
+      "fingerprint": "fd55bc79f85870ac0aad0ed69509151cbe8f381e263994e5b46f919cc793ea65",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/workdir/workdir_test.go",
+      "fingerprint": "33387acb6ab62c72d6f1fcd6138c62ed451c8f8b95d71799ab70b67d876aeb82",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/workdir/workdir_test.go",
+      "fingerprint": "3ce0d67e97cdcf9098c0b5687746002c9924d05f31a894190974ca6b7201f4f6",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/workdir/workdir_test.go",
+      "fingerprint": "4f1e338f52a56deecc8bfe38bb46a933816ecff2bf1289924ce9a7edffbbc51b",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/workdir/workdir_test.go",
+      "fingerprint": "c681190cad0b63a7b1c32ae827fe04e5c3dc8901ae093894bf5fd268c4799211",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/workdir/workdir_test.go",
+      "fingerprint": "ca59e4e09056997d722109ba3d5e9ccc55d934d397f137a5daf9e175e8f1ba23",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/workerpool/workerpool.go",
+      "fingerprint": "1a2d971773b7c16a8cc1926f3c71f477f3eaa20c6f89fbc3f6aae215af660291",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/engine/workerpool/workerpool.go",
+      "fingerprint": "c75fec7a005458487c365f8407ababe7206a93ed1c51f562a1d214f7b840131b",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/gomodule/gomodule.go",
+      "fingerprint": "14402b9caacac2afbef6576c0fd3ba34c2a42f1fda5419e5689507f70379758f",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/gomodule/gomodule_test.go",
+      "fingerprint": "3cd22cf3927ff879a2a121830bf1c2d7b3d615b355dd2a3eeebb1285e8470854",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/gomodule/gomodule_test.go",
+      "fingerprint": "b42b81be243ffe4e8fc3a007d187dec098e04d7e394fd15b84c3921be93e6f67",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/gomodule/gomodule_test.go",
+      "fingerprint": "d8b754d5a20eaa75ad45a6387f219cfc22d958a3872b6c95bdaccbc83e0ce0c7",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/log/log.go",
+      "fingerprint": "bfce2d74ef1dd870624b6c85f7a1e12976e0bfd189ffdd289e993bd43a6cd5b2",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/log/log_test.go",
+      "fingerprint": "2e67ee4c54d0892044468cbf2f9f364164b50be6474fcb77671f10eb6ea6f311",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/log/log_test.go",
+      "fingerprint": "6193ae82bd5ee804c6044d523ba9acb796e047daa51153fdaab3c4e8ec4bebae",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/log/log_test.go",
+      "fingerprint": "cbaaa77f225c9e882c77a0cdcac6968252020ac69433fcff9e0595555ebaedcf",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/report/report_test.go",
+      "fingerprint": "13f8bd567308324c5cbf210d04de36c272f99a5f4e3b95dff42aefa201057df0",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/report/report_test.go",
+      "fingerprint": "30594642150e8182f9fe12ddd737dcfaa4a8cdcabd61319f443b05f6b81ab0d2",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/report/report_test.go",
+      "fingerprint": "b081879c022bd491c6901f8fca1b4eca755cbf1ec112a549bdf4850c42b7ec4a",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "internal/report/report_test.go",
+      "fingerprint": "dfd78197088e57315138f85496eb1878540e09bf2e9f11e20ddc56539d378144",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "tools/architecture/baseline.go",
+      "fingerprint": "1e413682e25331d570803f466f7fc190e116d941e02fb9ec8b66f4a96ca7e38f",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "tools/architecture/baseline.go",
+      "fingerprint": "971272f37a7a79b1904d1f3881d1ec62f07618991d418119a0b82ab4d36883ba",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "tools/architecture/design.go",
+      "fingerprint": "1da188ae9dcb9c9888b8711352733c787bdf76db6e47e3f59baa331d8680025d",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "tools/architecture/design.go",
+      "fingerprint": "9a693397d6190f29d5b30e946e657a99fe2cccbf0f22d67cc8ebed275b0f018c",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "tools/architecture/git.go",
+      "fingerprint": "0fcd7fbb9d2f78b4a2ae1046ddfca13b36db50b751afe4940cdd74eb9e689501",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "tools/architecture/git.go",
+      "fingerprint": "370ae27b8eb2b60ae7db1f8f3bb9f5253f54ea1face0a73f9fb3fb9461572bc9",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "tools/architecture/git.go",
+      "fingerprint": "745f72b3eef2e3666efe5bd77e3a14c1f48bcb20d42686c35d0dd02b7ec4df11",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "tools/architecture/git_test.go",
+      "fingerprint": "122765acf9b91465943f42a4f323e015d5c8f7ebb752910d65985b814993768f",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "tools/architecture/git_test.go",
+      "fingerprint": "364177610043505fcf4e504187be1324b788a89a1582bcd327216ed4091485c2",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "tools/architecture/input.go",
+      "fingerprint": "b3441b99b5b2f899d86dbbda9426a9754502bfeee5122179629b2fe4ed52a223",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "tools/architecture/input.go",
+      "fingerprint": "d6175483dd47cf50f4ba161e0d975584263aaff5b42d7e97ac22c8c197334a15",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "tools/architecture/main_test.go",
+      "fingerprint": "2dcb5b392e72668c8fe213fca89ca73da7b4982aa40add4e813fb742143ca6bc",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "tools/architecture/model.go",
+      "fingerprint": "2f288a1394a91acbb456247073dc7bb4de108ce8c53bbda919fc0da3f5da7572",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "tools/architecture/model.go",
+      "fingerprint": "4281ddb0872d925d6c66ee6a66378b09a5a83038491764a545907f694c1b3873",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "tools/architecture/model.go",
+      "fingerprint": "4e2ed4a1ca26e5f40fe7a6a8bb66e00d90029baca54c748713f62e27c1104131",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "tools/architecture/proposals.go",
+      "fingerprint": "1f0d4a8c772c1ebccf03ca4a3b8e5b69e058b52abaa0e487fe4883d9a6fb1208",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "tools/architecture/scan.go",
+      "fingerprint": "1c020fdcd360b30bfd1dc95b1b2930967cd231be7b964b2f8a024d5ce95010b1",
+      "count": 1
+    },
+    {
+      "linter": "revive",
+      "file": "tools/architecture/scan.go",
+      "fingerprint": "447003f2a4a2e614f0513896c1935ca1e6db7e8de276cbcf682fc3f75e92a211",
+      "count": 1
+    },
+    {
+      "linter": "thelper",
+      "file": "tools/architecture/main_test.go",
+      "fingerprint": "1fbac2ad37da4f9e9bee88a3526a2c6122020f617312bc124c5c6aebe28e6be7",
+      "count": 1
+    },
+    {
+      "linter": "thelper",
+      "file": "tools/architecture/main_test.go",
+      "fingerprint": "4e5b2bd736b37b2da2174b34bc11ddb9b8545922edf87ceecf7d8c10d48e1fd1",
+      "count": 1
+    },
+    {
+      "linter": "thelper",
+      "file": "tools/architecture/main_test.go",
+      "fingerprint": "93be0370861f7107082ef1d5008530b489427bb05d162fd50cdfde8f7aabaf3d",
+      "count": 1
+    },
+    {
+      "linter": "thelper",
+      "file": "tools/architecture/main_test.go",
+      "fingerprint": "a30dc2d92b56fe815ebc87f79ae0e93dc77bd971eacd643516e11624464aae50",
+      "count": 1
+    },
+    {
+      "linter": "thelper",
+      "file": "tools/architecture/main_test.go",
+      "fingerprint": "a35a05bba9d742ae22b4ac28acb82a17eb55890204abf32f6abc60470b346e1d",
+      "count": 1
+    },
+    {
+      "linter": "thelper",
+      "file": "tools/architecture/main_test.go",
+      "fingerprint": "a72ac851ddcc621b577d3db201bb642a8dde85ba68dc8db62421a3c5e0d5f864",
+      "count": 1
+    },
+    {
+      "linter": "thelper",
+      "file": "tools/architecture/main_test.go",
+      "fingerprint": "be7a570ab14efc3df1f53b8be6c7864f87438f5e8d224b09d551c829df6b5660",
+      "count": 1
+    },
+    {
+      "linter": "thelper",
+      "file": "tools/architecture/main_test.go",
+      "fingerprint": "ead3ccbfb21d06dde7a26e2838a164b26609d4ecd821356b4cec08b84506ac0d",
+      "count": 1
+    },
+    {
+      "linter": "thelper",
+      "file": "tools/architecture/main_test.go",
+      "fingerprint": "ef801c7d9e67712c3e2b2d14d9e02f5fd1eb12d9afe56506287cbea74d0df3d6",
+      "count": 1
+    },
+    {
+      "linter": "usetesting",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "2595d915b4c8e2b8acf67ac06aec332e29a6e091d38188c4b2bacbe342cdec49",
+      "count": 1
+    },
+    {
+      "linter": "usetesting",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "4d96c5afeacb2091a9064a07b637068db672ff4f5643e5686e88e2530bc2958d",
+      "count": 1
+    },
+    {
+      "linter": "usetesting",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "af1d3852328301f30b633822a9f7a38c3eb9b05ea4542ce1150310152c636ff6",
+      "count": 1
+    },
+    {
+      "linter": "usetesting",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "c682ef2a96de138b27ea95477834600825008f1115f700005eacd86653e19bb9",
+      "count": 1
+    },
+    {
+      "linter": "usetesting",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "cffa6e286dd71bccce32eaeb14a900791b4888dd69175ffd66d9582377f17a54",
+      "count": 1
+    },
+    {
+      "linter": "usetesting",
+      "file": "internal/configuration/configuration_test.go",
+      "fingerprint": "e6dc9bdc183f262f8336b1f45c87b66c4c180eb3705597446ddff91a6af7f004",
+      "count": 1
+    },
+    {
+      "linter": "usetesting",
+      "file": "internal/report/report_test.go",
+      "fingerprint": "83194ed30525c1b7a2ebb84c14d0899ea0afdb3772e4d9446bf20f768a492ba3",
+      "count": 1
+    }
+  ]
+}

@@ -88,3 +88,8 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 .env
+
+# Python development-check caches
+__pycache__/
+.coverage
+python-coverage.xml

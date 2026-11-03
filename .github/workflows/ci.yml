@@ -38,6 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -49,7 +50,29 @@ jobs:
           version: 2026.10.25
           install_args: aqua:golangci/golangci-lint
           cache: false
-      - run: make lint
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - name: Provision Go modules before offline analysis
+        run: go mod download
+      - run: "python -m pip install --only-binary :all: 'coverage==7.16.0'"
+      - run: make lint-cover
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: python-coverage
+          path: python-coverage.xml
+          if-no-files-found: error
+          retention-days: 1
+      - name: Check lint with the pinned lint comparison
+        env:
+          LINT_ADOPTION_BASE: ${{ (github.base_ref == 'main' || github.ref == 'refs/heads/main') && 'origin/dev' || '' }}
+          COMPARISON: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/dev' }}
+        run: |
+          if [ "$COMPARISON" = 0000000000000000000000000000000000000000 ]; then
+            COMPARISON=origin/dev
+          fi
+          export LINT_BASE="$COMPARISON"
+          make lint
 
   test:
     name: Test (${{ matrix.os }})
@@ -82,6 +105,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -96,15 +120,26 @@ jobs:
         with:
           python-version: '3.12'
       - run: "python -m pip install --only-binary :all: 'pre-commit==4.3.0'"
-      - run: make policy
+      - name: Provision Go modules before offline analysis
+        run: go mod download
+      - name: Check policy with the pinned lint comparison
+        env:
+          LINT_ADOPTION_BASE: ${{ (github.base_ref == 'main' || github.ref == 'refs/heads/main') && 'origin/dev' || '' }}
+          COMPARISON: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/dev' }}
+        run: |
+          if [ "$COMPARISON" = 0000000000000000000000000000000000000000 ]; then
+            COMPARISON=origin/dev
+          fi
+          export LINT_BASE="$COMPARISON"
+          make policy
 
-  # Checks the coverage report and the scanner settings before the scan. It
-  # runs no candidate code and holds no secret. Secrets are not available to
+  # Validates coverage reports and scanner settings in a secret-free job.
+  # The token-bearing scan runs separately. Secrets are not available to
   # pull requests from other repositories, so those skip the Sonar jobs.
   sonar-admission:
     name: Sonar admission
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    needs: test
+    needs: [test, lint]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -114,23 +149,18 @@ jobs:
         with:
           name: coverage
           path: coverage
-      - name: Require exactly the coverage profile
-        run: |
-          report=coverage/coverage.out
-          if [ -L "$report" ] || [ ! -f "$report" ] || [ ! -s "$report" ]; then
-            echo "::error::Missing, empty or linked coverage report: $report"
-            exit 1
-          fi
-          if find coverage -mindepth 1 ! -path "$report" | grep .; then
-            echo "::error::Unexpected entries in the coverage directory"
-            exit 1
-          fi
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: python-coverage
+          path: coverage
+      - name: Require exactly the Go and Python coverage reports
+        run: bash scripts/check-coverage.sh
       # The scanner reads sonar-project.properties from the candidate. Reject
       # any setting outside this list and any path outside the checkout.
       - name: Allow only reviewed Sonar settings
         run: |
           settings=sonar-project.properties
-          allowed='^sonar\.(projectKey|organization|sources|exclusions|tests|test\.inclusions|test\.exclusions|go\.coverage\.reportPaths)=[A-Za-z0-9_./*,-]*$'
+          allowed='^sonar\.(projectKey|organization|sources|exclusions|tests|test\.inclusions|test\.exclusions|go\.coverage\.reportPaths|python\.coverage\.reportPaths)=[A-Za-z0-9_./*,-]*$'
           test -f "$settings"
           if grep -n '[\]' "$settings"; then
             echo "::error file=$settings::Backslash escapes and continuations are not allowed"
@@ -162,6 +192,10 @@ jobs:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: coverage
+          path: coverage
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: python-coverage
           path: coverage
       - name: Analyze and wait for the quality gate
         uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304 # v8.4.0

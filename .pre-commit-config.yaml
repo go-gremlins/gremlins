@@ -31,7 +31,7 @@ repos:
         name: golangci-lint (make lint)
         entry: make lint
         language: system
-        files: (\.go$|^\.golangci\.yml$|^go\.(mod|sum)$)
+        files: (\.go$|^\.golangci\.yml$|^go\.(mod|sum)$|^mise\.toml$|^\.lint/|^scripts/(lint|test_lint)\.py$|^Makefile$|^\.github/workflows/ci\.yml$|^\.pre-commit-config\.yaml$)
         pass_filenames: false
 
   # ===========================================================================

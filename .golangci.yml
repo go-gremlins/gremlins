@@ -1,46 +1,110 @@
 version: "2"
 
+run:
+  relative-path-mode: cfg
+  modules-download-mode: readonly
+  tests: true
+  timeout: 5m
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  uniq-by-line: false
+
 linters:
   default: none
   enable:
     - asasalint
     - asciicheck
+    - bidichk
+    - bodyclose
     - containedctx
+    - contextcheck
     - decorder
+    - depguard
     - dogsled
     - durationcheck
+    - errcheck
     - errname
     - errorlint
     - exhaustive
     - forbidigo
     - forcetypeassert
+    - gocheckcompilerdirectives
     - goconst
-    - godot
-    - gosec
     - gocritic
     - gocyclo
+    - godot
+    - gosec
+    - govet
     - importas
+    - ineffassign
     - maintidx
     - makezero
+    - nakedret
     - nilerr
     - nlreturn
+    - noctx
     - nolintlint
-    - nonamedreturns
     - predeclared
+    - recvcheck
     - revive
+    - rowserrcheck
+    - sqlclosecheck
     - staticcheck
     - tagliatelle
+    - testableexamples
+    - thelper
     - unconvert
+    - unused
     - usestdlibvars
+    - usetesting
   exclusions:
-    rules:
-      - path: '_test\.go'
-        linters:
-          - cyclop
+    generated: strict
+    presets: []
+    paths:
+      - '(^|/)testdata/'
+      - '(^|/)vendor/'
+      - '^dist/'
   settings:
+    depguard:
+      rules:
+        approved-imports:
+          list-mode: strict
+          files: [$all]
+          allow:
+            - $gostd
+            - github.com/OpenRAE/go-rae-gremlins/
+            - github.com/MakeNowJust/heredoc$
+            - github.com/aymanbagabas/go-udiff$
+            - github.com/bluekeyes/go-gitdiff/gitdiff$
+            - github.com/fatih/color$
+            - github.com/google/go-cmp/cmp$
+            - github.com/google/go-cmp/cmp/cmpopts$
+            - github.com/hako/durafmt$
+            - github.com/hectane/go-acl$
+            - github.com/mitchellh/go-homedir$
+            - github.com/spf13/cobra$
+            - github.com/spf13/pflag$
+            - github.com/spf13/viper$
+            - golang.org/x/tools/cover$
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+      disable-default-exclusions: true
+    gocritic:
+      enabled-checks:
+        - ptrToRefParam
+        - sprintfQuotedString
+    nakedret:
+      max-func-lines: 30
+    nolintlint:
+      allow-unused: false
+      require-specific: true
+      require-explanation: true
     revive:
-      severity: warning
-      confidence: 0.8
+      severity: error
+      confidence: 0
       rules:
         - name: blank-imports
         - name: context-as-argument
@@ -50,6 +114,7 @@ linters:
         - name: error-strings
         - name: error-naming
         - name: exported
+          arguments: [check-private-receivers, check-public-interface]
         - name: if-return
         - name: increment-decrement
         - name: var-naming
@@ -66,6 +131,23 @@ linters:
         - name: unused-parameter
         - name: unreachable-code
         - name: redefines-builtin-id
+        - name: package-naming
+        - name: redundant-import-alias
+        - name: import-alias-naming
+        - name: enforce-slice-style
+          arguments: [nil]
+        - name: use-any
+        - name: useless-break
+        - name: unnecessary-if
+        - name: unnecessary-format
+        - name: waitgroup-by-value
+        - name: imports-blocklist
+          arguments:
+            - github.com/stretchr/testify/**
+            - github.com/onsi/gomega/**
+            - github.com/smartystreets/goconvey/**
+    staticcheck:
+      checks: [all]
     tagliatelle:
       case:
         rules:
@@ -73,4 +155,16 @@ linters:
 
 formatters:
   enable:
+    - gofmt
     - goimports
+  settings:
+    gofmt:
+      simplify: true
+    goimports:
+      local-prefixes: [github.com/OpenRAE/go-rae-gremlins]
+  exclusions:
+    generated: strict
+    paths:
+      - '(^|/)testdata/'
+      - '(^|/)vendor/'
+      - '^dist/'
