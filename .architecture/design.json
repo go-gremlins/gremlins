@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "issue": 78,
-  "summary": "Document one Go test standard and a revision-specific gap assessment; link contributor guidance to that standard without changing executable verification policy.",
+  "issue": 97,
+  "summary": "Run the pinned Ground Control finalizer after delivery merges, with a separate release credential and issue-write repository token.",
   "changes": [],
   "contracts": [],
-  "trust_boundaries": "Inspect repository source and existing test policies locally. Keep design guidance and the eventual standard and assessment in repository documentation. Documentation introduces no source-execution path, upload, runtime configuration, or CI permission change. Existing test execution and report admission boundaries remain unchanged.",
+  "trust_boundaries": "See docs/development/phase-e-design.md. Keep development checks unchanged. A closed merged-PR event or named-PR repair verifies and installs the checksum-pinned private Ground Control release with locked npm dependencies outside the delivered checkout. Scope release access to download; only the repository token can post reports and close issues. Read installation manifests from the workflow revision. Treat the immutable delivery checkout as data and execute no delivered code or configured workflow command. The user confirmed ownership of both repositories and directed this integration to proceed.",
   "conflicts": [],
-  "policies": ["guidance", "contributing"],
+  "policies": ["model", "contributing", "delivery_finalization", "fork_finalization", "finalizer_manifest", "finalizer_lock", "sonar"],
   "trust_changes": {
     "development_checks": {
       "destinations": [
@@ -14,6 +14,11 @@
         "existing-ci"
       ],
       "network": false,
+      "execute_source": false
+    },
+    "delivery_finalization": {
+      "destinations": ["existing-ci", "github-api", "ground-control-release", "npm-registry"],
+      "network": true,
       "execute_source": false
     }
   }

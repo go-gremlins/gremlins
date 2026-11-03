@@ -163,10 +163,10 @@ Contributors working manually still follow the branch, hook, verification, revie
 4. Let the workflow render and create the synchronized PR, observe CI and Sonar, and record readiness for the
    checked head. A later head change requires a new readiness check. Readiness hands the PR to the maintainer for
    merge; it does not close the issue.
-5. After the maintainer merges, finalize the delivery and close the issue. This repository currently has no
-   Ground Control Phase E workflow, so re-invoke the same `/implement <issue>` or `/quickfix <issue>` command.
-   It verifies the merge and resumes finalization instead of repeating implementation. Where a Phase E workflow
-   is configured in future, follow the readiness result's finalization instructions.
+5. After the maintainer merges, the [Phase E workflow](../.github/workflows/ground-control-phase-e.yml) calls the
+   existing finalizer to post the final report and close the issue. Follow [setup and recovery](development/phase-e.md)
+   for release access, first installation, restricted fork events, or a failed run. When readiness reports
+   `finalization: reentry`, re-invoke the same `/implement <issue>` or `/quickfix <issue>` after merge.
 
 ## Release
 

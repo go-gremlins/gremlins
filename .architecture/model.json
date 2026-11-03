@@ -184,7 +184,11 @@
     "lint_version": "mise.toml",
     "sonar": "sonar-project.properties",
     "lint_coverage": ".coveragerc",
-    "coverage_admission": "scripts/check-coverage.sh"
+    "coverage_admission": "scripts/check-coverage.sh",
+    "delivery_finalization": ".github/workflows/ground-control-phase-e.yml",
+    "fork_finalization": ".github/workflows/ground-control-fork-finalization.yml",
+    "finalizer_manifest": ".github/ground-control/package.json",
+    "finalizer_lock": ".github/ground-control/package-lock.json"
   },
   "contract_changes": {
     "cli": [
@@ -216,6 +220,11 @@
         "existing-ci"
       ],
       "network": false,
+      "execute_source": false
+    },
+    "delivery_finalization": {
+      "destinations": ["existing-ci", "github-api", "ground-control-release", "npm-registry"],
+      "network": true,
       "execute_source": false
     }
   }

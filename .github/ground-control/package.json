@@ -1,0 +1,7 @@
+{
+  "name": "go-rae-gremlins-phase-e",
+  "private": true,
+  "dependencies": {
+    "grndctl": "file:grndctl-1.9.0.tgz"
+  }
+}
