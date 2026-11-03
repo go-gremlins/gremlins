@@ -1,0 +1,137 @@
+name: Ground Control Phase E
+run-name: Ground Control Phase E for PR ${{ github.event.pull_request.number || inputs.pr }}
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main, dev]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Merged pull request number to finalize
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: gc-phase-e-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: read
+      checks: read
+      statuses: read
+      issues: write
+    env:
+      PR: ${{ github.event.pull_request.number || inputs.pr }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      GC_RELEASE: v1.9.0
+      GC_ASSET: grndctl-1.9.0.tgz
+      GC_SHA256: bec0802871af2d8b816053d842150fce90b1e9e49faaa759726e113d249ea2f6
+    steps:
+      - name: Resolve the merged delivery
+        id: delivery
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$PR" =~ ^[1-9][0-9]{0,9}$ ]]; then
+            echo 'PR must be a positive decimal pull request number.' >&2
+            exit 1
+          fi
+          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch && "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]]; then
+            echo 'Dispatch Phase E from the default branch.' >&2
+            exit 1
+          fi
+          metadata="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq '{merged, base: .base.ref, sha: .merge_commit_sha}')"
+          if ! jq -e '.merged == true and (.base == "main" or .base == "dev")' <<< "$metadata" >/dev/null; then
+            echo 'Phase E requires a merged pull request into main or dev.' >&2
+            exit 1
+          fi
+          required="$(gh pr checks "$PR" --repo "$GITHUB_REPOSITORY" --required --json name,state)"
+          if ! jq -e 'length > 0 and all(.[]; .state == "SUCCESS" or .state == "NEUTRAL" or .state == "SKIPPED")' <<< "$required" >/dev/null; then
+            echo 'Required delivery checks have not passed.' >&2
+            exit 1
+          fi
+          sha="$(jq -er '.sha | select(test("^[0-9a-f]{40}$"))' <<< "$metadata")"
+          printf 'sha=%s\n' "$sha" >> "$GITHUB_OUTPUT"
+
+      # Read installation data from this workflow's revision, independently of
+      # the delivery being repaired. No checkout code is executed.
+      - name: Check out the transport definition
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: transport
+          persist-credentials: false
+
+      - name: Check out the immutable delivered revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.delivery.outputs.sha }}
+          path: delivery
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22.23.4'
+          package-manager-cache: false
+
+      - name: Download and verify Ground Control
+        env:
+          GH_TOKEN: ${{ secrets.GROUND_CONTROL_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo 'Set GROUND_CONTROL_READ_TOKEN with read-only access to the Ground Control release repository.' >&2
+            exit 1
+          fi
+          umask 077
+          mkdir -p "$RUNNER_TEMP/ground-control"
+          cp transport/.github/ground-control/package*.json "$RUNNER_TEMP/ground-control/"
+          gh release download "$GC_RELEASE" --repo autarchy-ai/Ground-Control \
+            --pattern "$GC_ASSET" --dir "$RUNNER_TEMP/ground-control"
+          cd "$RUNNER_TEMP/ground-control"
+          printf '%s  %s\n' "$GC_SHA256" "$GC_ASSET" | sha256sum --check --status
+
+      # The release credential is absent from installation and finalization.
+      - name: Install the locked utility
+        working-directory: ${{ runner.temp }}/ground-control
+        run: npm ci --ignore-scripts --omit=dev --no-audit --no-fund --userconfig=/dev/null --globalconfig="$RUNNER_TEMP/ground-control/global.npmrc" --cache="$RUNNER_TEMP/ground-control-cache"
+
+      - name: Finalize the merged delivery
+        working-directory: delivery
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -e .env || -L .env ]]; then
+            echo 'Refusing to overwrite an existing finalizer settings file.' >&2
+            exit 1
+          fi
+          umask 077
+          set -o noclobber
+          printf 'SONAR_TOKEN=%s\n' "$SONAR_TOKEN" > .env
+          trap 'rm -f -- .env' EXIT
+          node --input-type=module <<'JS'
+          import { pathToFileURL } from 'node:url';
+          const modulePath = `${process.env.RUNNER_TEMP}/ground-control/node_modules/grndctl/lib/automation-provenance.js`;
+          const { verifyFinalizerRunProvenance } = await import(pathToFileURL(modulePath).href);
+          const [owner, name] = process.env.GITHUB_REPOSITORY.split('/');
+          const valid = await verifyFinalizerRunProvenance({
+            repoRoot: process.cwd(), owner, name,
+            prNumber: Number(process.env.PR), runId: Number(process.env.GITHUB_RUN_ID),
+          });
+          if (!valid) throw new Error('This Actions run does not identify the requested delivery.');
+          JS
+          "$RUNNER_TEMP/ground-control/node_modules/.bin/grndctl" finalize-merged-pr --pr "$PR"

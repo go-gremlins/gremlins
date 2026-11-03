@@ -1,0 +1,38 @@
+name: Dispatch fork delivery finalization
+
+on:
+  pull_request_target:
+    types: [closed]
+    branches: [main, dev]
+
+permissions: {}
+
+jobs:
+  dispatch:
+    if: ${{ github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name != github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+      actions: write
+    steps:
+      # This trusted job never checks out a PR, installs the utility, or uses
+      # private secrets. It can dispatch only this repository's fixed finalizer.
+      - name: Dispatch the merged fork delivery
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$PR" =~ ^[1-9][0-9]{0,9}$ ]]; then
+            echo 'PR must be a positive decimal pull request number.' >&2
+            exit 1
+          fi
+          metadata="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq '{merged, base: .base.ref, head: .head.repo.full_name}')"
+          if ! jq -e --arg repo "$GITHUB_REPOSITORY" '.merged == true and (.base == "main" or .base == "dev") and .head != $repo' <<< "$metadata" >/dev/null; then
+            echo 'Dispatch requires a merged fork pull request into main or dev.' >&2
+            exit 1
+          fi
+          jq -n --arg ref "$DEFAULT_BRANCH" --arg pr "$PR" '{ref: $ref, inputs: {pr: $pr}}' |
+            gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/ground-control-phase-e.yml/dispatches" --input -

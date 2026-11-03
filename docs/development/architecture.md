@@ -5,6 +5,9 @@ The checker compiles its rules in memory. It creates no generated files.
 The checker is development tooling. The Gremlins binary does not import it.
 ADR 0004 records the decision and its limits.
 
+The separate [delivery finalization boundary](phase-e-design.md) models the post-merge workflow,
+its pinned utility installation, and GitHub evidence access. It does not broaden the static checker's permissions.
+
 ## Components and data flow
 
 ```mermaid
