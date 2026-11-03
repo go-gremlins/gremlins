@@ -186,6 +186,7 @@ def source_declarations(sources):
 def analysis_env(environ=None):
     # Keep only tool/cache locations and basic OS settings, never ambient credentials or build execution overrides.
     allowed = {"PATH", "HOME", "USER", "LOGNAME", "SYSTEMROOT", "SystemRoot", "WINDIR", "TEMP", "TMP", "TMPDIR",
+               "LOCALAPPDATA", "LocalAppData", "APPDATA", "USERPROFILE", "HOMEDRIVE", "HOMEPATH",
                "XDG_CACHE_HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "MISE_DATA_DIR", "MISE_CONFIG_DIR", "MISE_CACHE_DIR",
                "GOPATH", "GOCACHE", "GOMODCACHE", "LANG", "LC_ALL", "NO_COLOR"}
     env = {key: value for key, value in (os.environ if environ is None else environ).items()

@@ -166,6 +166,14 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(env["PATH"], "/bin")
         self.assertEqual(env["GOCACHE"], str(self.root / "cache"))
 
+    def test_windows_tool_and_cache_paths_are_preserved(self):
+        paths = {"LOCALAPPDATA": r"C:\Users\dev\AppData\Local", "LocalAppData": r"C:\Users\dev\AppData\Local",
+                 "APPDATA": r"C:\Users\dev\AppData\Roaming", "USERPROFILE": r"C:\Users\dev",
+                 "HOMEDRIVE": "C:", "HOMEPATH": r"\Users\dev"}
+        env = lint.analysis_env(paths)
+        for name, path in paths.items():
+            self.assertEqual(env.get(name), path)
+
     def test_parser_cannot_resolve_or_run_candidate_application_initializers(self):
         tool = self.root / lint.CONTEXT_TOOL
         tool.mkdir(parents=True)
