@@ -29,7 +29,7 @@ Each review has a record, a baseline, and decisions. The reviews do not fix code
   ([standard and comparison](coding-standards.md), [design](lint-design.md), [preflight](lint-preflight.md))
 - #78 Define the test standard
 - #79 Gate changes on mutation testing of changed lines and on regression proof
-- #80 Review the code quality
+- #80 [Review the code quality](code-quality-review.md), including architecture, security, and remediation decisions
 - #81 Review the security
 - #82 Review the documentation
 
