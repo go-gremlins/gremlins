@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "issue": 97,
-  "summary": "Run the pinned Ground Control finalizer after delivery merges, with a separate release credential and issue-write repository token.",
+  "issue": 82,
+  "summary": "Record the documentation review and remediation decisions, link it from the maintenance plan, and map existing documentation ownership for Ground Control context.",
   "changes": [],
   "contracts": [],
-  "trust_boundaries": "See docs/development/phase-e-design.md. Keep development checks unchanged. A closed merged-PR event or named-PR repair verifies and installs the checksum-pinned private Ground Control release with locked npm dependencies outside the delivered checkout. Scope release access to download; only the repository token can post reports and close issues. Read installation manifests from the workflow revision. Treat the immutable delivery checkout as data and execute no delivered code or configured workflow command. The user confirmed ownership of both repositories and directed this integration to proceed.",
+  "trust_boundaries": "Static review prose and existing ownership references only. No package, import, CLI, configuration, report, exit-code, permission, network destination, or source-execution change. Retain the existing development-check and delivery-finalization boundaries.",
   "conflicts": [],
-  "policies": ["model", "contributing", "delivery_finalization", "fork_finalization", "finalizer_manifest", "finalizer_lock", "sonar"],
+  "policies": ["workflow"],
   "trust_changes": {
     "development_checks": {
       "destinations": [

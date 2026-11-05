@@ -31,7 +31,7 @@ Each review has a record, a baseline, and decisions. The reviews do not fix code
 - #79 Gate changes on mutation testing of changed lines and on regression proof
 - #80 Review the code quality
 - #81 Review the security
-- #82 Review the documentation
+- #82 [Review the documentation](documentation-review.md) against ASD-STE100 and record remediation decisions
 
 ## 4. Triage
 
