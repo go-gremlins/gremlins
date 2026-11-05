@@ -26,6 +26,7 @@ import (
 	"go/token"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -168,7 +169,7 @@ func (mu *Engine) findMutations(
 		return
 	}
 
-	pkg := mu.pkgName(fileName, file.Name.Name)
+	pkg := mu.pkgName(fileName)
 	for _, mt := range mutantTypes {
 		if !configuration.Get[bool](configuration.MutantTypeEnabledKey(mt)) {
 			continue
@@ -182,32 +183,18 @@ func (mu *Engine) findMutations(
 	}
 }
 
-func (mu *Engine) pkgName(fileName, fPkg string) string {
-	var pkg string
-	fn := fmt.Sprintf("%s/%s", mu.module.CallingDir, fileName)
-	p := filepath.Dir(fn)
-	for {
-		if strings.HasSuffix(p, fPkg) {
-			pkg = fmt.Sprintf("%s/%s", mu.module.Name, p)
-
-			break
-		}
-		d := filepath.Dir(p)
-		if d == p {
-			pkg = mu.module.Name
-
-			break
-		}
-		p = d
+// pkgName returns the import path of the package that fileName belongs to.
+// The package is the directory of the file, relative to the module root. The
+// package declaration name does not identify the directory, for example for a
+// main package. fileName is slash-separated and relative to the calling
+// directory, as fs.WalkDir reports it.
+func (mu *Engine) pkgName(fileName string) string {
+	dir := path.Join(filepath.ToSlash(mu.module.CallingDir), path.Dir(fileName))
+	if dir == "." {
+		return mu.module.Name
 	}
 
-	return normalisePkgPath(pkg)
-}
-
-func normalisePkgPath(pkg string) string {
-	sep := fmt.Sprintf("%c", os.PathSeparator)
-
-	return strings.ReplaceAll(pkg, sep, "/")
+	return mu.module.Name + "/" + dir
 }
 
 func (mu *Engine) mutationStatus(pos token.Position, covered bool) mutator.Status {

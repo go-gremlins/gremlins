@@ -68,6 +68,12 @@ architecture:
         - docs/development/architecture.md
       adrs:
         - docs/adr/0004-architecture-model-checks.md
+    - path: internal/engine
+      implementations:
+        - internal/engine/engine.go
+        - internal/engine/executor.go
+      adrs:
+        - docs/adr/0004-architecture-model-checks.md
   vocabulary:
     patterns:
       - name: Mutation type

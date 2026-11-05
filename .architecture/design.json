@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "issue": 38,
-  "summary": "Read switch and select clause expressions as covered when Go coverage shows that tests evaluated them. Skip a Go file that cannot be read or parsed, and remove the fixed lint findings from the baseline.",
+  "issue": 23,
+  "summary": "Run the tests of the mutated file's directory. Derive the package import path from the module path and the module-relative directory of the file, and remove the package-declaration-name heuristic. Map internal/engine in the Ground Control architecture modules.",
   "changes": [
     {
       "package": "internal/engine",
@@ -22,6 +22,7 @@
         "internal/coverage",
         "internal/diff",
         "internal/engine",
+        "internal/engine/workdir",
         "internal/engine/workerpool",
         "internal/gomodule",
         "internal/mutator"
@@ -29,9 +30,11 @@
     }
   ],
   "contracts": [],
-  "trust_boundaries": "The engine reads the parsed source file and the existing coverage profile in memory. No package dependency, CLI flag, configuration key, report field, exit code, network destination, or source-execution change. Retain the existing development-check and delivery-finalization boundaries.",
+  "trust_boundaries": "The engine computes the package path from the module path and the walked file path in memory. The executor keeps its existing go test command with a different package argument. A regression test runs go test on a temporary module without dependencies. No package dependency, CLI flag, configuration key, report field, exit code, or network destination changes. The .ground-control.yaml change adds an architecture module mapping for design context only; it changes no workflow command or gate.",
   "conflicts": [],
-  "policies": ["lint_baseline"],
+  "policies": [
+    "workflow"
+  ],
   "trust_changes": {
     "development_checks": {
       "destinations": [
@@ -42,7 +45,12 @@
       "execute_source": false
     },
     "delivery_finalization": {
-      "destinations": ["existing-ci", "github-api", "ground-control-release", "npm-registry"],
+      "destinations": [
+        "existing-ci",
+        "github-api",
+        "ground-control-release",
+        "npm-registry"
+      ],
       "network": true,
       "execute_source": false
     }
