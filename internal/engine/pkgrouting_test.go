@@ -112,47 +112,60 @@ func TestMutantRunsTestsOfItsDirectory(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			root := writeRoutingModule(t)
-			mod, err := gomodule.Init(filepath.Join(root, filepath.FromSlash(tc.callingDir)))
-			if err != nil {
-				t.Fatalf("gomodule.Init(%q) error = %v", tc.callingDir, err)
-			}
-
-			viperSet(map[string]any{
-				configuration.MutantTypeEnabledKey(mutator.ConditionalsBoundary): true,
-				configuration.MutantTypeEnabledKey(mutator.ConditionalsNegation): true,
-			})
-			defer viperReset()
-
-			wdDealer := workdir.NewCachedDealer(t.TempDir(), mod.Root)
-			defer wdDealer.Clean()
-			jDealer := engine.NewExecutorDealer(mod, wdDealer, 30*time.Second)
-			codeData := engine.CodeData{Cov: wholeFilesCovered(tc.wantPkgs)}
-			eng := engine.New(mod, codeData, jDealer)
-
-			res := eng.Run(context.Background())
-
-			got := make(map[string]int)
-			for _, m := range res.Mutants {
-				file := m.Position().Filename
-				wantPkg, ok := tc.wantPkgs[file]
-				if !ok {
-					continue
-				}
-				got[file]++
-				if m.Pkg() != wantPkg {
-					t.Errorf("%s:%d %s package = %q, want %q", file, m.Position().Line, m.Type(), m.Pkg(), wantPkg)
-				}
-				if m.Status() != mutator.Killed {
-					t.Errorf("%s:%d %s status = %s, want %s", file, m.Position().Line, m.Type(), m.Status(), mutator.Killed)
-				}
-			}
-			for file := range tc.wantPkgs {
-				if got[file] == 0 {
-					t.Errorf("got no mutants of %s, want mutants", file)
-				}
-			}
+			mutants := runRoutingModule(t, tc.callingDir, tc.wantPkgs)
+			checkRoutedMutants(t, mutants, tc.wantPkgs)
 		})
+	}
+}
+
+// runRoutingModule runs the engine with the real executor on a new routing
+// module from callingDir. It covers only the files of wantPkgs.
+func runRoutingModule(t *testing.T, callingDir string, wantPkgs map[string]string) []mutator.Mutator {
+	t.Helper()
+	root := writeRoutingModule(t)
+	mod, err := gomodule.Init(filepath.Join(root, filepath.FromSlash(callingDir)))
+	if err != nil {
+		t.Fatalf("gomodule.Init(%q) error = %v", callingDir, err)
+	}
+
+	viperSet(map[string]any{
+		configuration.MutantTypeEnabledKey(mutator.ConditionalsBoundary): true,
+		configuration.MutantTypeEnabledKey(mutator.ConditionalsNegation): true,
+	})
+	defer viperReset()
+
+	wdDealer := workdir.NewCachedDealer(t.TempDir(), mod.Root)
+	defer wdDealer.Clean()
+	jDealer := engine.NewExecutorDealer(mod, wdDealer, 30*time.Second)
+	codeData := engine.CodeData{Cov: wholeFilesCovered(wantPkgs)}
+	eng := engine.New(mod, codeData, jDealer)
+
+	return eng.Run(context.Background()).Mutants
+}
+
+// checkRoutedMutants checks that each file of wantPkgs has mutants, and that
+// its package tests ran and killed each of them.
+func checkRoutedMutants(t *testing.T, mutants []mutator.Mutator, wantPkgs map[string]string) {
+	t.Helper()
+	got := make(map[string]int)
+	for _, m := range mutants {
+		file := m.Position().Filename
+		wantPkg, ok := wantPkgs[file]
+		if !ok {
+			continue
+		}
+		got[file]++
+		if m.Pkg() != wantPkg {
+			t.Errorf("%s:%d %s package = %q, want %q", file, m.Position().Line, m.Type(), m.Pkg(), wantPkg)
+		}
+		if m.Status() != mutator.Killed {
+			t.Errorf("%s:%d %s status = %s, want %s", file, m.Position().Line, m.Type(), m.Status(), mutator.Killed)
+		}
+	}
+	for file := range wantPkgs {
+		if got[file] == 0 {
+			t.Errorf("got no mutants of %s, want mutants", file)
+		}
 	}
 }
 
