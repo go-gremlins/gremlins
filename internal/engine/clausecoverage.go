@@ -19,6 +19,7 @@ package engine
 import (
 	"go/ast"
 	"go/token"
+	"slices"
 
 	"github.com/OpenRAE/go-rae-gremlins/internal/coverage"
 )
@@ -49,6 +50,8 @@ func newFileCoverage(set *token.FileSet, file *ast.File, profile coverage.Profil
 			c.clauseExprs = append(c.clauseExprs, c.evaluatedCaseExprs(n.Body)...)
 		case *ast.SelectStmt:
 			c.clauseExprs = append(c.clauseExprs, c.evaluatedCommExprs(n.Body)...)
+		default:
+			// Other nodes have no clause expressions.
 		}
 
 		return true
@@ -84,55 +87,64 @@ func (c fileCoverage) bodyRan(colon token.Pos) bool {
 // and stops at the first match. The default clause runs only when no case
 // matches. A clause body can also run because the previous clause body ran
 // and ends with fallthrough. Thus a body that ran proves only that the first
-// clause of its fallthrough chain was reached:
-//   - all expressions of the clauses before that clause were evaluated,
-//   - the first expression of that clause was evaluated,
-//   - all case expressions were evaluated if that clause is the default clause
-//     and the body that ran is its own.
+// clause of its fallthrough chain, the entry clause, was reached:
+//   - all expressions of the clauses before the entry clause were evaluated,
+//   - the first expression of the entry clause was evaluated,
+//   - all case expressions were evaluated if the entry clause is the default
+//     clause and the body that ran is its own.
 func (c fileCoverage) evaluatedCaseExprs(body *ast.BlockStmt) []exprSpan {
-	var clauses []*ast.CaseClause
-	for _, stmt := range body.List {
-		if cc, ok := stmt.(*ast.CaseClause); ok {
-			clauses = append(clauses, cc)
-		}
-	}
-
-	full := 0 // The clauses before this index had all expressions evaluated.
-	first := make([]bool, len(clauses))
-	for j, cc := range clauses {
-		if !c.bodyRan(cc.Colon) {
-			continue
-		}
-		entry := j
-		for entry > 0 && endsWithFallthrough(clauses[entry-1]) && c.bodyRan(clauses[entry-1].Colon) {
-			entry--
-		}
-		if entry == j && cc.List == nil {
-			full = len(clauses)
-
-			break
-		}
-		full = max(full, entry)
-		first[entry] = true
-	}
+	clauses := clausesOf[*ast.CaseClause](body)
+	full, first := c.caseEvidence(clauses)
 
 	var spans []exprSpan
 	for k, cc := range clauses {
 		switch {
 		case k < full:
-			for _, e := range cc.List {
-				spans = append(spans, exprSpan{start: e.Pos(), end: e.End()})
-			}
+			spans = append(spans, spansOf(cc.List)...)
 		case first[k] && len(cc.List) > 0:
-			spans = append(spans, exprSpan{start: cc.List[0].Pos(), end: cc.List[0].End()})
+			spans = append(spans, spansOf(cc.List[:1])...)
+		default:
+			// The tests did not prove that this clause was reached.
 		}
 	}
 
 	return spans
 }
 
-func endsWithFallthrough(cc *ast.CaseClause) bool {
-	if len(cc.Body) == 0 {
+// caseEvidence returns the number of leading clauses with all expressions
+// evaluated, and for each clause if its first expression was evaluated.
+func (c fileCoverage) caseEvidence(clauses []*ast.CaseClause) (int, []bool) {
+	full := 0
+	first := make([]bool, len(clauses))
+	for j, cc := range clauses {
+		if !c.bodyRan(cc.Colon) {
+			continue
+		}
+		entry := c.entryClause(clauses, j)
+		if entry == j && cc.List == nil {
+			return len(clauses), first
+		}
+		full = max(full, entry)
+		first[entry] = true
+	}
+
+	return full, first
+}
+
+// entryClause returns the index of the first clause of the fallthrough chain
+// that ends at clause j.
+func (c fileCoverage) entryClause(clauses []*ast.CaseClause, j int) int {
+	entry := j
+	for entry > 0 && c.fellThrough(clauses[entry-1]) {
+		entry--
+	}
+
+	return entry
+}
+
+// fellThrough tells if the body of the clause ran and ends with fallthrough.
+func (c fileCoverage) fellThrough(cc *ast.CaseClause) bool {
+	if len(cc.Body) == 0 || !c.bodyRan(cc.Colon) {
 		return false
 	}
 	br, ok := cc.Body[len(cc.Body)-1].(*ast.BranchStmt)
@@ -149,33 +161,57 @@ func endsWithFallthrough(cc *ast.CaseClause) bool {
 // evaluated. Go evaluates the left side of a receive assignment only for the
 // selected clause.
 func (c fileCoverage) evaluatedCommExprs(body *ast.BlockStmt) []exprSpan {
-	var clauses []*ast.CommClause
-	ran := false
-	for _, stmt := range body.List {
-		if cc, ok := stmt.(*ast.CommClause); ok {
-			clauses = append(clauses, cc)
-			ran = ran || c.bodyRan(cc.Colon)
-		}
-	}
+	clauses := clausesOf[*ast.CommClause](body)
+	ran := slices.ContainsFunc(clauses, func(cc *ast.CommClause) bool { return c.bodyRan(cc.Colon) })
 	if !ran {
 		return nil
 	}
 
 	var spans []exprSpan
 	for _, cc := range clauses {
-		switch s := cc.Comm.(type) {
-		case *ast.SendStmt, *ast.ExprStmt:
-			spans = append(spans, exprSpan{start: s.Pos(), end: s.End()})
-		case *ast.AssignStmt:
-			for _, e := range s.Rhs {
-				spans = append(spans, exprSpan{start: e.Pos(), end: e.End()})
-			}
-			if c.bodyRan(cc.Colon) {
-				for _, e := range s.Lhs {
-					spans = append(spans, exprSpan{start: e.Pos(), end: e.End()})
-				}
-			}
+		spans = append(spans, c.commSpans(cc)...)
+	}
+
+	return spans
+}
+
+func (c fileCoverage) commSpans(cc *ast.CommClause) []exprSpan {
+	switch s := cc.Comm.(type) {
+	case *ast.SendStmt, *ast.ExprStmt:
+		return []exprSpan{{start: s.Pos(), end: s.End()}}
+	case *ast.AssignStmt:
+		return c.receiveSpans(s, cc.Colon)
+	default:
+		// The default clause has no communication.
+		return nil
+	}
+}
+
+// receiveSpans returns the evaluated expressions of a receive assignment.
+func (c fileCoverage) receiveSpans(s *ast.AssignStmt, colon token.Pos) []exprSpan {
+	spans := spansOf(s.Rhs)
+	if c.bodyRan(colon) {
+		spans = append(spans, spansOf(s.Lhs)...)
+	}
+
+	return spans
+}
+
+func clausesOf[T ast.Stmt](body *ast.BlockStmt) []T {
+	var clauses []T
+	for _, stmt := range body.List {
+		if cc, ok := stmt.(T); ok {
+			clauses = append(clauses, cc)
 		}
+	}
+
+	return clauses
+}
+
+func spansOf(exprs []ast.Expr) []exprSpan {
+	spans := make([]exprSpan, 0, len(exprs))
+	for _, e := range exprs {
+		spans = append(spans, exprSpan{start: e.Pos(), end: e.End()})
 	}
 
 	return spans

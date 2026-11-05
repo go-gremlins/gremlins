@@ -160,7 +160,9 @@ func (mu *Engine) parseFile(set *token.FileSet, fileName string) (*ast.File, err
 	return file, nil
 }
 
-func (mu *Engine) findMutations(fileName string, set *token.FileSet, file *ast.File, node *NodeToken, cov fileCoverage) {
+func (mu *Engine) findMutations(
+	fileName string, set *token.FileSet, file *ast.File, node *NodeToken, cov fileCoverage,
+) {
 	mutantTypes, ok := TokenMutantType[node.Tok()]
 	if !ok {
 		return
