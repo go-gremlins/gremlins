@@ -612,7 +612,41 @@ func TestSkipTestAndNonGoFiles(t *testing.T) {
 	res := mut.Run(context.Background())
 
 	if got := res.Mutants; len(got) != 0 {
-		t.Errorf("should not receive results")
+		t.Error("should not receive results")
+	}
+}
+
+func TestSkipUnparsableFiles(t *testing.T) {
+	t.Parallel()
+	src, err := os.ReadFile("testdata/fixtures/geq_go")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sys := fstest.MapFS{
+		"good.go":           {Data: src},
+		"broken.go":         {Data: []byte("package main\n\nfunc main() {\n  if 1 >= 2 {\n")},
+		"directory.go/x.go": {Data: src},
+	}
+	mod := gomodule.GoModule{
+		Name:       expectedModule,
+		Root:       ".",
+		CallingDir: ".",
+	}
+	viperSet(map[string]any{configuration.UnleashDryRunKey: true})
+	defer viperReset()
+	mut := engine.New(mod, engine.CodeData{}, newJobDealerStub(t), engine.WithDirFs(sys))
+	res := mut.Run(context.Background())
+
+	files := make(map[string]int)
+	for _, m := range res.Mutants {
+		files[m.Position().Filename]++
+	}
+	if files["good.go"] == 0 {
+		t.Errorf("got no mutants of good.go, want mutants; mutants by file: %v", files)
+	}
+	if files["broken.go"] != 0 || files["directory.go"] != 0 {
+		t.Errorf("got mutants of an unparsable file, want none; mutants by file: %v", files)
 	}
 }
 

@@ -19,6 +19,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -34,6 +35,7 @@ import (
 	"github.com/OpenRAE/go-rae-gremlins/internal/diff"
 	"github.com/OpenRAE/go-rae-gremlins/internal/engine/workerpool"
 	"github.com/OpenRAE/go-rae-gremlins/internal/exclusion"
+	"github.com/OpenRAE/go-rae-gremlins/internal/log"
 	"github.com/OpenRAE/go-rae-gremlins/internal/mutator"
 	"github.com/OpenRAE/go-rae-gremlins/internal/report"
 
@@ -121,23 +123,46 @@ func (mu *Engine) Run(ctx context.Context) report.Results {
 }
 
 func (mu *Engine) runOnFile(fileName string) {
-	src, _ := mu.fs.Open(fileName)
 	set := token.NewFileSet()
-	file, _ := parser.ParseFile(set, fileName, src, parser.ParseComments)
-	_ = src.Close()
+	file, err := mu.parseFile(set, fileName)
+	if err != nil {
+		log.Errorf("skipping %s: %v\n", fileName, err)
 
+		return
+	}
+
+	cov := newFileCoverage(set, file, mu.codeData.Cov)
 	ast.Inspect(file, func(node ast.Node) bool {
 		n, ok := NewTokenNode(node)
 		if !ok {
 			return true
 		}
-		mu.findMutations(fileName, set, file, n)
+		mu.findMutations(fileName, set, file, n, cov)
 
 		return true
 	})
 }
 
-func (mu *Engine) findMutations(fileName string, set *token.FileSet, file *ast.File, node *NodeToken) {
+// parseFile parses a Go file of the module file system.
+func (mu *Engine) parseFile(set *token.FileSet, fileName string) (*ast.File, error) {
+	src, err := mu.fs.Open(fileName)
+	if err != nil {
+		return nil, fmt.Errorf("open: %w", err)
+	}
+	file, err := parser.ParseFile(set, fileName, src, parser.ParseComments)
+	if closeErr := src.Close(); closeErr != nil {
+		err = errors.Join(err, fmt.Errorf("close: %w", closeErr))
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return file, nil
+}
+
+func (mu *Engine) findMutations(
+	fileName string, set *token.FileSet, file *ast.File, node *NodeToken, cov fileCoverage,
+) {
 	mutantTypes, ok := TokenMutantType[node.Tok()]
 	if !ok {
 		return
@@ -151,7 +176,7 @@ func (mu *Engine) findMutations(fileName string, set *token.FileSet, file *ast.F
 		mutantType := mt
 		tm := NewTokenMutant(pkg, set, file, node)
 		tm.SetType(mutantType)
-		tm.SetStatus(mu.mutationStatus(set.Position(node.TokPos)))
+		tm.SetStatus(mu.mutationStatus(set.Position(node.TokPos), cov.isCovered(node.TokPos)))
 
 		mu.mutantStream <- tm
 	}
@@ -185,10 +210,10 @@ func normalisePkgPath(pkg string) string {
 	return strings.ReplaceAll(pkg, sep, "/")
 }
 
-func (mu *Engine) mutationStatus(pos token.Position) mutator.Status {
+func (mu *Engine) mutationStatus(pos token.Position, covered bool) mutator.Status {
 	var status mutator.Status
 
-	if mu.codeData.Cov.IsCovered(pos) {
+	if covered {
 		status = mutator.Runnable
 	}
 

@@ -1,12 +1,37 @@
 {
   "version": 1,
-  "issue": 82,
-  "summary": "Record the documentation review and remediation decisions, link it from the maintenance plan, and map existing documentation ownership for Ground Control context.",
-  "changes": [],
+  "issue": 38,
+  "summary": "Read switch and select clause expressions as covered when Go coverage shows that tests evaluated them. Skip a Go file that cannot be read or parsed, and remove the fixed lint findings from the baseline.",
+  "changes": [
+    {
+      "package": "internal/engine",
+      "imports": [
+        "internal/configuration",
+        "internal/coverage",
+        "internal/diff",
+        "internal/engine/workdir",
+        "internal/engine/workerpool",
+        "internal/exclusion",
+        "internal/gomodule",
+        "internal/log",
+        "internal/mutator",
+        "internal/report"
+      ],
+      "test_imports": [
+        "internal/configuration",
+        "internal/coverage",
+        "internal/diff",
+        "internal/engine",
+        "internal/engine/workerpool",
+        "internal/gomodule",
+        "internal/mutator"
+      ]
+    }
+  ],
   "contracts": [],
-  "trust_boundaries": "Static review prose and existing ownership references only. No package, import, CLI, configuration, report, exit-code, permission, network destination, or source-execution change. Retain the existing development-check and delivery-finalization boundaries.",
+  "trust_boundaries": "The engine reads the parsed source file and the existing coverage profile in memory. No package dependency, CLI flag, configuration key, report field, exit code, network destination, or source-execution change. Retain the existing development-check and delivery-finalization boundaries.",
   "conflicts": [],
-  "policies": ["workflow"],
+  "policies": ["lint_baseline"],
   "trust_changes": {
     "development_checks": {
       "destinations": [

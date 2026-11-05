@@ -1,0 +1,49 @@
+package main
+
+func Classify(n int) int {
+	switch {
+	case n > 10:
+		return 2
+	case n > 0:
+		return 1
+	}
+	return 0
+}
+
+func Either(n int) int {
+	switch {
+	case n > 10, n < -10:
+		return 1
+	}
+	return 0
+}
+
+func Fall(n int) int {
+	r := 0
+	switch {
+	case n > 10:
+		r++
+		fallthrough
+	case n > 5:
+		r++
+	}
+	return r
+}
+
+func Default(n int) int {
+	switch {
+	default:
+		return 0
+	case n > 10:
+		return 1
+	}
+}
+
+func Send(ch chan int, n int) bool {
+	select {
+	case ch <- n + 1:
+		return true
+	default:
+		return false
+	}
+}
