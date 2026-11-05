@@ -136,25 +136,7 @@
     {
       "linter": "errcheck",
       "file": "internal/engine/engine.go",
-      "fingerprint": "7ea1d9d8c6f14d394eddba5b99ea7382960daec0ff6f484ecbef94c8064a06cb",
-      "count": 1
-    },
-    {
-      "linter": "errcheck",
-      "file": "internal/engine/engine.go",
       "fingerprint": "853c77ce4e871d138c9f61aa91c4da851bb883960892fa53abb809df9562e633",
-      "count": 1
-    },
-    {
-      "linter": "errcheck",
-      "file": "internal/engine/engine.go",
-      "fingerprint": "d2e52c206ce46aaa77cd1a30ea3a84193bc48bd17882dd44bf20971fc6e2bb90",
-      "count": 1
-    },
-    {
-      "linter": "errcheck",
-      "file": "internal/engine/engine.go",
-      "fingerprint": "f6afd70bfbc9d56e57b8727d2789823f047e7294a0558c64aa2311dc1bb10c39",
       "count": 1
     },
     {
@@ -503,12 +485,6 @@
       "linter": "revive",
       "file": "internal/diff/diff_test.go",
       "fingerprint": "a824f9bccbd096d6debf7905abc5774a6458d8a6bbcc1a21e4413f6d48b87fb1",
-      "count": 1
-    },
-    {
-      "linter": "revive",
-      "file": "internal/engine/engine_test.go",
-      "fingerprint": "1a442c8418dde8afd364623b2e78497d98114b0d57b7367e0716c9107c0ef284",
       "count": 1
     },
     {
