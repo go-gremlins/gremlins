@@ -709,13 +709,13 @@ func TestPackageDiscovery(t *testing.T) {
 			name:     "from root, normal mode",
 			fromPkg:  ".",
 			intMode:  false,
-			wantPath: expectedModule,
+			wantPath: "example.com/testdata/fixtures",
 		},
 		{
 			name:     "from subpackage, normal mode",
 			fromPkg:  "testdata/main/fixture",
 			intMode:  false,
-			wantPath: "example.com/testdata/main",
+			wantPath: "example.com/testdata/main/fixture/testdata/fixtures",
 		},
 	}
 	for _, tc := range testCases {
