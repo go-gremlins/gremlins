@@ -1,37 +1,23 @@
 {
   "version": 1,
-  "issue": 108,
-  "summary": "Engine.Run no longer descends into testdata or vendor directories, or into a directory that is the root of its own Go module (a go.mod file present). This replaces reliance on the user-maintained exclude-files regex list for these cases with automatic module and package boundary detection.",
+  "issue": 112,
+  "summary": "reportStatus.assess in internal/report compared the computed efficacy and coverage percentages to their configured thresholds with <=, so a result exactly at the configured minimum failed the quality gate instead of passing it. The fix changes both comparisons to <, so only a result strictly below its threshold fails. No package dependency, CLI flag, configuration key, report field, or exit code changes.",
   "changes": [
     {
-      "package": "internal/engine",
+      "package": "internal/report",
       "imports": [
         "internal/configuration",
-        "internal/coverage",
-        "internal/diff",
-        "internal/engine/workdir",
-        "internal/engine/workerpool",
-        "internal/exclusion",
-        "internal/gomodule",
+        "internal/execution",
         "internal/log",
         "internal/mutator",
-        "internal/report"
-      ],
-      "test_imports": [
-        "internal/configuration",
-        "internal/engine/workdir",
-        "internal/engine/workerpool",
-        "internal/gomodule",
-        "internal/mutator"
+        "internal/report/internal"
       ]
     }
   ],
   "contracts": [],
-  "trust_boundaries": "Engine.Run now calls fs.Stat on the walked fs.FS to detect a nested go.mod before descending into a directory. No package dependency, CLI flag, configuration key, report field, exit code, or network destination changes.",
+  "trust_boundaries": "reportStatus.assess remains local computation over already-collected mutant results. It calls no new function, reads no new input, and does not change what is logged or reported. No network call, external process, or generated code is involved.",
   "conflicts": [],
-  "policies": [
-    "lint_baseline"
-  ],
+  "policies": [],
   "trust_changes": {
     "development_checks": {
       "destinations": [
