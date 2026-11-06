@@ -27,10 +27,10 @@ func TestDiff_IsChanged(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "must be changed on empty Diff",
+			name: "must be unchanged on empty Diff",
 			d:    map[FileName][]Change{},
 			pos:  token.Position{},
-			want: true,
+			want: false,
 		},
 		{
 			name: "must be changed if in range",
@@ -164,4 +164,41 @@ func opLines(op gitdiff.LineOp, count int) []gitdiff.Line {
 	}
 
 	return result
+}
+
+func Test_newChanges_separateEditsInOneFragment(t *testing.T) {
+	var lines []gitdiff.Line
+	lines = append(lines, opLines(gitdiff.OpContext, 3)...)
+	lines = append(lines, opLines(gitdiff.OpDelete, 1)...)
+	lines = append(lines, opLines(gitdiff.OpAdd, 1)...)
+	lines = append(lines, opLines(gitdiff.OpContext, 5)...)
+	lines = append(lines, opLines(gitdiff.OpDelete, 1)...)
+	lines = append(lines, opLines(gitdiff.OpAdd, 1)...)
+	lines = append(lines, opLines(gitdiff.OpContext, 3)...)
+
+	file := &gitdiff.File{
+		NewName: testFile,
+		TextFragments: []*gitdiff.TextFragment{
+			{
+				NewPosition: 5,
+				Lines:       lines,
+			},
+		},
+	}
+
+	expect := []Change{
+		{StartLine: 8, EndLine: 8},
+		{StartLine: 14, EndLine: 14},
+	}
+
+	name, changes := newChanges(file)
+
+	if name != testFile {
+		t.Fatalf("name %s unexpected", name)
+	}
+	if !reflect.DeepEqual(changes, expect) {
+		t.Log("want", expect)
+		t.Log("got", changes)
+		t.Fatal("unexpected newChanges result for a hunk with two separate edits")
+	}
 }

@@ -35,25 +35,52 @@ func newChanges(file *gitdiff.File) (FileName, []Change) {
 	var changes []Change
 
 	for _, fragment := range file.TextFragments {
-		if fragment.LinesAdded == 0 {
-			continue
-		}
-
-		startLine := int(fragment.NewPosition + fragment.LeadingContext)
-
-		changes = append(changes, Change{
-			StartLine: startLine,
-			EndLine:   startLine + int(fragment.LinesAdded-1),
-		})
+		changes = append(changes, changesInFragment(fragment)...)
 	}
 
 	return FileName(file.NewName), changes
 }
 
+// changesInFragment walks a fragment's lines in order and returns one Change
+// per contiguous run of added lines, tracked by the line's actual position in
+// the new file. A hunk can hold more than one such run when git merges two
+// nearby edits into a single fragment.
+func changesInFragment(fragment *gitdiff.TextFragment) []Change {
+	var changes []Change
+
+	newLine := int(fragment.NewPosition)
+	var current *Change
+
+	for _, line := range fragment.Lines {
+		if line.Op == gitdiff.OpAdd {
+			if current == nil {
+				current = &Change{StartLine: newLine, EndLine: newLine}
+			} else {
+				current.EndLine = newLine
+			}
+		} else if current != nil {
+			changes = append(changes, *current)
+			current = nil
+		}
+
+		if line.New() {
+			newLine++
+		}
+	}
+
+	if current != nil {
+		changes = append(changes, *current)
+	}
+
+	return changes
+}
+
 // IsChanged returns true if the given position is within a changed region.
-// If the diff is empty, it returns true for all positions.
+// A nil Diff means diff-based selection is disabled, so every position is
+// changed. A non-nil Diff with no matching range means diff-based selection
+// is enabled but found no added lines for that position, so it is unchanged.
 func (d Diff) IsChanged(pos token.Position) bool {
-	if len(d) == 0 {
+	if d == nil {
 		return true
 	}
 
