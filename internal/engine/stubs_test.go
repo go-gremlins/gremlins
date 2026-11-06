@@ -73,7 +73,10 @@ func loadFixture(fixture, fromPackage string) (fstest.MapFS, gomodule.GoModule, 
 }
 
 func filenameFromFixture(fix string) string {
-	return strings.ReplaceAll(fix, "_go", ".go")
+	// Strip testdata/ so the virtual path isn't excluded by Engine.Run's testdata exclusion.
+	virtual := strings.TrimPrefix(fix, "testdata/")
+
+	return strings.ReplaceAll(virtual, "_go", ".go")
 }
 
 type dealerStub struct {

@@ -135,12 +135,6 @@
     },
     {
       "linter": "errcheck",
-      "file": "internal/engine/engine.go",
-      "fingerprint": "853c77ce4e871d138c9f61aa91c4da851bb883960892fa53abb809df9562e633",
-      "count": 1
-    },
-    {
-      "linter": "errcheck",
       "file": "internal/engine/engine_test.go",
       "fingerprint": "0fc297550c3f11f44b5651851b128186132b92d9f3bf43ca9d3a5293ad93433e",
       "count": 1
