@@ -17,6 +17,7 @@
 package engine
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -188,17 +189,36 @@ func (m *mutantExecutor) Start(w *workerpool.Worker) {
 		return
 	}
 
-	m.mutant.SetStatus(m.runTests(rootDir, m.mutant.Pkg()))
+	status, runErr := m.runTests(rootDir, m.mutant.Pkg())
+	if runErr != nil {
+		log.Errorf("failed to run tests at %s - %s\n\t%v", m.mutant.Position(), m.mutant.Status(), runErr)
+	} else {
+		m.mutant.SetStatus(status)
+	}
 
 	if err := m.mutant.Rollback(); err != nil {
 		// What should we do now?
 		log.Errorf("failed to restore mutation at %s - %s\n\t%v", m.mutant.Position(), m.mutant.Status(), err)
 	}
 
+	if runErr != nil {
+		return
+	}
+
 	m.outCh <- m.mutant
 }
 
-func (m *mutantExecutor) runTests(rootDir, pkg string) mutator.Status {
+// runTests runs the tests for pkg and classifies the mutant status from the
+// result. A mutant whose package does not compile must be NOT VIABLE, not
+// KILLED: the test suite never ran, so it has no opinion on the mutation.
+// go test exits 1 for both a build failure and a genuine assertion failure,
+// so the exit code alone cannot distinguish them; the classification reads
+// the compiler's own "[build failed]"/"[setup failed]" markers from the
+// captured output instead.
+// An error not caused by the test run itself (for example a missing `go`
+// executable) is returned as an error rather than folded into a status, so
+// an infrastructure failure is never reported as a passing mutant.
+func (m *mutantExecutor) runTests(rootDir, pkg string) (mutator.Status, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), m.testExecutionTime)
 	defer cancel()
 
@@ -213,17 +233,26 @@ func (m *mutantExecutor) runTests(rootDir, pkg string) mutator.Status {
 	// Set up process group for killing entire process tree
 	setupProcessGroup(cmd)
 
+	var output bytes.Buffer
+	cmd.Stdout = &output
+	cmd.Stderr = &output
+
 	err := run(ctx, cmd)
 
 	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-		return mutator.TimedOut
-	}
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) {
-		return getTestFailedStatus(exitErr.ExitCode())
+		return mutator.TimedOut, nil
 	}
 
-	return mutator.Lived
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		return getTestFailedStatus(output.Bytes()), nil
+	}
+
+	if err != nil {
+		return 0, fmt.Errorf("failed to run tests for %s: %w", pkg, err)
+	}
+
+	return mutator.Lived, nil
 }
 
 func (m *mutantExecutor) getTestArgs(pkg string) []string {
@@ -287,13 +316,20 @@ func run(ctx context.Context, cmd *exec.Cmd) error {
 	}
 }
 
-func getTestFailedStatus(exitCode int) mutator.Status {
-	switch exitCode {
-	case 1:
-		return mutator.Killed
-	case 2:
-		return mutator.NotViable
-	default:
-		return mutator.Lived
+// buildFailureMarkers are the markers cmd/go prints in place of a test's
+// PASS/FAIL line when the package under test, or one of its dependencies,
+// did not build or initialize.
+var buildFailureMarkers = [][]byte{
+	[]byte("[build failed]"),
+	[]byte("[setup failed]"),
+}
+
+func getTestFailedStatus(output []byte) mutator.Status {
+	for _, marker := range buildFailureMarkers {
+		if bytes.Contains(output, marker) {
+			return mutator.NotViable
+		}
 	}
+
+	return mutator.Killed
 }

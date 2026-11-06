@@ -1,21 +1,33 @@
 {
   "version": 1,
-  "issue": 40,
-  "summary": "Fix diff hunk line selection. Walk each text fragment's lines in order and track the new-file line position, so a hunk with more than one separated edit produces one Change range per added-line run instead of one range for the whole hunk. Make IsChanged distinguish a nil Diff (diff selection disabled, everything is changed) from a non-nil Diff with no matching range (diff selection enabled, nothing added at that position).",
+  "issue": 59,
+  "summary": "Classify a mutant's test run from the captured go test output, not the bare exit code. go test exits 1 for both a build failure and a genuine assertion failure, so getTestFailedStatus reads the compiler's own [build failed]/[setup failed] markers to return NOT VIABLE, and an infrastructure error in running the command (for example a missing executable) is returned as an error instead of being folded into LIVED.",
   "changes": [
     {
-      "package": "internal/diff",
+      "package": "internal/engine",
       "imports": [
         "internal/configuration",
-        "internal/log"
+        "internal/coverage",
+        "internal/diff",
+        "internal/engine/workdir",
+        "internal/engine/workerpool",
+        "internal/exclusion",
+        "internal/gomodule",
+        "internal/log",
+        "internal/mutator",
+        "internal/report"
       ],
       "test_imports": [
-        "internal/configuration"
+        "internal/configuration",
+        "internal/engine/workdir",
+        "internal/engine/workerpool",
+        "internal/gomodule",
+        "internal/mutator"
       ]
     }
   ],
   "contracts": [],
-  "trust_boundaries": "newChanges now walks fragment.Lines and tracks the new-file line position in memory instead of computing one range from aggregate hunk counts. IsChanged distinguishes a nil Diff from an empty, non-nil Diff. No package dependency, CLI flag, configuration key, report field, exit code, or network destination changes.",
+  "trust_boundaries": "runTests now captures the test command's combined stdout/stderr to classify build and setup failures by their go test marker text, instead of trusting exit code 2. No package dependency, CLI flag, configuration key, report field, exit code, or network destination changes.",
   "conflicts": [],
   "policies": [],
   "trust_changes": {

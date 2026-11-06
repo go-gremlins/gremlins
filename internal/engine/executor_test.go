@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -30,6 +31,7 @@ import (
 
 	"github.com/OpenRAE/go-rae-gremlins/internal/configuration"
 	"github.com/OpenRAE/go-rae-gremlins/internal/engine"
+	"github.com/OpenRAE/go-rae-gremlins/internal/engine/workdir"
 	"github.com/OpenRAE/go-rae-gremlins/internal/engine/workerpool"
 	"github.com/OpenRAE/go-rae-gremlins/internal/gomodule"
 	"github.com/OpenRAE/go-rae-gremlins/internal/mutator"
@@ -152,12 +154,6 @@ func TestMutatorTestExecution(t *testing.T) {
 			mutantStatus:  mutator.Runnable,
 			wantMutStatus: mutator.Killed,
 		},
-		{
-			name:          "if build fails then mutation is BUILD FAILED",
-			testResult:    fakeExecCommandBuildFailure,
-			mutantStatus:  mutator.Runnable,
-			wantMutStatus: mutator.NotViable,
-		},
 	}
 	for _, tc := range testCases {
 		tc := tc
@@ -221,6 +217,171 @@ func TestMutatorTestExecution(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestMutatorTestExecutionClassification runs the real go toolchain against
+// small, purpose-built packages so the classification is proven against
+// go test's actual output rather than an invented exit code (issue #59):
+// go test exits 1 for a build failure and for an assertion failure alike, so
+// only the compiler's own markers in the output can tell them apart.
+func TestMutatorTestExecutionClassification(t *testing.T) {
+	const probeModule = "probe"
+
+	testCases := []struct {
+		name       string
+		probeGo    string
+		probeTest  string
+		wantStatus mutator.Status
+	}{
+		{
+			name:    "a compile-invalid package is NOT VIABLE",
+			probeGo: "package probe\n\nfunc Label(n int) string { return \"n\" - n }\n",
+			probeTest: `package probe
+
+import "testing"
+
+func TestLabel(t *testing.T) {
+	_ = Label(3)
+}
+`,
+			wantStatus: mutator.NotViable,
+		},
+		{
+			name:    "an assertion failure is KILLED",
+			probeGo: "package probe\n\nfunc Label(n int) string { return \"n\" }\n",
+			probeTest: `package probe
+
+import "testing"
+
+func TestLabel(t *testing.T) {
+	if Label(3) != "wrong" {
+		t.Fatal("mismatch")
+	}
+}
+`,
+			wantStatus: mutator.Killed,
+		},
+		{
+			name:    "passing tests are LIVED",
+			probeGo: "package probe\n\nfunc Label(n int) string { return \"n\" }\n",
+			probeTest: `package probe
+
+import "testing"
+
+func TestLabel(t *testing.T) {
+	if Label(3) != "n" {
+		t.Fatal("mismatch")
+	}
+}
+`,
+			wantStatus: mutator.Lived,
+		},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			viperSet(map[string]any{configuration.UnleashDryRunKey: false})
+			defer viperReset()
+
+			root := t.TempDir()
+			writeFiles(t, root, map[string]string{
+				"go.mod":        "module " + probeModule + "\n\ngo 1.25\n",
+				"probe.go":      tc.probeGo,
+				"probe_test.go": tc.probeTest,
+			})
+
+			mod := gomodule.GoModule{
+				Name:       probeModule,
+				Root:       root,
+				CallingDir: ".",
+			}
+			wdDealer := workdir.NewCachedDealer(t.TempDir(), mod.Root)
+			defer wdDealer.Clean()
+
+			mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout)
+			mut := &mutantStub{
+				status:  mutator.Runnable,
+				mutType: mutator.ConditionalsBoundary,
+				pkg:     probeModule,
+			}
+			outCh := make(chan mutator.Mutator, 1)
+			wg := sync.WaitGroup{}
+			wg.Add(1)
+			executor := mjd.NewExecutor(mut, outCh, &wg)
+			w := &workerpool.Worker{
+				Name: testWorkerName,
+				ID:   1,
+			}
+
+			executor.Start(w)
+			wg.Wait()
+
+			got := <-outCh
+			if got.Status() != tc.wantStatus {
+				t.Errorf("status = %v, want %v", got.Status(), tc.wantStatus)
+			}
+		})
+	}
+}
+
+// TestMutatorRunErrorIsNotReportedAsLived proves that an infrastructure
+// failure in running the test command (here, a missing executable) is never
+// folded into mutator.Lived: the mutant must not be reported as a kill the
+// suite survived when the suite never ran at all (issue #59).
+func TestMutatorRunErrorIsNotReportedAsLived(t *testing.T) {
+	viperSet(map[string]any{configuration.UnleashDryRunKey: false})
+	defer viperReset()
+
+	wdDealer := newWdDealerStub(t)
+	mod := gomodule.GoModule{
+		Name:       expectedModule,
+		Root:       ".",
+		CallingDir: ".",
+	}
+	missingExecutable := filepath.Join(t.TempDir(), "no-such-executable")
+	missingExec := func(ctx context.Context, _ string, _ ...string) *exec.Cmd {
+		return exec.CommandContext(ctx, missingExecutable)
+	}
+	mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout, engine.WithExecContext(missingExec))
+	mut := &mutantStub{
+		status:  mutator.Runnable,
+		mutType: mutator.ConditionalsBoundary,
+		pkg:     expectedModule,
+	}
+	outCh := make(chan mutator.Mutator, 1)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	executor := mjd.NewExecutor(mut, outCh, &wg)
+	w := &workerpool.Worker{
+		Name: testWorkerName,
+		ID:   1,
+	}
+
+	executor.Start(w)
+	wg.Wait()
+
+	select {
+	case got := <-outCh:
+		t.Fatalf("expected no mutant to be reported for a run error, got status %v", got.Status())
+	default:
+	}
+
+	if !mut.rollbackCalled {
+		t.Error("expected rollback to be called even when the test run errors")
+	}
+}
+
+func writeFiles(t *testing.T, root string, files map[string]string) {
+	t.Helper()
+	for name, content := range files {
+		path := filepath.Join(root, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
+			t.Fatalf("create directory of %s: %v", name, err)
+		}
+		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
 	}
 }
 
@@ -442,13 +603,6 @@ func TestProcessTestsFailure(_ *testing.T) {
 	os.Exit(1) // skipcq: RVV-A0003
 }
 
-func TestProcessBuildFailure(_ *testing.T) {
-	if os.Getenv("GO_TEST_PROCESS") != "1" {
-		return
-	}
-	os.Exit(2) // skipcq: RVV-A0003
-}
-
 func TestMutatorRunInTheCorrectFolder(t *testing.T) {
 	t.Run("mutation should run in the correct folder", func(t *testing.T) {
 		callingDir := exampleCallDir
@@ -580,13 +734,6 @@ func fakeExecCommandWithHolder(got *commandHolder, fakeCmd func(ctx context.Cont
 
 func fakeExecCommandTestsFailure(ctx context.Context, command string, args ...string) *exec.Cmd {
 	cs := []string{"-test.run=TestProcessTestsFailure", "--", command}
-	cs = append(cs, args...)
-
-	return getCmd(ctx, cs)
-}
-
-func fakeExecCommandBuildFailure(ctx context.Context, command string, args ...string) *exec.Cmd {
-	cs := []string{"-test.run=TestProcessBuildFailure", "--", command}
 	cs = append(cs, args...)
 
 	return getCmd(ctx, cs)
