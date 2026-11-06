@@ -1,40 +1,23 @@
 {
   "version": 1,
-  "issue": 23,
-  "summary": "Run the tests of the mutated file's directory. Derive the package import path from the module path and the module-relative directory of the file, and remove the package-declaration-name heuristic. Map internal/engine in the Ground Control architecture modules.",
+  "issue": 40,
+  "summary": "Fix diff hunk line selection. Walk each text fragment's lines in order and track the new-file line position, so a hunk with more than one separated edit produces one Change range per added-line run instead of one range for the whole hunk. Make IsChanged distinguish a nil Diff (diff selection disabled, everything is changed) from a non-nil Diff with no matching range (diff selection enabled, nothing added at that position).",
   "changes": [
     {
-      "package": "internal/engine",
+      "package": "internal/diff",
       "imports": [
         "internal/configuration",
-        "internal/coverage",
-        "internal/diff",
-        "internal/engine/workdir",
-        "internal/engine/workerpool",
-        "internal/exclusion",
-        "internal/gomodule",
-        "internal/log",
-        "internal/mutator",
-        "internal/report"
+        "internal/log"
       ],
       "test_imports": [
-        "internal/configuration",
-        "internal/coverage",
-        "internal/diff",
-        "internal/engine",
-        "internal/engine/workdir",
-        "internal/engine/workerpool",
-        "internal/gomodule",
-        "internal/mutator"
+        "internal/configuration"
       ]
     }
   ],
   "contracts": [],
-  "trust_boundaries": "The engine computes the package path from the module path and the walked file path in memory. The executor keeps its existing go test command with a different package argument. A regression test runs go test on a temporary module without dependencies. No package dependency, CLI flag, configuration key, report field, exit code, or network destination changes. The .ground-control.yaml change adds an architecture module mapping for design context only; it changes no workflow command or gate.",
+  "trust_boundaries": "newChanges now walks fragment.Lines and tracks the new-file line position in memory instead of computing one range from aggregate hunk counts. IsChanged distinguishes a nil Diff from an empty, non-nil Diff. No package dependency, CLI flag, configuration key, report field, exit code, or network destination changes.",
   "conflicts": [],
-  "policies": [
-    "workflow"
-  ],
+  "policies": [],
   "trust_changes": {
     "development_checks": {
       "destinations": [
