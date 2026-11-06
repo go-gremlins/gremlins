@@ -52,15 +52,16 @@ func changesInFragment(fragment *gitdiff.TextFragment) []Change {
 	var current *Change
 
 	for _, line := range fragment.Lines {
-		if line.Op == gitdiff.OpAdd {
-			if current == nil {
-				current = &Change{StartLine: newLine, EndLine: newLine}
-			} else {
-				current.EndLine = newLine
+		switch {
+		case line.Op != gitdiff.OpAdd:
+			if current != nil {
+				changes = append(changes, *current)
+				current = nil
 			}
-		} else if current != nil {
-			changes = append(changes, *current)
-			current = nil
+		case current == nil:
+			current = &Change{StartLine: newLine, EndLine: newLine}
+		default:
+			current.EndLine = newLine
 		}
 
 		if line.New() {
