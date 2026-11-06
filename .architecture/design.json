@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "issue": 59,
-  "summary": "Classify a mutant's test run from the captured go test output, not the bare exit code. go test exits 1 for both a build failure and a genuine assertion failure, so getTestFailedStatus reads the compiler's own [build failed]/[setup failed] markers to return NOT VIABLE, and an infrastructure error in running the command (for example a missing executable) is returned as an error instead of being folded into LIVED.",
+  "issue": 108,
+  "summary": "Engine.Run no longer descends into testdata or vendor directories, or into a directory that is the root of its own Go module (a go.mod file present). This replaces reliance on the user-maintained exclude-files regex list for these cases with automatic module and package boundary detection.",
   "changes": [
     {
       "package": "internal/engine",
@@ -27,9 +27,11 @@
     }
   ],
   "contracts": [],
-  "trust_boundaries": "runTests now captures the test command's combined stdout/stderr to classify build and setup failures by their go test marker text, instead of trusting exit code 2. No package dependency, CLI flag, configuration key, report field, exit code, or network destination changes.",
+  "trust_boundaries": "Engine.Run now calls fs.Stat on the walked fs.FS to detect a nested go.mod before descending into a directory. No package dependency, CLI flag, configuration key, report field, exit code, or network destination changes.",
   "conflicts": [],
-  "policies": [],
+  "policies": [
+    "lint_baseline"
+  ],
   "trust_changes": {
     "development_checks": {
       "destinations": [

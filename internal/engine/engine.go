@@ -104,15 +104,31 @@ func (mu *Engine) Run(ctx context.Context) report.Results {
 	mu.mutantStream = make(chan mutator.Mutator)
 	go func() {
 		defer close(mu.mutantStream)
-		_ = fs.WalkDir(mu.fs, ".", func(path string, _ fs.DirEntry, _ error) error {
-			isGoCode := filepath.Ext(path) == ".go" && !strings.HasSuffix(path, "_test.go")
+		walkErr := fs.WalkDir(mu.fs, ".", func(walkPath string, d fs.DirEntry, err error) error {
+			if err != nil {
+				log.Errorf("skipping %s: %v\n", walkPath, err)
 
-			if isGoCode && !mu.codeData.Exclusion.IsFileExcluded(path) {
-				mu.runOnFile(path)
+				return nil
+			}
+			if d.IsDir() {
+				if walkPath != "." && mu.skipDir(walkPath, d.Name()) {
+					return fs.SkipDir
+				}
+
+				return nil
+			}
+
+			isGoCode := filepath.Ext(walkPath) == ".go" && !strings.HasSuffix(walkPath, "_test.go")
+
+			if isGoCode && !mu.codeData.Exclusion.IsFileExcluded(walkPath) {
+				mu.runOnFile(walkPath)
 			}
 
 			return nil
 		})
+		if walkErr != nil {
+			log.Errorf("walking module tree: %v\n", walkErr)
+		}
 	}()
 
 	start := time.Now()
@@ -121,6 +137,19 @@ func (mu *Engine) Run(ctx context.Context) report.Results {
 	res.Module = mu.module.Name
 
 	return res
+}
+
+// skipDir reports whether dirPath is a testdata tree, a vendor tree, or the
+// root of a nested Go module. None of these belong to the module being
+// mutated, so Run must not descend into them.
+func (mu *Engine) skipDir(dirPath, name string) bool {
+	if name == "testdata" || name == "vendor" {
+		return true
+	}
+
+	_, err := fs.Stat(mu.fs, path.Join(dirPath, "go.mod"))
+
+	return err == nil
 }
 
 func (mu *Engine) runOnFile(fileName string) {
