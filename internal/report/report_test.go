@@ -274,11 +274,15 @@ func TestAssessment(t *testing.T) {
 
 			err := report.Do(data)
 
-			if tc.expectError && err == nil {
-				t.Fatal("expected an error")
-			}
 			if !tc.expectError {
+				if err != nil {
+					t.Errorf("expected no error, got %v", err)
+				}
+
 				return
+			}
+			if err == nil {
+				t.Fatal("expected an error")
 			}
 			var exitErr *execution.ExitError
 			if errors.As(err, &exitErr) {
@@ -290,6 +294,22 @@ func TestAssessment(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAssessmentEmptyResultsSkipsThreshold(t *testing.T) {
+	t.Run("no mutants bypasses the threshold assessment", func(t *testing.T) {
+		log.Init(&bytes.Buffer{}, &bytes.Buffer{})
+		defer log.Reset()
+
+		viper.Set(configuration.UnleashThresholdEfficacyKey, float64(100))
+		defer viper.Reset()
+
+		err := report.Do(report.Results{})
+
+		if err != nil {
+			t.Errorf("expected no error for empty results, got %v", err)
+		}
+	})
 }
 
 func TestMutantNoDiff(t *testing.T) {
