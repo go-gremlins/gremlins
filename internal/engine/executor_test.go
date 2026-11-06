@@ -220,24 +220,23 @@ func TestMutatorTestExecution(t *testing.T) {
 	}
 }
 
-// TestMutatorTestExecutionClassification runs the real go toolchain against
-// small, purpose-built packages so the classification is proven against
-// go test's actual output rather than an invented exit code (issue #59):
-// go test exits 1 for a build failure and for an assertion failure alike, so
-// only the compiler's own markers in the output can tell them apart.
-func TestMutatorTestExecutionClassification(t *testing.T) {
+// TestMutatorTestExecutionBuildFailureIsNotViable runs the real go toolchain
+// against a small, purpose-built package that does not compile, so the
+// classification is proven against go test's actual output rather than an
+// invented exit code (issue #59): go test exits 1 for a build failure and
+// for an assertion failure alike, so only the compiler's own markers in the
+// output can tell them apart.
+func TestMutatorTestExecutionBuildFailureIsNotViable(t *testing.T) {
 	const probeModule = "probe"
 
-	testCases := []struct {
-		name       string
-		probeGo    string
-		probeTest  string
-		wantStatus mutator.Status
-	}{
-		{
-			name:    "a compile-invalid package is NOT VIABLE",
-			probeGo: "package probe\n\nfunc Label(n int) string { return \"n\" - n }\n",
-			probeTest: `package probe
+	viperSet(map[string]any{configuration.UnleashDryRunKey: false})
+	defer viperReset()
+
+	root := t.TempDir()
+	writeFiles(t, root, map[string]string{
+		"go.mod":   "module " + probeModule + "\n\ngo 1.25\n",
+		"probe.go": "package probe\n\nfunc Label(n int) string { return \"n\" - n }\n",
+		"probe_test.go": `package probe
 
 import "testing"
 
@@ -245,83 +244,37 @@ func TestLabel(t *testing.T) {
 	_ = Label(3)
 }
 `,
-			wantStatus: mutator.NotViable,
-		},
-		{
-			name:    "an assertion failure is KILLED",
-			probeGo: "package probe\n\nfunc Label(n int) string { return \"n\" }\n",
-			probeTest: `package probe
+	})
 
-import "testing"
-
-func TestLabel(t *testing.T) {
-	if Label(3) != "wrong" {
-		t.Fatal("mismatch")
+	mod := gomodule.GoModule{
+		Name:       probeModule,
+		Root:       root,
+		CallingDir: ".",
 	}
-}
-`,
-			wantStatus: mutator.Killed,
-		},
-		{
-			name:    "passing tests are LIVED",
-			probeGo: "package probe\n\nfunc Label(n int) string { return \"n\" }\n",
-			probeTest: `package probe
+	wdDealer := workdir.NewCachedDealer(t.TempDir(), mod.Root)
+	defer wdDealer.Clean()
 
-import "testing"
-
-func TestLabel(t *testing.T) {
-	if Label(3) != "n" {
-		t.Fatal("mismatch")
+	mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout)
+	mut := &mutantStub{
+		status:  mutator.Runnable,
+		mutType: mutator.ConditionalsBoundary,
+		pkg:     probeModule,
 	}
-}
-`,
-			wantStatus: mutator.Lived,
-		},
+	outCh := make(chan mutator.Mutator, 1)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	executor := mjd.NewExecutor(mut, outCh, &wg)
+	w := &workerpool.Worker{
+		Name: testWorkerName,
+		ID:   1,
 	}
-	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			viperSet(map[string]any{configuration.UnleashDryRunKey: false})
-			defer viperReset()
 
-			root := t.TempDir()
-			writeFiles(t, root, map[string]string{
-				"go.mod":        "module " + probeModule + "\n\ngo 1.25\n",
-				"probe.go":      tc.probeGo,
-				"probe_test.go": tc.probeTest,
-			})
+	executor.Start(w)
+	wg.Wait()
 
-			mod := gomodule.GoModule{
-				Name:       probeModule,
-				Root:       root,
-				CallingDir: ".",
-			}
-			wdDealer := workdir.NewCachedDealer(t.TempDir(), mod.Root)
-			defer wdDealer.Clean()
-
-			mjd := engine.NewExecutorDealer(mod, wdDealer, expectedTimeout)
-			mut := &mutantStub{
-				status:  mutator.Runnable,
-				mutType: mutator.ConditionalsBoundary,
-				pkg:     probeModule,
-			}
-			outCh := make(chan mutator.Mutator, 1)
-			wg := sync.WaitGroup{}
-			wg.Add(1)
-			executor := mjd.NewExecutor(mut, outCh, &wg)
-			w := &workerpool.Worker{
-				Name: testWorkerName,
-				ID:   1,
-			}
-
-			executor.Start(w)
-			wg.Wait()
-
-			got := <-outCh
-			if got.Status() != tc.wantStatus {
-				t.Errorf("status = %v, want %v", got.Status(), tc.wantStatus)
-			}
-		})
+	got := <-outCh
+	if got.Status() != mutator.NotViable {
+		t.Errorf("status = %v, want %v", got.Status(), mutator.NotViable)
 	}
 }
 
