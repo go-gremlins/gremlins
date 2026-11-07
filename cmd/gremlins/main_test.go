@@ -17,11 +17,19 @@
 package main
 
 import (
+	"runtime"
 	"runtime/debug"
 	"testing"
 )
 
 const releaseTag = "0.7.0"
+
+func TestBuildVersionAddsPlatform(t *testing.T) {
+	want := releaseTag + " " + runtime.GOOS + "/" + runtime.GOARCH
+	if got := buildVersion(releaseTag); got != want {
+		t.Errorf("buildVersion(%q) = %q, want %q", releaseTag, got, want)
+	}
+}
 
 func TestReleaseVersion(t *testing.T) {
 	buildInfo := func(version string) *debug.BuildInfo {
