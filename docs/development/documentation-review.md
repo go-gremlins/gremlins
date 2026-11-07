@@ -293,7 +293,7 @@ The existing install guide and private vulnerability-reporting instructions need
 That observation is not a full STE or security certification.
 
 Triage #83 should group related repairs and carry these IDs into its decisions.
-Address incorrect examples and fork routing before relying on the documentation for the release under #84.
+Address incorrect examples and fork routing in the remediation issues. The release under #84 does not wait for them.
 Resolve behavior questions in D05, D07, and D08 before prose changes imply an approved runtime contract.
 For each repair, record the revision, affected IDs, verification result, and remaining limits.
 Preserve this commit as the assessment baseline.

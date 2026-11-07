@@ -50,30 +50,6 @@ cross_cutting_concerns:
     Tests: table-driven tests with the race detector (make test). Files in testdata directories are byte-exact test inputs.
     Lint: golangci-lint v2 with .golangci.yml, which includes the goimports formatter (make lint).
 architecture:
-  modules:
-    - path: docs/development
-      implementations:
-        - docs/development/process-review.md
-        - docs/development/maintenance-plan.md
-      adrs:
-        - docs/adr/0002-binary-name-and-versions.md
-        - docs/adr/0004-architecture-model-checks.md
-    - path: .ground-control.yaml
-      implementations:
-        - docs/CONTRIBUTING.md
-      adrs:
-        - docs/adr/0004-architecture-model-checks.md
-    - path: .architecture/design.json
-      implementations:
-        - docs/development/architecture.md
-      adrs:
-        - docs/adr/0004-architecture-model-checks.md
-    - path: internal/engine
-      implementations:
-        - internal/engine/engine.go
-        - internal/engine/executor.go
-      adrs:
-        - docs/adr/0004-architecture-model-checks.md
   vocabulary:
     patterns:
       - name: Mutation type

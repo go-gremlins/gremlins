@@ -24,6 +24,8 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"runtime/debug"
+	"strings"
 	"syscall"
 
 	"github.com/fatih/color"
@@ -33,7 +35,9 @@ import (
 	"github.com/OpenRAE/go-rae-gremlins/internal/log"
 )
 
-var version = "dev"
+const devVersion = "dev"
+
+var version = devVersion
 
 func main() {
 	var exitErr *execution.ExitError
@@ -67,5 +71,21 @@ func ctxDoneOnSignal() context.Context {
 }
 
 func buildVersion(version string) string {
-	return fmt.Sprintf("%s %s/%s", version, runtime.GOOS, runtime.GOARCH)
+	info, ok := debug.ReadBuildInfo()
+
+	return fmt.Sprintf("%s %s/%s", releaseVersion(version, info, ok), runtime.GOOS, runtime.GOARCH)
+}
+
+// releaseVersion prefers the version set by the linker, as GoReleaser does,
+// and falls back to the main module version that go install records.
+func releaseVersion(linked string, info *debug.BuildInfo, ok bool) string {
+	if linked != devVersion || !ok {
+		return linked
+	}
+	switch info.Main.Version {
+	case "", "(devel)":
+		return linked
+	default:
+		return strings.TrimPrefix(info.Main.Version, "v")
+	}
 }

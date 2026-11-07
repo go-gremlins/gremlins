@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "issue": 112,
-  "summary": "reportStatus.assess in internal/report compared the computed efficacy and coverage percentages to their configured thresholds with <=, so a result exactly at the configured minimum failed the quality gate instead of passing it. The fix changes both comparisons to <, so only a result strictly below its threshold fails. No package dependency, CLI flag, configuration key, report field, or exit code changes.",
+  "issue": 84,
+  "summary": "Make the fork ready for a release that the dependent repositories can pin. A binary installed with go install at a module version reported the version dev, because only GoReleaser builds set main.version. buildVersion in cmd/gremlins now uses the main module version from the embedded build information when main.version is dev. Remove the architecture.modules block from .ground-control.yaml so the configuration conforms to Ground Control schema version 1. Remove the plan text that made the release wait for the remediation issues.",
   "changes": [
     {
-      "package": "internal/report",
+      "package": "cmd/gremlins",
       "imports": [
-        "internal/configuration",
+        "cmd",
         "internal/execution",
-        "internal/log",
-        "internal/mutator",
-        "internal/report/internal"
+        "internal/log"
       ]
     }
   ],
   "contracts": [],
-  "trust_boundaries": "reportStatus.assess remains local computation over already-collected mutant results. It calls no new function, reads no new input, and does not change what is logged or reported. No network call, external process, or generated code is involved.",
+  "trust_boundaries": "buildVersion reads the build information that the Go linker embeds in the binary through runtime/debug.ReadBuildInfo. It reads no file, environment variable, network resource, or user input. GoReleaser builds keep the version that the linker flag sets. No CLI flag, configuration key, report field, exit code, or network destination changes. The .ground-control.yaml change removes a block that no workflow command or gate reads.",
   "conflicts": [],
-  "policies": [],
+  "policies": [
+    "workflow"
+  ],
   "trust_changes": {
     "development_checks": {
       "destinations": [

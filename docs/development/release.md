@@ -27,6 +27,9 @@ first release is v0.7.0 and lists the changes since upstream v0.6.0.
 Each release has `gremlins` archives for Linux (386, amd64, arm64), macOS (amd64, arm64), and Windows (386, amd64,
 arm64), a source archive, and `checksums.txt`. `gremlins --version` prints the release version.
 
+A dependent repository can also pin a module version, for example
+`go install github.com/OpenRAE/go-rae-gremlins/cmd/gremlins@v0.7.0`. That binary also prints the release version.
+
 ## Differences from upstream
 
 `docs/development/upstream-release.md` describes the upstream process.
