@@ -39,8 +39,12 @@ Each copied item and #1 has a decision: keep, rework, or close.
 
 - #83 Triage the copied upstream items and #1 against the review results
 
-## 5. Remediate and develop
+## 5. Release
+
+Release-please cuts the release from `main`. The release does not wait for the remediation issues.
+
+- #84 Make the fork ready for a release that the dependent repositories can pin
+
+## 6. Remediate and develop
 
 The kept work and the remediations are done under the new gates. Triage (#83) creates their issues.
-
-- #84 Cut a tagged release that the dependent repositories can pin
