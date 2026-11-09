@@ -179,7 +179,7 @@ func run(ctx context.Context, mod gomodule.GoModule, workDir string) (report.Res
 	wdDealer := workdir.NewCachedDealer(workDir, mod.Root)
 	defer wdDealer.Clean()
 
-	jDealer := engine.NewExecutorDealer(mod, wdDealer, cProfile.Elapsed)
+	jDealer := engine.NewExecutorDealer(mod, wdDealer, cProfile.Elapsed, engine.WithPackageElapsed(cProfile.PackageElapsed))
 
 	codeData := engine.CodeData{
 		Cov:       cProfile.Profile,
