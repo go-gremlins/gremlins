@@ -22,6 +22,7 @@ import (
 	"os/exec"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/spf13/viper"
@@ -176,6 +177,32 @@ func TestCoverageParsesOutput(t *testing.T) {
 	}
 }
 
+func TestCoverageRecordsPackageElapsed(t *testing.T) {
+	mod := gomodule.GoModule{
+		Name:       "example.com",
+		CallingDir: ".",
+	}
+	out := "ok  \texample.com\t0.490s\tcoverage: 80.0% of statements\n" +
+		"ok  \texample.com/slow\t12.500s\tcoverage: 61.2% of statements\n" +
+		"?   \texample.com/notests\t[no test files]\n" +
+		"\texample.com/nocover\t\tcoverage: 0.0% of statements\n" +
+		"ok  \texample.com/cached\t(cached)\tcoverage: 50.0% of statements\n"
+	cov := coverage.NewWithCmd(fakeExecCommandOutput(out), "testdata/valid", mod)
+
+	got, err := cov.Run()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]time.Duration{
+		"example.com":      490 * time.Millisecond,
+		"example.com/slow": 12500 * time.Millisecond,
+	}
+	if !cmp.Equal(got.PackageElapsed, want) {
+		t.Error(cmp.Diff(got.PackageElapsed, want))
+	}
+}
+
 func TestParseOutputFail(t *testing.T) {
 	mod := gomodule.GoModule{
 		Name:       "example.com",
@@ -192,6 +219,7 @@ func TestCoverageProcessSuccess(_ *testing.T) {
 	if os.Getenv("GO_TEST_PROCESS") != "1" {
 		return
 	}
+	_, _ = os.Stdout.WriteString(os.Getenv("GO_TEST_PROCESS_OUTPUT"))
 	os.Exit(0) // skipcq: RVV-A0003
 }
 
@@ -217,6 +245,15 @@ func fakeExecCommandSuccess(got *commandHolder) execContext {
 		// #nosec G204 G702 - We are in tests, we don't care
 		cmd := exec.Command(os.Args[0], cs...)
 		cmd.Env = []string{"GO_TEST_PROCESS=1"}
+
+		return cmd
+	}
+}
+
+func fakeExecCommandOutput(out string) execContext {
+	return func(command string, args ...string) *exec.Cmd {
+		cmd := fakeExecCommandSuccess(nil)(command, args...)
+		cmd.Env = append(cmd.Env, "GO_TEST_PROCESS_OUTPUT="+out)
 
 		return cmd
 	}

@@ -38,6 +38,11 @@ import (
 // of each test run.
 const DefaultTimeoutCoefficient = 5
 
+// MinPackageTimeout is the shortest timeout a mutant timed from its own package
+// gets. A package's test run time excludes compiling and linking the mutant,
+// which this has to cover on a loaded machine.
+const MinPackageTimeout = 60 * time.Second
+
 // ExecutorDealer is the initializer for new workerpool.Executor.
 type ExecutorDealer interface {
 	NewExecutor(mut mutator.Mutator, outCh chan<- mutator.Mutator, wg *sync.WaitGroup) workerpool.Executor
@@ -55,8 +60,10 @@ type MutantExecutorDealer struct {
 	wdDealer          workdir.Dealer
 	execContext       execContext
 	mod               gomodule.GoModule
+	pkgElapsed        map[string]time.Duration
 	buildTags         string
 	testExecutionTime time.Duration
+	coefficient       int
 	dryRun            bool
 	integrationMode   bool
 	testCPU           int
@@ -69,6 +76,18 @@ type ExecutorDealerOption func(j MutantExecutorDealer) MutantExecutorDealer
 func WithExecContext(c execContext) ExecutorDealerOption {
 	return func(m MutantExecutorDealer) MutantExecutorDealer {
 		m.execContext = c
+
+		return m
+	}
+}
+
+// WithPackageElapsed times each mutant outside integration mode from its own
+// package's test run time, keyed by import path, with MinPackageTimeout as the
+// floor and the whole run's timeout as the ceiling. A package with no entry
+// keeps the whole run's timeout.
+func WithPackageElapsed(elapsed map[string]time.Duration) ExecutorDealerOption {
+	return func(m MutantExecutorDealer) MutantExecutorDealer {
+		m.pkgElapsed = elapsed
 
 		return m
 	}
@@ -106,6 +125,7 @@ func NewExecutorDealer(mod gomodule.GoModule, wdd workdir.Dealer, elapsed time.D
 		integrationMode:   integrationMode,
 		testCPU:           testCPU,
 		testExecutionTime: baseTime * time.Duration(coefficient),
+		coefficient:       coefficient,
 		execContext:       exec.CommandContext,
 	}
 
@@ -132,10 +152,21 @@ func (m MutantExecutorDealer) NewExecutor(mut mutator.Mutator, outCh chan<- muta
 		buildTags:         m.buildTags,
 		execContext:       m.execContext,
 		testCPU:           m.testCPU,
-		testExecutionTime: m.testExecutionTime,
+		testExecutionTime: m.timeout(mut.Pkg()),
 	}
 
 	return &mj
+}
+
+// timeout is a mutant's test budget. Integration mode runs every package's
+// tests, so only the whole coverage run's time fits it.
+func (m MutantExecutorDealer) timeout(pkg string) time.Duration {
+	elapsed, ok := m.pkgElapsed[pkg]
+	if !ok || m.integrationMode {
+		return m.testExecutionTime
+	}
+
+	return min(max(elapsed*time.Duration(m.coefficient), MinPackageTimeout), m.testExecutionTime)
 }
 
 type execContext = func(ctx context.Context, name string, args ...string) *exec.Cmd

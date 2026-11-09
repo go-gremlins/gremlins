@@ -38,7 +38,10 @@ import (
 // it took to generate the coverage report.
 type Result struct {
 	Profile Profile
-	Elapsed time.Duration
+	// PackageElapsed is each tested package's own test run time, keyed by import
+	// path. It excludes the build, and has no entry for a cached or untested package.
+	PackageElapsed map[string]time.Duration
+	Elapsed        time.Duration
 }
 
 // Coverage is responsible for executing a Go test with coverage via the Run() method,
@@ -100,7 +103,7 @@ func (c *Coverage) Run() (Result, error) {
 	if err := c.downloadModules(); err != nil {
 		return Result{}, fmt.Errorf("impossible to download modules: %w", err)
 	}
-	elapsed, err := c.executeCoverage()
+	elapsed, out, err := c.executeCoverage()
 	if err != nil {
 		return Result{}, fmt.Errorf("impossible to executeCoverage coverage: %w", err)
 	}
@@ -110,7 +113,24 @@ func (c *Coverage) Run() (Result, error) {
 		return Result{}, fmt.Errorf("an error occurred while generating coverage profile: %w", err)
 	}
 
-	return Result{Profile: profile, Elapsed: elapsed}, nil
+	return Result{Profile: profile, PackageElapsed: packageElapsed(out), Elapsed: elapsed}, nil
+}
+
+// packageElapsed reads the run time go test prints on each passing package's
+// "ok" line. A cached result prints "(cached)" there instead and gets no entry.
+func packageElapsed(out []byte) map[string]time.Duration {
+	elapsed := make(map[string]time.Duration)
+	for line := range strings.Lines(string(out)) {
+		f := strings.Fields(line)
+		if len(f) < 3 || f[0] != "ok" {
+			continue
+		}
+		if d, err := time.ParseDuration(f[2]); err == nil {
+			elapsed[f[1]] = d
+		}
+	}
+
+	return elapsed
 }
 
 func (c *Coverage) profile() (Profile, error) {
@@ -141,7 +161,7 @@ func (c *Coverage) downloadModules() error {
 	return cmd.Run()
 }
 
-func (c *Coverage) executeCoverage() (time.Duration, error) {
+func (c *Coverage) executeCoverage() (time.Duration, []byte, error) {
 	args := []string{"test"}
 	if c.buildTags != "" {
 		args = append(args, "-tags", c.buildTags)
@@ -154,13 +174,14 @@ func (c *Coverage) executeCoverage() (time.Duration, error) {
 	cmd := c.cmdContext("go", args...)
 
 	start := time.Now()
-	if out, err := cmd.CombinedOutput(); err != nil {
+	out, err := cmd.CombinedOutput()
+	if err != nil {
 		log.Infof("\n%s\n", string(out))
 
-		return 0, err
+		return 0, nil, err
 	}
 
-	return time.Since(start), nil
+	return time.Since(start), out, nil
 }
 
 func (c *Coverage) scanPath() string {

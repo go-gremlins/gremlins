@@ -436,6 +436,12 @@ coefficient. For example:
 - Coverage run takes 500ms → timeout = max(500ms, 1s) × 5 = 5 seconds
 - Coverage run takes 2s → timeout = 2s × 5 = 10 seconds
 
+Outside integration mode, each mutant's timeout comes from its own package
+instead: the time that package's tests took in the coverage run, multiplied by
+the coefficient. It is at least 60 seconds, to leave time to build the mutant,
+and never more than the timeout above. A package with no time of its own, such
+as one whose result came from the test cache, keeps the timeout above.
+
 ```shell
 gremlins unleash --timeout-coefficient=10
 ```

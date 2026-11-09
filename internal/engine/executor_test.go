@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -319,6 +320,96 @@ func TestMutatorRun(t *testing.T) {
 			diffThreshold := 100 * time.Second
 			if timeoutDifference > diffThreshold {
 				t.Errorf("expected timeout to be within %s from the set timeout, got %s", diffThreshold, timeoutDifference)
+			}
+		})
+	}
+}
+
+func TestMutantTimeoutFromItsPackage(t *testing.T) {
+	const slow, fast = "example.com/slow", "example.com/fast"
+	pkgElapsed := map[string]time.Duration{
+		slow: 10 * time.Second,
+		fast: 490 * time.Millisecond,
+	}
+	testCases := []struct {
+		name          string
+		pkg           string
+		moduleElapsed time.Duration
+		intMode       bool
+		wantTimeout   time.Duration
+	}{
+		{
+			name:          "coefficient times the package's own test time",
+			pkg:           slow,
+			moduleElapsed: 200 * time.Second,
+			wantTimeout:   10 * time.Second * 12,
+		},
+		{
+			name:          "a fast package gets the floor",
+			pkg:           fast,
+			moduleElapsed: 200 * time.Second,
+			wantTimeout:   engine.MinPackageTimeout,
+		},
+		{
+			name:          "the floor never exceeds the whole run's timeout",
+			pkg:           fast,
+			moduleElapsed: 2 * time.Second,
+			wantTimeout:   2 * time.Second * 12,
+		},
+		{
+			name:          "a package the coverage run did not time keeps the whole run's timeout",
+			pkg:           "example.com/untimed",
+			moduleElapsed: 200 * time.Second,
+			wantTimeout:   200 * time.Second * 12,
+		},
+		{
+			name:          "integration mode runs every package, so it keeps the whole run's timeout",
+			pkg:           slow,
+			moduleElapsed: 200 * time.Second,
+			intMode:       true,
+			wantTimeout:   200 * time.Second * 12,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			viperSet(map[string]any{
+				configuration.UnleashIntegrationMode:       tc.intMode,
+				configuration.UnleashTimeoutCoefficientKey: 12,
+			})
+			defer viperReset()
+
+			mod := gomodule.GoModule{
+				Name:       expectedModule,
+				Root:       ".",
+				CallingDir: ".",
+			}
+			wdDealer := newWdDealerStub(t)
+			holder := &commandHolder{}
+			mjd := engine.NewExecutorDealer(mod, wdDealer, tc.moduleElapsed,
+				engine.WithExecContext(fakeExecCommandSuccessWithHolder(holder)),
+				engine.WithPackageElapsed(pkgElapsed))
+			mut := &mutantStub{
+				status:  mutator.Runnable,
+				mutType: mutator.ConditionalsBoundary,
+				pkg:     tc.pkg,
+			}
+			outCh := make(chan mutator.Mutator)
+			wg := sync.WaitGroup{}
+			wg.Add(1)
+			executor := mjd.NewExecutor(mut, outCh, &wg)
+			go func() {
+				<-outCh
+				close(outCh)
+			}()
+			executor.Start(&workerpool.Worker{Name: "test", ID: 1})
+			wg.Wait()
+
+			wantArg := (2*time.Second + tc.wantTimeout).String()
+			if !slices.Contains(holder.args, wantArg) {
+				t.Errorf("expected -timeout %s, got: go %s", wantArg, strings.Join(holder.args, " "))
+			}
+			if d := absTimeDiff(holder.timeout, tc.wantTimeout); d > time.Second {
+				t.Errorf("expected a deadline %s away, got %s", tc.wantTimeout, holder.timeout)
 			}
 		})
 	}
