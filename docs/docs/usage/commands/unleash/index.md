@@ -438,9 +438,10 @@ coefficient. For example:
 
 Outside integration mode, each mutant's timeout comes from its own package
 instead: the time that package's tests took in the coverage run, multiplied by
-the coefficient. It is at least 60 seconds, to leave time to build the mutant,
-and never more than the timeout above. A package with no time of its own, such
-as one whose result came from the test cache, keeps the timeout above.
+the coefficient. The result is never longer than the timeout above. When that
+timeout is longer than 60 seconds, the result is at least 60 seconds, to leave
+time to build the mutant. A package with no time of its own, such as one whose
+result came from the test cache, keeps the timeout above.
 
 ```shell
 gremlins unleash --timeout-coefficient=10

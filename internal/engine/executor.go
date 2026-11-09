@@ -38,9 +38,9 @@ import (
 // of each test run.
 const DefaultTimeoutCoefficient = 5
 
-// MinPackageTimeout is the shortest timeout a mutant timed from its own package
-// gets. A package's test run time excludes compiling and linking the mutant,
-// which this has to cover on a loaded machine.
+// MinPackageTimeout covers compiling and linking the mutant, which a package's
+// recorded test time does not include. It never raises a mutant's timeout above
+// the whole run's timeout.
 const MinPackageTimeout = 60 * time.Second
 
 // ExecutorDealer is the initializer for new workerpool.Executor.
@@ -158,8 +158,8 @@ func (m MutantExecutorDealer) NewExecutor(mut mutator.Mutator, outCh chan<- muta
 	return &mj
 }
 
-// timeout is a mutant's test budget. Integration mode runs every package's
-// tests, so only the whole coverage run's time fits it.
+// Integration mode runs every package's tests, so only the whole coverage
+// run's time fits it.
 func (m MutantExecutorDealer) timeout(pkg string) time.Duration {
 	elapsed, ok := m.pkgElapsed[pkg]
 	if !ok || m.integrationMode {
